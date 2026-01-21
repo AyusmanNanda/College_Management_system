@@ -1,6 +1,6 @@
-# College_Management_system
+# College_Management_system <br>
 Stricture :
-
-src - for source java files 
-assets - for images and pictures 
-jar - will be used to store jar libraries like jdbc in future 
+<br>
+src - for source java files <br>
+assets - for images and pictures <br>
+jar - will be used to store jar libraries like jdbc in future <br>
