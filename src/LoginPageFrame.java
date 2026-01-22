@@ -3,6 +3,8 @@ package college.login;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import javax.swing.JButton;
@@ -11,7 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-class LoginPageFrame extends JFrame {
+class LoginPageFrame extends JFrame implements ActionListener {
 
     private JPanel contentPane;
     private JPanel headerPanel;
@@ -65,6 +67,10 @@ class LoginPageFrame extends JFrame {
         facultyButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         studentButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
 
+        adminButton.addActionListener(this);
+        facultyButton.addActionListener(this);
+        studentButton.addActionListener(this);
+
         centerPanel.add(adminButton);
         centerPanel.add(facultyButton);
         centerPanel.add(studentButton);
@@ -100,6 +106,17 @@ class LoginPageFrame extends JFrame {
         adminButton.setBounds(startX, y, buttonWidth, buttonHeight);
         facultyButton.setBounds(startX + buttonWidth + gap, y, buttonWidth, buttonHeight);
         studentButton.setBounds(startX + (buttonWidth + gap) * 2, y, buttonWidth, buttonHeight);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == adminButton) {
+            System.out.println("Admin login selected");
+        } else if (e.getSource() == facultyButton) {
+            System.out.println("Faculty login selected");
+        } else if (e.getSource() == studentButton) {
+            System.out.println("Student login selected");
+        }
     }
 
     public static void main(String[] args) {
