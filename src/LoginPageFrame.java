@@ -14,6 +14,7 @@ class LoginPageFrame extends JFrame {
 
     private JPanel contentPane;
     private JPanel headerPanel;
+    private JPanel centerPanel;
     private JLabel titleLabel;
 
     LoginPageFrame() {
@@ -30,14 +31,13 @@ class LoginPageFrame extends JFrame {
         contentPane.setLayout(null);
         setContentPane(contentPane);
 
-        // Top header area for branding or title
+        // Top header area
         headerPanel = new JPanel();
         headerPanel.setBackground(new Color(39, 71, 122));
-        headerPanel.setBounds(0, 0, getWidth(), 60);
         headerPanel.setLayout(null);
         contentPane.add(headerPanel);
 
-        // Application title displayed in the header
+        // Application title
         titleLabel = new JLabel("College Login System");
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
@@ -45,13 +45,31 @@ class LoginPageFrame extends JFrame {
         titleLabel.setBounds(20, 15, 300, 30);
         headerPanel.add(titleLabel);
 
+        // Central area reserved for login-related UI
+        centerPanel = new JPanel();
+        centerPanel.setBackground(Color.WHITE);
+        centerPanel.setLayout(null);
+        contentPane.add(centerPanel);
+
+        // Initial layout setup
+        updateLayout();
+
         // Adjust UI components when the window is resized
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                headerPanel.setBounds(0, 0, getWidth(), 60);
+                updateLayout();
             }
         });
+    }
+
+    // Handles manual resizing of UI components
+    private void updateLayout() {
+        int width = getWidth();
+        int height = getHeight();
+
+        headerPanel.setBounds(0, 0, width, 60);
+        centerPanel.setBounds(0, 60, width, height - 60);
     }
 
     public static void main(String[] args) {
