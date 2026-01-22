@@ -5,6 +5,7 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -16,6 +17,10 @@ class LoginPageFrame extends JFrame {
     private JPanel headerPanel;
     private JPanel centerPanel;
     private JLabel titleLabel;
+
+    private JButton adminButton;
+    private JButton facultyButton;
+    private JButton studentButton;
 
     LoginPageFrame() {
         // Configure the main login window
@@ -45,11 +50,24 @@ class LoginPageFrame extends JFrame {
         titleLabel.setBounds(20, 15, 300, 30);
         headerPanel.add(titleLabel);
 
-        // Central area reserved for login-related UI
+        // Central area for login-related UI
         centerPanel = new JPanel();
         centerPanel.setBackground(Color.WHITE);
         centerPanel.setLayout(null);
         contentPane.add(centerPanel);
+
+        // Role selection buttons
+        adminButton = new JButton("Admin");
+        facultyButton = new JButton("Faculty");
+        studentButton = new JButton("Student");
+
+        adminButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        facultyButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        studentButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        centerPanel.add(adminButton);
+        centerPanel.add(facultyButton);
+        centerPanel.add(studentButton);
 
         // Initial layout setup
         updateLayout();
@@ -63,13 +81,25 @@ class LoginPageFrame extends JFrame {
         });
     }
 
-    // Handles manual resizing of UI components
+    // Handles manual resizing and positioning of UI components
     private void updateLayout() {
         int width = getWidth();
         int height = getHeight();
 
         headerPanel.setBounds(0, 0, width, 60);
         centerPanel.setBounds(0, 60, width, height - 60);
+
+        int buttonWidth = 120;
+        int buttonHeight = 40;
+        int gap = 20;
+
+        int totalWidth = (buttonWidth * 3) + (gap * 2);
+        int startX = (width - totalWidth) / 2;
+        int y = 80;
+
+        adminButton.setBounds(startX, y, buttonWidth, buttonHeight);
+        facultyButton.setBounds(startX + buttonWidth + gap, y, buttonWidth, buttonHeight);
+        studentButton.setBounds(startX + (buttonWidth + gap) * 2, y, buttonWidth, buttonHeight);
     }
 
     public static void main(String[] args) {
