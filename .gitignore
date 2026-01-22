@@ -20,5 +20,5 @@
 *.rar
 
 #folders
-../.idea/vcs.xml
-out/production
+.idea/
+out/
