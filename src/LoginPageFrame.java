@@ -3,6 +3,8 @@ package college.login;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -20,8 +22,6 @@ class LoginPageFrame extends JFrame {
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
-        // Allow the window to be resized and maximized
         setResizable(true);
 
         // Root container for manual component positioning
@@ -33,7 +33,7 @@ class LoginPageFrame extends JFrame {
         // Top header area for branding or title
         headerPanel = new JPanel();
         headerPanel.setBackground(new Color(39, 71, 122));
-        headerPanel.setBounds(0, 0, 400, 60);
+        headerPanel.setBounds(0, 0, getWidth(), 60);
         headerPanel.setLayout(null);
         contentPane.add(headerPanel);
 
@@ -44,6 +44,14 @@ class LoginPageFrame extends JFrame {
         titleLabel.setHorizontalAlignment(SwingConstants.LEFT);
         titleLabel.setBounds(20, 15, 300, 30);
         headerPanel.add(titleLabel);
+
+        // Adjust UI components when the window is resized
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                headerPanel.setBounds(0, 0, getWidth(), 60);
+            }
+        });
     }
 
     public static void main(String[] args) {
