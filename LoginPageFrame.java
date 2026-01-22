@@ -16,9 +16,10 @@ class LoginPageFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Root container for all future UI components
+        // Root container for manual component positioning
         contentPane = new JPanel();
         contentPane.setBackground(Color.WHITE);
+        contentPane.setLayout(null); // required for absolute positioning
         setContentPane(contentPane);
     }
 
