@@ -24,48 +24,41 @@ class LoginPageFrame extends JFrame implements ActionListener {
     private JButton facultyButton;
     private JButton studentButton;
 
+    private LoginPanel adminPanel;
+    private LoginPanel facultyPanel;
+    private LoginPanel studentPanel;
+
     LoginPageFrame() {
-        // Configure the main login window
         setTitle("Login");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(true);
 
-        // Root container for manual component positioning
         contentPane = new JPanel();
         contentPane.setBackground(Color.WHITE);
         contentPane.setLayout(null);
         setContentPane(contentPane);
 
-        // Top header area
         headerPanel = new JPanel();
         headerPanel.setBackground(new Color(39, 71, 122));
         headerPanel.setLayout(null);
         contentPane.add(headerPanel);
 
-        // Application title
         titleLabel = new JLabel("College Login System");
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titleLabel.setHorizontalAlignment(SwingConstants.LEFT);
         titleLabel.setBounds(20, 15, 300, 30);
         headerPanel.add(titleLabel);
 
-        // Central area for login-related UI
         centerPanel = new JPanel();
         centerPanel.setBackground(Color.WHITE);
         centerPanel.setLayout(null);
         contentPane.add(centerPanel);
 
-        // Role selection buttons
         adminButton = new JButton("Admin");
         facultyButton = new JButton("Faculty");
         studentButton = new JButton("Student");
-
-        adminButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        facultyButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        studentButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
 
         adminButton.addActionListener(this);
         facultyButton.addActionListener(this);
@@ -75,10 +68,18 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(facultyButton);
         centerPanel.add(studentButton);
 
-        // Initial layout setup
+        adminPanel = new LoginPanel("Admin");
+        facultyPanel = new LoginPanel("Faculty");
+        studentPanel = new LoginPanel("Student");
+
+        centerPanel.add(adminPanel);
+        centerPanel.add(facultyPanel);
+        centerPanel.add(studentPanel);
+
+        showPanel(studentPanel); // default view
+
         updateLayout();
 
-        // Adjust UI components when the window is resized
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -87,7 +88,13 @@ class LoginPageFrame extends JFrame implements ActionListener {
         });
     }
 
-    // Handles manual resizing and positioning of UI components
+    private void showPanel(LoginPanel panel) {
+        adminPanel.setVisible(false);
+        facultyPanel.setVisible(false);
+        studentPanel.setVisible(false);
+        panel.setVisible(true);
+    }
+
     private void updateLayout() {
         int width = getWidth();
         int height = getHeight();
@@ -101,30 +108,30 @@ class LoginPageFrame extends JFrame implements ActionListener {
 
         int totalWidth = (buttonWidth * 3) + (gap * 2);
         int startX = (width - totalWidth) / 2;
-        int y = 80;
 
-        adminButton.setBounds(startX, y, buttonWidth, buttonHeight);
-        facultyButton.setBounds(startX + buttonWidth + gap, y, buttonWidth, buttonHeight);
-        studentButton.setBounds(startX + (buttonWidth + gap) * 2, y, buttonWidth, buttonHeight);
+        adminButton.setBounds(startX, 20, buttonWidth, buttonHeight);
+        facultyButton.setBounds(startX + buttonWidth + gap, 20, buttonWidth, buttonHeight);
+        studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, buttonHeight);
+
+        adminPanel.setBounds(0, 80, width, height - 140);
+        facultyPanel.setBounds(0, 80, width, height - 140);
+        studentPanel.setBounds(0, 80, width, height - 140);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == adminButton) {
-            System.out.println("Admin login selected");
+            showPanel(adminPanel);
         } else if (e.getSource() == facultyButton) {
-            System.out.println("Faculty login selected");
+            showPanel(facultyPanel);
         } else if (e.getSource() == studentButton) {
-            System.out.println("Student login selected");
+            showPanel(studentPanel);
         }
     }
 
     public static void main(String[] args) {
-
-        // Start UI creation on the Event Dispatch Thread
         EventQueue.invokeLater(() -> {
-            LoginPageFrame frame = new LoginPageFrame();
-            frame.setVisible(true);
+            new LoginPageFrame().setVisible(true);
         });
     }
 }
