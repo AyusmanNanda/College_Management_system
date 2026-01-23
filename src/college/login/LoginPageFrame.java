@@ -11,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 class LoginPageFrame extends JFrame implements ActionListener {
 
@@ -29,6 +30,9 @@ class LoginPageFrame extends JFrame implements ActionListener {
     private LoginPanel adminPanel;
     private LoginPanel facultyPanel;
     private LoginPanel studentPanel;
+
+    private Timer underlineTimer;
+    private int targetUnderlineX;
 
     LoginPageFrame() {
         setTitle("Login");
@@ -70,10 +74,13 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(facultyButton);
         centerPanel.add(studentButton);
 
-        // Underline indicator (static for now)
+        // Underline indicator
         underlinePanel = new JPanel();
         underlinePanel.setBackground(THEME_BLUE);
         centerPanel.add(underlinePanel);
+
+        // Animation timer for underline
+        underlineTimer = new Timer(5, e -> animateUnderline());
 
         adminPanel = new LoginPanel("Admin");
         facultyPanel = new LoginPanel("Faculty");
@@ -84,14 +91,14 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(studentPanel);
 
         showPanel(studentPanel);
-        moveUnderline(studentButton);
-
         updateLayout();
+        snapUnderlineTo(studentButton);
 
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 updateLayout();
+                snapUnderlineTo(studentButton);
             }
         });
     }
@@ -103,13 +110,30 @@ class LoginPageFrame extends JFrame implements ActionListener {
         panel.setVisible(true);
     }
 
-    private void moveUnderline(JButton button) {
+    private void snapUnderlineTo(JButton button) {
         underlinePanel.setBounds(
                 button.getX(),
                 button.getY() + button.getHeight() + 2,
                 button.getWidth(),
                 3
         );
+    }
+
+    private void moveUnderlineAnimated(JButton button) {
+        targetUnderlineX = button.getX();
+        underlineTimer.start();
+    }
+
+    private void animateUnderline() {
+        int currentX = underlinePanel.getX();
+
+        if (currentX == targetUnderlineX) {
+            underlineTimer.stop();
+            return;
+        }
+
+        int step = currentX < targetUnderlineX ? 5 : -5;
+        underlinePanel.setLocation(currentX + step, underlinePanel.getY());
     }
 
     private void updateLayout() {
@@ -134,10 +158,6 @@ class LoginPageFrame extends JFrame implements ActionListener {
         facultyButton.setBounds(startX + buttonWidth + gap, 20, buttonWidth, buttonHeight);
         studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, buttonHeight);
 
-        underlinePanel.setBounds(studentButton.getX(),
-                studentButton.getY() + studentButton.getHeight() + 2,
-                studentButton.getWidth(), 3);
-
         adminPanel.setBounds(0, 80, width, height - headerHeight - 80);
         facultyPanel.setBounds(0, 80, width, height - headerHeight - 80);
         studentPanel.setBounds(0, 80, width, height - headerHeight - 80);
@@ -147,13 +167,13 @@ class LoginPageFrame extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == adminButton) {
             showPanel(adminPanel);
-            moveUnderline(adminButton);
+            moveUnderlineAnimated(adminButton);
         } else if (e.getSource() == facultyButton) {
             showPanel(facultyPanel);
-            moveUnderline(facultyButton);
+            moveUnderlineAnimated(facultyButton);
         } else if (e.getSource() == studentButton) {
             showPanel(studentPanel);
-            moveUnderline(studentButton);
+            moveUnderlineAnimated(studentButton);
         }
     }
 
