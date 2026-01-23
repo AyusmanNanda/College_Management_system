@@ -14,6 +14,8 @@ import javax.swing.JPanel;
 
 class LoginPageFrame extends JFrame implements ActionListener {
 
+    private static final Color THEME_BLUE = new Color(39, 71, 122);
+
     private JPanel contentPane;
     private JPanel headerPanel;
     private JPanel centerPanel;
@@ -39,15 +41,15 @@ class LoginPageFrame extends JFrame implements ActionListener {
         contentPane.setLayout(null);
         setContentPane(contentPane);
 
+        // Top branding panel (expanded)
         headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(39, 71, 122));
+        headerPanel.setBackground(THEME_BLUE);
         headerPanel.setLayout(null);
         contentPane.add(headerPanel);
 
         titleLabel = new JLabel("College Login System");
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titleLabel.setBounds(20, 15, 300, 30);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         headerPanel.add(titleLabel);
 
         centerPanel = new JPanel();
@@ -75,7 +77,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(facultyPanel);
         centerPanel.add(studentPanel);
 
-        showPanel(studentPanel); // default view
+        showPanel(studentPanel);
 
         updateLayout();
 
@@ -98,8 +100,12 @@ class LoginPageFrame extends JFrame implements ActionListener {
         int width = getWidth();
         int height = getHeight();
 
-        headerPanel.setBounds(0, 0, width, 60);
-        centerPanel.setBounds(0, 60, width, height - 60);
+        int headerHeight = 100; // expanded header (step toward final UI)
+
+        headerPanel.setBounds(0, 0, width, headerHeight);
+        titleLabel.setBounds(30, 35, width - 60, 30);
+
+        centerPanel.setBounds(0, headerHeight, width, height - headerHeight);
 
         int buttonWidth = 120;
         int buttonHeight = 40;
@@ -112,9 +118,9 @@ class LoginPageFrame extends JFrame implements ActionListener {
         facultyButton.setBounds(startX + buttonWidth + gap, 20, buttonWidth, buttonHeight);
         studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, buttonHeight);
 
-        adminPanel.setBounds(0, 80, width, height - 140);
-        facultyPanel.setBounds(0, 80, width, height - 140);
-        studentPanel.setBounds(0, 80, width, height - 140);
+        adminPanel.setBounds(0, 80, width, height - headerHeight - 80);
+        facultyPanel.setBounds(0, 80, width, height - headerHeight - 80);
+        studentPanel.setBounds(0, 80, width, height - headerHeight - 80);
     }
 
     @Override
@@ -130,7 +136,10 @@ class LoginPageFrame extends JFrame implements ActionListener {
 
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
-            new LoginPageFrame().setVisible(true);
+            LoginPageFrame frame = new LoginPageFrame();
+            frame.setVisible(true);
+            // fullscreen-capable without forcing it
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         });
     }
 }
