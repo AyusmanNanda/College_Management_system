@@ -63,6 +63,10 @@ class LoginPageFrame extends JFrame implements ActionListener {
         facultyButton = new JButton("Faculty");
         studentButton = new JButton("Student");
 
+        styleButton(adminButton);
+        styleButton(facultyButton);
+        styleButton(studentButton);
+
         adminButton.addActionListener(this);
         facultyButton.addActionListener(this);
         studentButton.addActionListener(this);
@@ -72,6 +76,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(studentButton);
 
         activeButton = studentButton;
+        setActiveButton(studentButton);
 
         underlinePanel = new JPanel();
         underlinePanel.setBackground(THEME_BLUE);
@@ -101,6 +106,28 @@ class LoginPageFrame extends JFrame implements ActionListener {
         });
     }
 
+    /* ---------------- Button Styling ---------------- */
+
+    private void styleButton(JButton button) {
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setForeground(Color.DARK_GRAY);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    }
+
+    private void setActiveButton(JButton button) {
+        adminButton.setForeground(Color.DARK_GRAY);
+        facultyButton.setForeground(Color.DARK_GRAY);
+        studentButton.setForeground(Color.DARK_GRAY);
+
+        button.setForeground(THEME_BLUE);
+        activeButton = button;
+    }
+
+    /* ---------------- Panel Handling ---------------- */
+
     private void showPanel(LoginPanel panel) {
         adminPanel.setVisible(false);
         facultyPanel.setVisible(false);
@@ -118,7 +145,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
     }
 
     private void moveUnderlineAnimated(JButton button) {
-        activeButton = button;
+        setActiveButton(button);
         targetUnderlineX = button.getX();
         underlineTimer.start();
     }
@@ -135,6 +162,8 @@ class LoginPageFrame extends JFrame implements ActionListener {
         int step = currentX < targetUnderlineX ? 5 : -5;
         underlinePanel.setLocation(currentX + step, underlinePanel.getY());
     }
+
+    /* ---------------- Layout ---------------- */
 
     private void updateLayout() {
         int width = getWidth();
@@ -159,9 +188,13 @@ class LoginPageFrame extends JFrame implements ActionListener {
         int panelY = 80;
         int panelHeight = height - headerHeight - panelY;
 
-        adminPanel.setBounds(0, panelY, width, panelHeight);
-        facultyPanel.setBounds(0, panelY, width, panelHeight);
-        studentPanel.setBounds(0, panelY, width, panelHeight);
+        int maxPanelWidth = 420;
+        int panelWidth = Math.min(width, maxPanelWidth);
+        int panelX = (width - panelWidth) / 2;
+
+        adminPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        facultyPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        studentPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
 
         adminPanel.updateLayout(adminPanel.getWidth(), adminPanel.getHeight());
         facultyPanel.updateLayout(facultyPanel.getWidth(), facultyPanel.getHeight());
