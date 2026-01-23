@@ -3,10 +3,13 @@ package college.login;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.File;
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -22,6 +25,10 @@ class LoginPageFrame extends JFrame implements ActionListener {
     private JPanel centerPanel;
     private JPanel underlinePanel;
     private JLabel titleLabel;
+
+    private JLabel backgroundLabel;
+    private Timer backgroundTimer;
+    private int backgroundIndex = 1;
 
     private JButton adminButton;
     private JButton facultyButton;
@@ -42,11 +49,14 @@ class LoginPageFrame extends JFrame implements ActionListener {
         setResizable(true);
 
         contentPane = new JPanel();
-        contentPane.setBackground(Color.WHITE);
         contentPane.setLayout(null);
         setContentPane(contentPane);
 
-        // Header / branding panel
+        // Background image layer (bottom-most)
+        backgroundLabel = new JLabel();
+        contentPane.add(backgroundLabel);
+
+        // Header panel
         headerPanel = new JPanel();
         headerPanel.setBackground(THEME_BLUE);
         headerPanel.setLayout(null);
@@ -58,7 +68,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         headerPanel.add(titleLabel);
 
         centerPanel = new JPanel();
-        centerPanel.setBackground(Color.WHITE);
+        centerPanel.setBackground(new Color(255, 255, 255, 230));
         centerPanel.setLayout(null);
         contentPane.add(centerPanel);
 
@@ -74,12 +84,10 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(facultyButton);
         centerPanel.add(studentButton);
 
-        // Underline indicator
         underlinePanel = new JPanel();
         underlinePanel.setBackground(THEME_BLUE);
         centerPanel.add(underlinePanel);
 
-        // Animation timer for underline
         underlineTimer = new Timer(5, e -> animateUnderline());
 
         adminPanel = new LoginPanel("Admin");
@@ -91,14 +99,21 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(studentPanel);
 
         showPanel(studentPanel);
+
+        // Background image rotation timer
+        backgroundTimer = new Timer(5000, e -> changeBackgroundImage());
+        backgroundTimer.start();
+
         updateLayout();
         snapUnderlineTo(studentButton);
+        loadBackgroundImage();
 
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 updateLayout();
                 snapUnderlineTo(studentButton);
+                loadBackgroundImage();
             }
         });
     }
@@ -136,11 +151,34 @@ class LoginPageFrame extends JFrame implements ActionListener {
         underlinePanel.setLocation(currentX + step, underlinePanel.getY());
     }
 
+    private void loadBackgroundImage() {
+        try {
+            Image img = ImageIO.read(
+                    new File("res/background/background" + backgroundIndex + ".jpg")
+            );
+            Image scaled = img.getScaledInstance(
+                    getWidth(), getHeight(), Image.SCALE_SMOOTH
+            );
+            backgroundLabel.setIcon(new javax.swing.ImageIcon(scaled));
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void changeBackgroundImage() {
+        backgroundIndex++;
+        if (backgroundIndex > 3) {
+            backgroundIndex = 1;
+        }
+        loadBackgroundImage();
+    }
+
     private void updateLayout() {
         int width = getWidth();
         int height = getHeight();
 
         int headerHeight = 100;
+
+        backgroundLabel.setBounds(0, 0, width, height);
 
         headerPanel.setBounds(0, 0, width, headerHeight);
         titleLabel.setBounds(30, 35, width - 60, 30);
