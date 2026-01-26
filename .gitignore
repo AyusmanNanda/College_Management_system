@@ -3,6 +3,7 @@
 
 # Log file
 *.log
+*.iml
 
 # BlueJ files
 *.ctxt
@@ -18,4 +19,7 @@
 *.tar.gz
 *.rar
 
-
+#folders
+.idea/
+out/
+src/META-INF/
