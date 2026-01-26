@@ -3,10 +3,14 @@ package college.login;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -23,6 +27,11 @@ class LoginPageFrame extends JFrame implements ActionListener {
     private JPanel underlinePanel;
     private JLabel titleLabel;
 
+    // Background image handling
+    private JLabel backgroundLabel;
+    private Timer imageTimer;
+    private int imageIndex = 1;
+
     private JButton adminButton;
     private JButton facultyButton;
     private JButton studentButton;
@@ -33,7 +42,11 @@ class LoginPageFrame extends JFrame implements ActionListener {
     private LoginPanel studentPanel;
 
     private Timer underlineTimer;
+    private Timer fadeTimer;
+
     private int targetUnderlineX;
+    private int fadeAlpha;
+    private LoginPanel fadingPanel;
 
     LoginPageFrame() {
         setTitle("Login");
@@ -46,6 +59,10 @@ class LoginPageFrame extends JFrame implements ActionListener {
         contentPane.setBackground(Color.WHITE);
         setContentPane(contentPane);
 
+        // Background image sits at the very back
+        backgroundLabel = new JLabel();
+        contentPane.add(backgroundLabel);
+
         headerPanel = new JPanel(null);
         headerPanel.setBackground(THEME_BLUE);
         contentPane.add(headerPanel);
@@ -56,7 +73,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         headerPanel.add(titleLabel);
 
         centerPanel = new JPanel(null);
-        centerPanel.setBackground(Color.WHITE);
+        centerPanel.setBackground(new Color(255, 255, 255, 230));
         contentPane.add(centerPanel);
 
         adminButton = new JButton("Admin");
@@ -83,6 +100,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.add(underlinePanel);
 
         underlineTimer = new Timer(5, e -> animateUnderline());
+        fadeTimer = new Timer(20, e -> animateFade());
 
         adminPanel = new LoginPanel("Admin");
         facultyPanel = new LoginPanel("Faculty");
@@ -94,6 +112,11 @@ class LoginPageFrame extends JFrame implements ActionListener {
 
         showPanel(studentPanel);
 
+        // Rotate background images every 5 seconds
+        imageTimer = new Timer(5000, e -> changeBackgroundImage());
+        imageTimer.start();
+        loadBackgroundImage();
+
         updateLayout();
         snapUnderlineTo(activeButton);
 
@@ -102,11 +125,40 @@ class LoginPageFrame extends JFrame implements ActionListener {
             public void componentResized(ComponentEvent e) {
                 updateLayout();
                 snapUnderlineTo(activeButton);
+                loadBackgroundImage();
             }
         });
     }
 
-    /* ---------------- Button Styling ---------------- */
+    // ---------- Background image logic ----------
+
+    private void changeBackgroundImage() {
+        imageIndex++;
+        if (imageIndex > 5) {
+            imageIndex = 1;
+        }
+        loadBackgroundImage();
+    }
+
+    private void loadBackgroundImage() {
+        try {
+            Image img = ImageIO.read(
+                    new File("./assets/backgroundimage" + imageIndex + ".jpg")
+            );
+
+            Image scaled = img.getScaledInstance(
+                    getWidth(),
+                    getHeight(),
+                    Image.SCALE_SMOOTH
+            );
+
+            backgroundLabel.setIcon(new javax.swing.ImageIcon(scaled));
+        } catch (IOException ignored) {
+            // If image is missing, just skip it
+        }
+    }
+
+    // ---------- Existing logic below (unchanged) ----------
 
     private void styleButton(JButton button) {
         button.setFocusPainted(false);
@@ -126,13 +178,29 @@ class LoginPageFrame extends JFrame implements ActionListener {
         activeButton = button;
     }
 
-    /* ---------------- Panel Handling ---------------- */
-
     private void showPanel(LoginPanel panel) {
         adminPanel.setVisible(false);
         facultyPanel.setVisible(false);
         studentPanel.setVisible(false);
+        startFade(panel);
+    }
+
+    private void startFade(LoginPanel panel) {
+        fadeAlpha = 40;
+        fadingPanel = panel;
         panel.setVisible(true);
+        panel.setBackground(new Color(0, 0, 0, fadeAlpha));
+        fadeTimer.start();
+    }
+
+    private void animateFade() {
+        fadeAlpha += 15;
+        if (fadeAlpha >= 120) {
+            fadeAlpha = 120;
+            fadeTimer.stop();
+        }
+        fadingPanel.setBackground(new Color(0, 0, 0, fadeAlpha));
+        fadingPanel.repaint();
     }
 
     private void snapUnderlineTo(JButton button) {
@@ -152,23 +220,23 @@ class LoginPageFrame extends JFrame implements ActionListener {
 
     private void animateUnderline() {
         int currentX = underlinePanel.getX();
-
         if (Math.abs(currentX - targetUnderlineX) <= 5) {
             underlinePanel.setLocation(targetUnderlineX, underlinePanel.getY());
             underlineTimer.stop();
             return;
         }
-
-        int step = currentX < targetUnderlineX ? 5 : -5;
-        underlinePanel.setLocation(currentX + step, underlinePanel.getY());
+        underlinePanel.setLocation(
+                currentX + (currentX < targetUnderlineX ? 5 : -5),
+                underlinePanel.getY()
+        );
     }
-
-    /* ---------------- Layout ---------------- */
 
     private void updateLayout() {
         int width = getWidth();
         int height = getHeight();
         int headerHeight = 100;
+
+        backgroundLabel.setBounds(0, 0, width, height);
 
         headerPanel.setBounds(0, 0, width, headerHeight);
         titleLabel.setBounds(30, 35, width - 60, 30);
@@ -176,29 +244,26 @@ class LoginPageFrame extends JFrame implements ActionListener {
         centerPanel.setBounds(0, headerHeight, width, height - headerHeight);
 
         int buttonWidth = 120;
-        int buttonHeight = 40;
         int gap = 20;
-        int totalWidth = (buttonWidth * 3) + (gap * 2);
-        int startX = (width - totalWidth) / 2;
+        int startX = (width - (buttonWidth * 3 + gap * 2)) / 2;
 
-        adminButton.setBounds(startX, 20, buttonWidth, buttonHeight);
-        facultyButton.setBounds(startX + buttonWidth + gap, 20, buttonWidth, buttonHeight);
-        studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, buttonHeight);
+        adminButton.setBounds(startX, 20, buttonWidth, 40);
+        facultyButton.setBounds(startX + buttonWidth + gap, 20, buttonWidth, 40);
+        studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, 40);
 
         int panelY = 80;
         int panelHeight = height - headerHeight - panelY;
 
-        int maxPanelWidth = 420;
-        int panelWidth = Math.min(width, maxPanelWidth);
+        int panelWidth = Math.min(width, 420);
         int panelX = (width - panelWidth) / 2;
 
         adminPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         facultyPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         studentPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
 
-        adminPanel.updateLayout(adminPanel.getWidth(), adminPanel.getHeight());
-        facultyPanel.updateLayout(facultyPanel.getWidth(), facultyPanel.getHeight());
-        studentPanel.updateLayout(studentPanel.getWidth(), studentPanel.getHeight());
+        adminPanel.updateLayout(panelWidth, panelHeight);
+        facultyPanel.updateLayout(panelWidth, panelHeight);
+        studentPanel.updateLayout(panelWidth, panelHeight);
     }
 
     @Override
