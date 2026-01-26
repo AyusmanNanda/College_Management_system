@@ -143,7 +143,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
     private void loadBackgroundImage() {
         try {
             Image img = ImageIO.read(
-                    new File("./assets/backgroundimage" + imageIndex + ".jpg")
+                    new File("./src/backgroundimage" + imageIndex + ".jpg")
             );
 
             Image scaled = img.getScaledInstance(
@@ -252,7 +252,8 @@ class LoginPageFrame extends JFrame implements ActionListener {
         studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, 40);
 
         int panelY = 80;
-        int panelHeight = height - headerHeight - panelY;
+        // int panelHeight = height - headerHeight - panelY;
+        int panelHeight = 470;
 
         int panelWidth = Math.min(width, 420);
         int panelX = (width - panelWidth) / 2;

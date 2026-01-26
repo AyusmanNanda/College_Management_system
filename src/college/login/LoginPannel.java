@@ -51,7 +51,7 @@ class LoginPanel extends JPanel {
         add(loginButton);
     }
 
-    // THIS METHOD IS REQUIRED BY LoginPageFrame
+    // LoginPageFrame
     void updateLayout(int panelWidth, int panelHeight) {
 
         int fieldWidth = 260;
