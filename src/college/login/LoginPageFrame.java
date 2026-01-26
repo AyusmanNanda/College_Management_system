@@ -3,51 +3,66 @@ package college.login;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+// Main login window frame
 class LoginPageFrame extends JFrame implements ActionListener {
 
+    // Global theme color
     private static final Color THEME_BLUE = new Color(39, 71, 122);
 
+    // Root container panel
     private JPanel contentPane;
+
+    // Top header bar
     private JPanel headerPanel;
+
+    // Center area for buttons and login panels
     private JPanel centerPanel;
+
+    // Animated underline indicator
     private JPanel underlinePanel;
+
+    // Header title label
     private JLabel titleLabel;
 
-    // Background image handling
-    private JLabel backgroundLabel;
-    private Timer imageTimer;
-    private int imageIndex = 1;
-
+    // Role selection buttons
     private JButton adminButton;
     private JButton facultyButton;
     private JButton studentButton;
+
+    // Currently selected button
     private JButton activeButton;
 
+    // Login panels for each role
     private LoginPanel adminPanel;
     private LoginPanel facultyPanel;
     private LoginPanel studentPanel;
 
+    // Timer for underline animation
     private Timer underlineTimer;
+
+    // Timer for fade-in animation
     private Timer fadeTimer;
 
+    // Target X position for underline
     private int targetUnderlineX;
+
+    // Alpha value for fade animation
     private int fadeAlpha;
+
+    // Panel currently fading in
     private LoginPanel fadingPanel;
 
+    // Frame constructor
     LoginPageFrame() {
         setTitle("Login");
         setSize(400, 300);
@@ -55,111 +70,88 @@ class LoginPageFrame extends JFrame implements ActionListener {
         setLocationRelativeTo(null);
         setResizable(true);
 
+        // Base panel with absolute layout
         contentPane = new JPanel(null);
         contentPane.setBackground(Color.WHITE);
         setContentPane(contentPane);
 
-        // Background image sits at the very back
-        backgroundLabel = new JLabel();
-        contentPane.add(backgroundLabel);
-
+        // Header container
         headerPanel = new JPanel(null);
         headerPanel.setBackground(THEME_BLUE);
         contentPane.add(headerPanel);
 
+        // Header title text
         titleLabel = new JLabel("College Login System");
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         headerPanel.add(titleLabel);
 
+        // Center container
         centerPanel = new JPanel(null);
         centerPanel.setBackground(new Color(255, 255, 255, 230));
         contentPane.add(centerPanel);
 
+        // Role buttons
         adminButton = new JButton("Admin");
         facultyButton = new JButton("Faculty");
         studentButton = new JButton("Student");
 
+        // Apply visual styling to buttons
         styleButton(adminButton);
         styleButton(facultyButton);
         styleButton(studentButton);
 
+        // Register click listeners
         adminButton.addActionListener(this);
         facultyButton.addActionListener(this);
         studentButton.addActionListener(this);
 
+        // Add buttons to center panel
         centerPanel.add(adminButton);
         centerPanel.add(facultyButton);
         centerPanel.add(studentButton);
 
+        // Default selected role
         activeButton = studentButton;
         setActiveButton(studentButton);
 
+        // Underline indicator panel
         underlinePanel = new JPanel();
         underlinePanel.setBackground(THEME_BLUE);
         centerPanel.add(underlinePanel);
 
+        // Animation timers
         underlineTimer = new Timer(5, e -> animateUnderline());
         fadeTimer = new Timer(20, e -> animateFade());
 
+        // Login panels
         adminPanel = new LoginPanel("Admin");
         facultyPanel = new LoginPanel("Faculty");
         studentPanel = new LoginPanel("Student");
 
+        // Add panels to center container
         centerPanel.add(adminPanel);
         centerPanel.add(facultyPanel);
         centerPanel.add(studentPanel);
 
+        // Show default panel
         showPanel(studentPanel);
 
-        // Rotate background images every 5 seconds
-        imageTimer = new Timer(5000, e -> changeBackgroundImage());
-        imageTimer.start();
-        loadBackgroundImage();
-
+        // Initial layout setup
         updateLayout();
         snapUnderlineTo(activeButton);
 
+        // Handle window resize
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 updateLayout();
                 snapUnderlineTo(activeButton);
-                loadBackgroundImage();
             }
         });
     }
 
-    // ---------- Background image logic ----------
-
-    private void changeBackgroundImage() {
-        imageIndex++;
-        if (imageIndex > 5) {
-            imageIndex = 1;
-        }
-        loadBackgroundImage();
-    }
-
-    private void loadBackgroundImage() {
-        try {
-            Image img = ImageIO.read(
-                    new File("./src/backgroundimage" + imageIndex + ".jpg")
-            );
-
-            Image scaled = img.getScaledInstance(
-                    getWidth(),
-                    getHeight(),
-                    Image.SCALE_SMOOTH
-            );
-
-            backgroundLabel.setIcon(new javax.swing.ImageIcon(scaled));
-        } catch (IOException ignored) {
-            // If image is missing, just skip it
-        }
-    }
-
-    // ---------- Existing logic below (unchanged) ----------
-
+    // Button visual configuration
     private void styleButton(JButton button) {
         button.setFocusPainted(false);
         button.setBorderPainted(false);
@@ -169,6 +161,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         button.setFont(new Font("Segoe UI", Font.BOLD, 14));
     }
 
+    // Update active button color
     private void setActiveButton(JButton button) {
         adminButton.setForeground(Color.DARK_GRAY);
         facultyButton.setForeground(Color.DARK_GRAY);
@@ -178,6 +171,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         activeButton = button;
     }
 
+    // Switch visible login panel
     private void showPanel(LoginPanel panel) {
         adminPanel.setVisible(false);
         facultyPanel.setVisible(false);
@@ -185,6 +179,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         startFade(panel);
     }
 
+    // Start fade animation for panel
     private void startFade(LoginPanel panel) {
         fadeAlpha = 40;
         fadingPanel = panel;
@@ -193,6 +188,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         fadeTimer.start();
     }
 
+    // Fade animation step
     private void animateFade() {
         fadeAlpha += 15;
         if (fadeAlpha >= 120) {
@@ -203,6 +199,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         fadingPanel.repaint();
     }
 
+    // Instantly position underline
     private void snapUnderlineTo(JButton button) {
         underlinePanel.setBounds(
                 button.getX(),
@@ -212,12 +209,14 @@ class LoginPageFrame extends JFrame implements ActionListener {
         );
     }
 
+    // Animate underline movement
     private void moveUnderlineAnimated(JButton button) {
         setActiveButton(button);
         targetUnderlineX = button.getX();
         underlineTimer.start();
     }
 
+    // Underline animation step
     private void animateUnderline() {
         int currentX = underlinePanel.getX();
         if (Math.abs(currentX - targetUnderlineX) <= 5) {
@@ -231,12 +230,11 @@ class LoginPageFrame extends JFrame implements ActionListener {
         );
     }
 
+    // Calculate and apply component layout
     private void updateLayout() {
         int width = getWidth();
         int height = getHeight();
         int headerHeight = 100;
-
-        backgroundLabel.setBounds(0, 0, width, height);
 
         headerPanel.setBounds(0, 0, width, headerHeight);
         titleLabel.setBounds(30, 35, width - 60, 30);
@@ -269,6 +267,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         studentPanel.updateLayout(panelWidth, panelHeight);
     }
 
+    // Handle role button clicks
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == adminButton) {
@@ -283,6 +282,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         }
     }
 
+    // Application entry point
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
             LoginPageFrame frame = new LoginPageFrame();
