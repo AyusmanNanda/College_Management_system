@@ -23,7 +23,7 @@ class LoginPanel extends JPanel {
     LoginPanel(String loginProfile) {
 
         setLayout(null);
-        setBackground(new Color(0, 0, 0, 80));
+        setOpaque(false); // REQUIRED for alpha background
         setBorder(new LineBorder(THEME_BLUE));
 
         titleLabel = new JLabel(loginProfile + " Login");
@@ -63,5 +63,12 @@ class LoginPanel extends JPanel {
         userIdField.setBounds(centerX, 120, fieldWidth, fieldHeight);
         passwordField.setBounds(centerX, 180, fieldWidth, fieldHeight);
         loginButton.setBounds(centerX, 240, fieldWidth, fieldHeight);
+    }
+
+    @Override
+    protected void paintComponent(java.awt.Graphics g) {
+        g.setColor(new Color(0, 0, 0, 80));
+        g.fillRect(0, 0, getWidth(), getHeight());
+        super.paintComponent(g);
     }
 }
