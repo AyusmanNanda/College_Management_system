@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 public class TestConnection {
     public static void main(String[] args) {
-        Connection con = DatabaseConnection.getConnection();
+        Connection con = DataBaseConnection.getConnection();
 
         if (con != null) {
             System.out.println("Connection established successfully!");
