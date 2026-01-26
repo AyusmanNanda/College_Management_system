@@ -252,8 +252,10 @@ class LoginPageFrame extends JFrame implements ActionListener {
         studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, 40);
 
         int panelY = 80;
-        // int panelHeight = height - headerHeight - panelY;
-        int panelHeight = 470;
+
+        int maxPanelHeight = 470;
+        int availableHeight = height - headerHeight - panelY;
+        int panelHeight = Math.min(availableHeight, maxPanelHeight);
 
         int panelWidth = Math.min(width, 420);
         int panelX = (width - panelWidth) / 2;
