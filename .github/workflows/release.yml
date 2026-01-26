@@ -1,0 +1,35 @@
+name: Build & Attach JAR to GitHub Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Compile source
+        run: |
+          mkdir -p out
+          javac -encoding UTF-8 -d out $(find src -name "*.java")
+
+      - name: Build runnable JAR
+        run: |
+          jar cfe college-login.jar college.login.LoginPageFrame -C out .
+
+      - name: Upload JAR to the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: college-login.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
