@@ -136,9 +136,9 @@ class LoginPageFrame extends JFrame implements ActionListener {
         fadeTimer = new Timer(20, e -> animateFade());
 
         // Login panels
-        adminPanel = new LoginPanel("Admin");
-        facultyPanel = new LoginPanel("Faculty");
-        studentPanel = new LoginPanel("Student");
+        adminPanel = new LoginPanel("Admin", this);
+        facultyPanel = new LoginPanel("Faculty", this);
+        studentPanel = new LoginPanel("Student", this);
 
         // Add panels to center container
         centerPanel.add(adminPanel);
