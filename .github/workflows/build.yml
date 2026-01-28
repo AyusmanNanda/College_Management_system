@@ -31,7 +31,7 @@ jobs:
       - name: Unpack all dependency JARs
         run: |
           shopt -s nullglob
-          for dep in jar/*.jar; do
+          for dep in ../jar/*.jar; do
             echo "Extracting $dep"
             jar xf "$dep"
           done
