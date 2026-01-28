@@ -23,16 +23,28 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Compile sources
+      - name: Prepare build directory
         run: |
-          mkdir -p out
-          javac -encoding UTF-8 -d out $(find src -name "*.java")
+          rm -rf build
+          mkdir build
 
-      - name: Build runnable JAR
+      - name: Unpack all dependency JARs
         run: |
-          jar cfe college-login.jar college.login.LoginPageFrame -C out .
+          shopt -s nullglob
+          for dep in jar/*.jar; do
+            echo "Extracting $dep"
+            jar xf "$dep"
+          done
+        working-directory: build
 
-      # OPTIONAL: download the JAR from GitHub Actions
+      - name: Compile application sources
+        run: |
+          javac -encoding UTF-8 -cp build -d build $(find src -name "*.java")
+
+      - name: Build runnable FAT JAR
+        run: |
+          jar cfe college-login.jar college.login.LoginPageFrame -C build .
+
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
