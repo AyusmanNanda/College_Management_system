@@ -2,9 +2,12 @@ name: Build JAR
 
 on:
   push:
-    branches: [testing, main]
+    branches:
+      - testing
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -27,9 +30,10 @@ jobs:
 
       - name: Unpack all dependency JARs
         run: |
-          for jar in jar/*.jar; do
-            echo "Extracting $jar"
-            jar xf "$jar"
+          shopt -s nullglob
+          for dep in jar/*.jar; do
+            echo "Extracting $dep"
+            jar xf "$dep"
           done
         working-directory: build
 
