@@ -18,31 +18,27 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 import college.admin.AdminData;
+import college.admin.AdminMain;
 
 /*
- * Login panel used for Admin, Faculty and Student.
- * The frame switches panels, this class handles login clicks.
+ * Common login panel for Admin / Faculty / Student.
+ * This class only handles input and button clicks.
  */
 class LoginPanel extends JPanel implements ActionListener {
 
     private static final Color THEME_BLUE = new Color(39, 71, 122);
 
-    // UI components
+    // UI
     private JLabel titleLabel;
     private JTextField userIdField;
     private JPasswordField passwordField;
     private JButton loginButton;
 
-    // Identifies which role this panel belongs to
+    // Role type
     private String loginProfile;
 
-    // Reference to parent frame (used later for dispose / navigation)
+    // Parent frame reference
     private LoginPageFrame loginPageFrame;
-
-    // Kept for compatibility if needed elsewhere
-    LoginPanel(String loginProfile) {
-        this(loginProfile, null);
-    }
 
     // Constructor used by LoginPageFrame
     LoginPanel(String loginProfile, LoginPageFrame frame) {
@@ -80,7 +76,7 @@ class LoginPanel extends JPanel implements ActionListener {
         add(loginButton);
     }
 
-    // Positions components based on panel size
+    // Called by LoginPageFrame
     void updateLayout(int panelWidth, int panelHeight) {
 
         int fieldWidth = 260;
@@ -93,7 +89,7 @@ class LoginPanel extends JPanel implements ActionListener {
         loginButton.setBounds(centerX, 240, fieldWidth, fieldHeight);
     }
 
-    // Handles login button click
+    // Login button click
     @Override
     public void actionPerformed(ActionEvent e) {
 
@@ -110,7 +106,7 @@ class LoginPanel extends JPanel implements ActionListener {
             return;
         }
 
-        // Admin authentication
+        // Admin login
         if (loginProfile.equalsIgnoreCase("Admin")) {
 
             AdminData adminData = new AdminData();
@@ -118,33 +114,28 @@ class LoginPanel extends JPanel implements ActionListener {
 
             if (result) {
                 System.out.println("Hello Admin");
-                // later:
-                // new AdminMain().setVisible(true);
-                // if (loginPageFrame != null) loginPageFrame.dispose();
-            } else {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Invalid userid or password",
-                        "Login Failed",
-                        JOptionPane.ERROR_MESSAGE
-                );
+
+                AdminMain adminMain = new AdminMain();
+                adminMain.setVisible(true);
+
+                if (loginPageFrame != null) {
+                    loginPageFrame.dispose();
+                }
             }
         }
 
-        // Faculty login logic will go here
+        // Faculty login (later)
         else if (loginProfile.equalsIgnoreCase("Faculty")) {
-
             // FacultyData.checkPassword(userid, password);
         }
 
-        // Student login logic will go here
+        // Student login (later)
         else if (loginProfile.equalsIgnoreCase("Student")) {
-
             // StudentData.checkPassword(userid, password);
         }
     }
 
-    // Paints a semi-transparent background for the panel
+    // Translucent panel background
     @Override
     protected void paintComponent(Graphics g) {
 
