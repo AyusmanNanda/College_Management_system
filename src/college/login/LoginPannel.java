@@ -2,6 +2,9 @@ package college.login;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -89,9 +92,19 @@ class LoginPanel extends JPanel {
 
     // Custom translucent background rendering
     @Override
-    protected void paintComponent(java.awt.Graphics g) {
-        g.setColor(new Color(0, 0, 0, 80));
-        g.fillRect(0, 0, getWidth(), getHeight());
+    protected void paintComponent(Graphics g) {
+
+        // Create isolated graphics context to avoid state leakage
+        Graphics2D g2 = (Graphics2D) g.create();
+
+        // Paint translucent background
+        g2.setColor(new Color(0, 0, 0, 80));
+        g2.fillRect(0, 0, getWidth(), getHeight());
+
+        // Dispose graphics context
+        g2.dispose();
+
+        // Continue normal Swing painting
         super.paintComponent(g);
     }
 }

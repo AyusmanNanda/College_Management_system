@@ -3,6 +3,8 @@ package college.login;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -86,9 +88,18 @@ class LoginPageFrame extends JFrame implements ActionListener {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         headerPanel.add(titleLabel);
 
-        // Center container
-        centerPanel = new JPanel(null);
-        centerPanel.setBackground(new Color(255, 255, 255, 230));
+        // Center container (FIXED: correct transparency handling)
+        centerPanel = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(new Color(255, 255, 255, 230));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        centerPanel.setOpaque(false);
         contentPane.add(centerPanel);
 
         // Role buttons
