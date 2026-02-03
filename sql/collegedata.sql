@@ -64,6 +64,11 @@ CREATE TABLE `students` (
                             `admissiondate` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- temporary student placeholder
+INSERT INTO students (userid, password)
+VALUES ('student', '1234');
+
+
 
 ALTER TABLE `students`
     ADD PRIMARY KEY (`sr_no`);
