@@ -123,6 +123,7 @@ class LoginPanel extends JPanel implements ActionListener {
                 // Open next window AFTER state is saved
                 AdminMain adminMain = new AdminMain();
                 adminMain.setVisible(true);
+
             }
         }
 
