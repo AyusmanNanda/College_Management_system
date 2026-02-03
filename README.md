@@ -1,4 +1,4 @@
-# 🎓 College Management System
+# 🎓 College Management System ![Build](https://github.com/AyusmanNanda/College_Management_system/actions/workflows/build.yml/badge.svg)
 
 A **Java Swing–based desktop application** developed to streamline and manage core college administrative operations.  
 This project is designed for **academic use**, demonstrating Java GUI development, database connectivity, and modular software design.
