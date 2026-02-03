@@ -1,20 +1,21 @@
 package college.admin;
 
+import college.libs.ApplicationWindow;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 /*
  * Temporary Admin main screen.
- * Opens fullscreen and shows "Hello Admin".
+ * Shows "Hello Admin".
  */
-public class AdminMain extends JFrame {
+public class AdminMain extends ApplicationWindow {
 
     private JPanel contentPane;
     private JLabel titleLabel;
@@ -22,8 +23,6 @@ public class AdminMain extends JFrame {
     public AdminMain() {
 
         setTitle("Admin Panel");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(true);
 
         contentPane = new JPanel(null);
         contentPane.setBackground(Color.WHITE);
@@ -35,16 +34,13 @@ public class AdminMain extends JFrame {
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPane.add(titleLabel);
 
-        // Keep label centered on resize
+        // Keep label centered on resize (layout only)
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 updateLayout();
             }
         });
-
-        // Start fullscreen (same as LoginPageFrame)
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
     private void updateLayout() {

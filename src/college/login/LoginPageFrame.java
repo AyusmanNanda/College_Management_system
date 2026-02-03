@@ -1,5 +1,7 @@
 package college.login;
 
+import college.libs.ApplicationWindow;
+
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
@@ -9,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -16,7 +19,7 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 // Main login window frame
-class LoginPageFrame extends JFrame implements ActionListener {
+class LoginPageFrame extends ApplicationWindow implements ActionListener {
 
     // Global theme color
     private static final Color THEME_BLUE = new Color(39, 71, 122);
@@ -67,9 +70,8 @@ class LoginPageFrame extends JFrame implements ActionListener {
     // Frame constructor
     LoginPageFrame() {
         setTitle("Login");
-        setSize(400, 300);
+        setSize(1000, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
         setResizable(true);
 
         // Base panel with absolute layout
@@ -88,7 +90,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         headerPanel.add(titleLabel);
 
-        // Center container (FIXED: correct transparency handling)
+        // Center container
         centerPanel = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -107,17 +109,14 @@ class LoginPageFrame extends JFrame implements ActionListener {
         facultyButton = new JButton("Faculty");
         studentButton = new JButton("Student");
 
-        // Apply visual styling to buttons
         styleButton(adminButton);
         styleButton(facultyButton);
         styleButton(studentButton);
 
-        // Register click listeners
         adminButton.addActionListener(this);
         facultyButton.addActionListener(this);
         studentButton.addActionListener(this);
 
-        // Add buttons to center panel
         centerPanel.add(adminButton);
         centerPanel.add(facultyButton);
         centerPanel.add(studentButton);
@@ -126,7 +125,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         activeButton = studentButton;
         setActiveButton(studentButton);
 
-        // Underline indicator panel
+        // Underline indicator
         underlinePanel = new JPanel();
         underlinePanel.setBackground(THEME_BLUE);
         centerPanel.add(underlinePanel);
@@ -140,7 +139,6 @@ class LoginPageFrame extends JFrame implements ActionListener {
         facultyPanel = new LoginPanel("Faculty", this);
         studentPanel = new LoginPanel("Student", this);
 
-        // Add panels to center container
         centerPanel.add(adminPanel);
         centerPanel.add(facultyPanel);
         centerPanel.add(studentPanel);
@@ -152,7 +150,7 @@ class LoginPageFrame extends JFrame implements ActionListener {
         updateLayout();
         snapUnderlineTo(activeButton);
 
-        // Handle window resize
+        // Handle window resize (layout only — no window state logic)
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -261,7 +259,6 @@ class LoginPageFrame extends JFrame implements ActionListener {
         studentButton.setBounds(startX + (buttonWidth + gap) * 2, 20, buttonWidth, 40);
 
         int panelY = 80;
-
         int maxPanelHeight = 470;
         int availableHeight = height - headerHeight - panelY;
         int panelHeight = Math.min(availableHeight, maxPanelHeight);
@@ -298,7 +295,6 @@ class LoginPageFrame extends JFrame implements ActionListener {
         EventQueue.invokeLater(() -> {
             LoginPageFrame frame = new LoginPageFrame();
             frame.setVisible(true);
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         });
     }
 }

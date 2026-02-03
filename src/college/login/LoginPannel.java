@@ -113,8 +113,6 @@ class LoginPanel extends JPanel implements ActionListener {
             boolean result = adminData.checkPassword(userid, password);
 
             if (result) {
-                System.out.println("Hello Admin");
-
                 AdminMain adminMain = new AdminMain();
                 adminMain.setVisible(true);
 
