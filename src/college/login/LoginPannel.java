@@ -113,14 +113,17 @@ class LoginPanel extends JPanel implements ActionListener {
             boolean result = adminData.checkPassword(userid, password);
 
             if (result) {
-                System.out.println("Hello Admin");
 
+                // IMPORTANT: save window state BEFORE switching
+                if (loginPageFrame != null) {
+                    loginPageFrame.rememberBounds();
+                    loginPageFrame.dispose();
+                }
+
+                // Open next window AFTER state is saved
                 AdminMain adminMain = new AdminMain();
                 adminMain.setVisible(true);
 
-                if (loginPageFrame != null) {
-                    loginPageFrame.dispose();
-                }
             }
         }
 
