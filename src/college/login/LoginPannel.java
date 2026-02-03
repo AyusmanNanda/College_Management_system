@@ -20,6 +20,9 @@ import javax.swing.border.LineBorder;
 import college.admin.AdminData;
 import college.admin.AdminMain;
 
+import college.student.StudentData;
+import college.student.StudentMain;
+
 /*
  * Common login panel for Admin / Faculty / Student.
  * This class only handles input and button clicks.
@@ -129,9 +132,28 @@ class LoginPanel extends JPanel implements ActionListener {
             // FacultyData.checkPassword(userid, password);
         }
 
-        // Student login (later)
+        // Student login
         else if (loginProfile.equalsIgnoreCase("Student")) {
-            // StudentData.checkPassword(userid, password);
+            StudentData studentData = new StudentData();
+            boolean result = studentData.checkPassword(userid, password);
+
+            if (result) {
+                System.out.println("Hello Student");
+
+                StudentMain studentMain = new StudentMain();
+                studentMain.setVisible(true);
+
+                if (loginPageFrame != null) {
+                    loginPageFrame.dispose();
+                }
+            } else {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Invalid student credentials",
+                    "Login Failed",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
         }
     }
 
