@@ -97,7 +97,7 @@ class LoginPanel extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         String userid = userIdField.getText().trim();
-        String password = new String(passwordField.getPassword());
+        String password = new String(passwordField.getPassword()).trim();
 
         if (userid.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(
