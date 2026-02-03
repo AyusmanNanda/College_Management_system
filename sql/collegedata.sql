@@ -36,5 +36,42 @@ INSERT INTO `admin` (`collagename`, `address`, `emailid`, `contactnumber`, `webs
 'https://in.linkedin.com/school/government-college-of-engineering-keonjhar/', 
 NULL, 
 0);
+
+
+CREATE TABLE `students` (
+                            `Courcecode` varchar(255) DEFAULT NULL,
+                            `semoryear` int(255) DEFAULT NULL,
+                            `rollnumber` bigint(255) DEFAULT NULL,
+                            `optionalsubject` varchar(255) DEFAULT NULL,
+                            `firstname` varchar(255) DEFAULT NULL,
+                            `lastname` varchar(255) DEFAULT NULL,
+                            `emailid` varchar(255) DEFAULT NULL,
+                            `contactnumber` varchar(255) DEFAULT NULL,
+                            `dateofbirth` varchar(255) DEFAULT NULL,
+                            `gender` varchar(255) DEFAULT NULL,
+                            `state` varchar(255) DEFAULT NULL,
+                            `city` varchar(255) DEFAULT NULL,
+                            `fathername` varchar(255) DEFAULT NULL,
+                            `fatheroccupation` varchar(255) DEFAULT NULL,
+                            `mothername` varchar(255) DEFAULT NULL,
+                            `motheroccupation` varchar(255) DEFAULT NULL,
+                            `profilepic` longblob DEFAULT NULL,
+                            `sr_no` int(255) NOT NULL,
+                            `lastlogin` varchar(255) DEFAULT NULL,
+                            `userid` varchar(255) DEFAULT NULL,
+                            `password` varchar(255) DEFAULT NULL,
+                            `activestatus` tinyint(4) DEFAULT 0,
+                            `admissiondate` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+ALTER TABLE `students`
+    ADD PRIMARY KEY (`sr_no`);
+
+ALTER TABLE `students`
+    MODIFY `sr_no` int(11) NOT NULL AUTO_INCREMENT;
+
+
+
 COMMIT;
 
