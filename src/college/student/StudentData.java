@@ -22,7 +22,7 @@ public class StudentData {
         userid = userid.trim();
 
         try {
-            String query = "SELECT password FROM students WHERE userid = student";
+            String query = "SELECT password FROM students WHERE userid = ?";
             PreparedStatement ps = con.prepareStatement(query);
             ps.setString(1, userid);
 
