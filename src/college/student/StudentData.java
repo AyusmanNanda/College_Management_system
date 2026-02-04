@@ -8,4 +8,15 @@ import javax.swing.JOptionPane;
 
 import college.libs.DataBaseConnection;
 
+/*
+ * Handles student related database operations.
+ * Currently used only for authentication.
+ */
+public class StudentData {
 
+    private Connection con = DataBaseConnection.getConnection();
+
+    // Fetches student password from database and checks login
+    public boolean checkPassword(String userid, String password) {
+
+        userid = userid.trim();
