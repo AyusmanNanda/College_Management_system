@@ -19,6 +19,8 @@ import javax.swing.border.LineBorder;
 
 import college.admin.AdminData;
 import college.admin.AdminMain;
+import college.faculty.FacultyData;
+import college.faculty.FacultyMain;;
 
 /*
  * Common login panel for Admin / Faculty / Student.
@@ -130,6 +132,18 @@ class LoginPanel extends JPanel implements ActionListener {
         // Faculty login (later)
         else if (loginProfile.equalsIgnoreCase("Faculty")) {
             // FacultyData.checkPassword(userid, password);
+            FacultyData facultyData = new FacultyData();
+            boolean result = facultyData.checkPassword(userid, password);
+
+            if (result) {
+                if (loginPageFrame != null) {
+                    loginPageFrame.rememberBounds();
+                    loginPageFrame.dispose();
+                }
+                FacultyMain facultyMain = new FacultyMain();
+                facultyMain.setVisible(true);
+            }
+
         }
 
         // Student login (later)
