@@ -1,42 +1,39 @@
-package college.admin;
+package college.student;
 
 import college.libs.ApplicationWindow;
 
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 
 /*
- * Temporary Admin main screen.
- * Shows "Hello Admin".
+ * Temporary Student main screen.
+ * Shows "Hello Student".
  */
-public class AdminMain extends ApplicationWindow {
+public class StudentMain extends ApplicationWindow {
 
     private JPanel contentPane;
     private JLabel titleLabel;
 
-    public AdminMain() {
+    public StudentMain() {
 
-        setTitle("Admin Panel");
+        setTitle("Student Dashboard");
 
         contentPane = new JPanel(null);
         contentPane.setBackground(Color.WHITE);
         setContentPane(contentPane);
 
-        titleLabel = new JLabel("Hello Admin");
+        titleLabel = new JLabel("Welcome Student");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        titleLabel.setForeground(new Color(39, 71, 122));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPane.add(titleLabel);
 
-        updateLayout();  // Apply layout immediately
+        updateLayout();
 
-        // Keep label centered on resize (layout only)
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {

@@ -1,4 +1,4 @@
-package college.admin;
+package college.faculty;
 
 import college.libs.ApplicationWindow;
 
@@ -15,26 +15,26 @@ import javax.swing.SwingConstants;
  * Temporary Admin main screen.
  * Shows "Hello Admin".
  */
-public class AdminMain extends ApplicationWindow {
+public class FacultyMain extends ApplicationWindow {
 
     private JPanel contentPane;
     private JLabel titleLabel;
 
-    public AdminMain() {
+    public FacultyMain() {
 
-        setTitle("Admin Panel");
+        setTitle("Faculty Panel");
 
         contentPane = new JPanel(null);
         contentPane.setBackground(Color.WHITE);
         setContentPane(contentPane);
 
-        titleLabel = new JLabel("Hello Admin");
+        titleLabel = new JLabel("Hello Faculty");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         titleLabel.setForeground(new Color(39, 71, 122));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPane.add(titleLabel);
 
-        updateLayout();  // Apply layout immediately
+        updateLayout();
 
         // Keep label centered on resize (layout only)
         addComponentListener(new ComponentAdapter() {
