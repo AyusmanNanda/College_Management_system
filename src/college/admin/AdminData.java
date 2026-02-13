@@ -4,8 +4,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import javax.swing.JOptionPane;
-
 import college.libs.DataBaseConnection;
 
 /*
@@ -21,14 +19,7 @@ public class AdminData {
 
         userid = userid.trim();
 
-        // Admin userid is fixed by design
         if (!userid.equalsIgnoreCase("Admin")) {
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Incorrect Userid or Password",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
             return false;
         }
 
@@ -46,21 +37,9 @@ public class AdminData {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Database error while checking login",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            e.printStackTrace();  // logs in console only
         }
 
-        JOptionPane.showMessageDialog(
-                null,
-                "Incorrect Userid or Password",
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-        );
         return false;
     }
 }
