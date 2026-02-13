@@ -4,8 +4,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import javax.swing.JOptionPane;
-
 import college.libs.DataBaseConnection;
 
 /*
@@ -18,17 +16,9 @@ public class FacultyData {
 
     public boolean checkPassword(String userid, String password) {
 
-       
-
         userid = userid.trim();
 
         if (userid.isEmpty()) {
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Incorrect Userid or Password",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
             return false;
         }
 
@@ -48,21 +38,9 @@ public class FacultyData {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Database error while checking login",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            e.printStackTrace();  // console log only
         }
 
-        JOptionPane.showMessageDialog(
-                null,
-                "Incorrect Userid or Password",
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-        );
         return false;
     }
 }
