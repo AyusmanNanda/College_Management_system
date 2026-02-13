@@ -34,6 +34,8 @@ public class FacultyMain extends ApplicationWindow {
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPane.add(titleLabel);
 
+        updateLayout();
+
         // Keep label centered on resize (layout only)
         addComponentListener(new ComponentAdapter() {
             @Override
