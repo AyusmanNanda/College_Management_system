@@ -34,6 +34,8 @@ public class AdminMain extends ApplicationWindow {
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPane.add(titleLabel);
 
+        updateLayout();  // Apply layout immediately
+
         // Keep label centered on resize (layout only)
         addComponentListener(new ComponentAdapter() {
             @Override

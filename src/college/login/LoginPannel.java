@@ -19,11 +19,12 @@ import javax.swing.border.LineBorder;
 
 import college.admin.AdminData;
 import college.admin.AdminMain;
-import college.faculty.FacultyData;
-import college.faculty.FacultyMain;;
 
 import college.student.StudentData;
 import college.student.StudentMain;
+
+import college.faculty.FacultyData;
+import college.faculty.FacultyMain;
 
 /*
  * Common login panel for Admin / Faculty / Student.
@@ -39,23 +40,19 @@ class LoginPanel extends JPanel implements ActionListener {
     private JPasswordField passwordField;
     private JButton loginButton;
 
-    // Role type
-    private String loginProfile;
-
     // Parent frame reference
     private LoginPageFrame loginPageFrame;
 
     // Constructor used by LoginPageFrame
-    LoginPanel(String loginProfile, LoginPageFrame frame) {
+    LoginPanel(LoginPageFrame frame) {
 
-        this.loginProfile = loginProfile;
         this.loginPageFrame = frame;
 
         setLayout(null);
         setOpaque(false);
         setBorder(new LineBorder(THEME_BLUE));
 
-        titleLabel = new JLabel(loginProfile + " Login");
+        titleLabel = new JLabel("College Login");
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -111,67 +108,57 @@ class LoginPanel extends JPanel implements ActionListener {
             return;
         }
 
-        // Admin login
-        if (loginProfile.equalsIgnoreCase("Admin")) {
+        AdminData adminData = new AdminData();
+        boolean adminResult = adminData.checkPassword(userid, password);
 
-            AdminData adminData = new AdminData();
-            boolean result = adminData.checkPassword(userid, password);
+        if (adminResult) {
+            System.out.println("Hello Admin");
 
-            if (result) {
-
-                // IMPORTANT: save window state BEFORE switching
-                if (loginPageFrame != null) {
-                    loginPageFrame.rememberBounds();
-                    loginPageFrame.dispose();
-                }
-
-                // Open next window AFTER state is saved
-                AdminMain adminMain = new AdminMain();
-                adminMain.setVisible(true);
-
-            }
-        }
-
-        // Faculty login (later)
-        else if (loginProfile.equalsIgnoreCase("Faculty")) {
-            // FacultyData.checkPassword(userid, password);
-            FacultyData facultyData = new FacultyData();
-            boolean result = facultyData.checkPassword(userid, password);
-
-            if (result) {
-                if (loginPageFrame != null) {
-                    loginPageFrame.rememberBounds();
-                    loginPageFrame.dispose();
-                }
-                FacultyMain facultyMain = new FacultyMain();
-                facultyMain.setVisible(true);
+            if (loginPageFrame != null) {
+                loginPageFrame.dispose();
             }
 
+            AdminMain adminMain = new AdminMain();
+            adminMain.setVisible(true);
+            return;
         }
 
-        // Student login
-        else if (loginProfile.equalsIgnoreCase("Student")) {
-            StudentData studentData = new StudentData();
-            boolean result = studentData.checkPassword(userid, password);
+        FacultyData facultyData = new FacultyData();
+        boolean facultyResult = facultyData.checkPassword(userid, password);
 
-            if (result) {
-                System.out.println("Hello Student");
+        if (facultyResult) {
+            System.out.println("Hello Faculty");
 
-                StudentMain studentMain = new StudentMain();
-                studentMain.setVisible(true);
-
-                if (loginPageFrame != null) {
-                    loginPageFrame.dispose();
-                }
-            } else {
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Invalid student credentials",
-                    "Login Failed",
-                    JOptionPane.ERROR_MESSAGE
-                );
+            if (loginPageFrame != null) {
+                loginPageFrame.dispose();
             }
+
+            FacultyMain facultyMain = new FacultyMain();
+            facultyMain.setVisible(true);
+            return;
         }
+
+        StudentData studentData = new StudentData();
+        boolean studentResult = studentData.checkPassword(userid, password);
+
+        if (studentResult) {
+            System.out.println("Hello Student");
+
+            if (loginPageFrame != null) {
+                loginPageFrame.dispose();
+            }
+
+            StudentMain studentMain = new StudentMain();
+            studentMain.setVisible(true);
+            return;
+        }
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Invalid credentials",
+                "Login Failed",
+                JOptionPane.ERROR_MESSAGE
+        );
     }
 
     // Translucent panel background
