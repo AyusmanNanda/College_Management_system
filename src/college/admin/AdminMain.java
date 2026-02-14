@@ -1,20 +1,23 @@
 package college.admin;
 
+import college.libs.ApplicationWindow;
+
 import javax.swing.*;
+import java.awt.*;
 
 /**
- * AdminMain acts as controller and frame holder.
+ * AdminMain is the main dashboard window for Admin.
  *
- * UI logic is delegated to AdminProfilePanel.
+ * This class extends ApplicationWindow to ensure
+ * consistent window behavior and scalability.
  */
-public class AdminMain extends JFrame {
+public class AdminMain extends ApplicationWindow {
 
     private Admin admin;
     private AdminProfilePanel profilePanel;
 
     public AdminMain() {
 
-        // Temporary dummy data (later connect to AdminData)
         admin = new Admin(
                 "A001",
                 "Default Admin",
@@ -23,27 +26,20 @@ public class AdminMain extends JFrame {
                 "System Administrator"
         );
 
-        initializeFrame();
+        initializeWindow();
     }
 
-    /**
-     * Initializes main frame settings.
-     */
-    private void initializeFrame() {
+    private void initializeWindow() {
 
         setTitle("Admin Dashboard");
-        setSize(600, 400);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         profilePanel = new AdminProfilePanel(admin);
 
-        add(profilePanel);
+        // Add content without disturbing ApplicationWindow layout
+        getContentPane().add(profilePanel, BorderLayout.CENTER);
 
-        setVisible(true);
         profilePanel.getEditDetailsButton().addActionListener(e ->
                 new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
         );
-
     }
 }
