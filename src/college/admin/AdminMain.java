@@ -41,5 +41,9 @@ public class AdminMain extends JFrame {
         add(profilePanel);
 
         setVisible(true);
+        profilePanel.getEditDetailsButton().addActionListener(e ->
+                new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
+        );
+
     }
 }
