@@ -18,6 +18,7 @@ public class AdminMain extends ApplicationWindow {
     private AdminProfilePanel profilePanel;
     private JPanel contentPanel;
     private CardLayout cardLayout;
+    private JPanel sidebarPanel;
 
     public AdminMain() {
 
@@ -49,6 +50,47 @@ public class AdminMain extends ApplicationWindow {
 
         return panel;
     }
+    /**
+     * Creates styled sidebar button.
+     */
+    private JButton createSidebarButton(String text) {
+
+        JButton button = new JButton(text);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setBackground(UITheme.PRIMARY_BLUE);
+        button.setForeground(Color.WHITE);
+
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        return button;
+    }
+
+    /**
+     * Creates left sidebar navigation panel.
+     */
+    private JPanel createSidebar() {
+
+        JPanel panel = new JPanel();
+        panel.setPreferredSize(new Dimension(180, 0));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(UITheme.PRIMARY_BLUE);
+
+        JButton profileButton = createSidebarButton("Profile");
+
+        profileButton.addActionListener(e ->
+                cardLayout.show(contentPanel, "PROFILE")
+        );
+
+        panel.add(Box.createVerticalStrut(20));
+        panel.add(profileButton);
+
+        return panel;
+    }
+
 
     private void initializeWindow() {
 
@@ -59,30 +101,31 @@ public class AdminMain extends ApplicationWindow {
 
         JPanel headerPanel = createHeaderPanel();
 
-        // Card layout for future section switching
+        // Sidebar
+        sidebarPanel = createSidebar();
+
+        // Card layout area
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
         contentPanel.setBackground(UITheme.BACKGROUND_WHITE);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        // Profile section
         profilePanel = new AdminProfilePanel(admin);
-
         contentPanel.add(profilePanel, "PROFILE");
 
         rootPanel.add(headerPanel, BorderLayout.NORTH);
+        rootPanel.add(sidebarPanel, BorderLayout.WEST);
         rootPanel.add(contentPanel, BorderLayout.CENTER);
 
         getContentPane().add(rootPanel, BorderLayout.CENTER);
 
-        // Button action
         profilePanel.getEditDetailsButton().addActionListener(e ->
                 new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
         );
 
-        // Show default card
         cardLayout.show(contentPanel, "PROFILE");
     }
+
 
 
 
