@@ -47,31 +47,27 @@ public class AdminMain extends ApplicationWindow {
 
     private void initializeWindow() {
 
-        setTitle("Admin Dashboard");
+        setTitle("Admin");
 
-        // Main container panel
+        // Root container using BorderLayout (standard CMS structure)
         JPanel rootPanel = new JPanel(new BorderLayout());
 
-        // Header panel
-        JPanel headerPanel = createHeaderPanel();
+        // Maintain standard padding used across CMS
+        rootPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
 
-        // Content panel (center area)
-        JPanel contentPanel = new JPanel(new BorderLayout());
-
+        // Profile panel (main content)
         profilePanel = new AdminProfilePanel(admin);
-        contentPanel.add(profilePanel, BorderLayout.CENTER);
 
-        // Add sections to root
-        rootPanel.add(headerPanel, BorderLayout.NORTH);
-        rootPanel.add(contentPanel, BorderLayout.CENTER);
+        rootPanel.add(profilePanel, BorderLayout.CENTER);
 
-        // Add to ApplicationWindow content pane
+        // Add root panel to ApplicationWindow
         getContentPane().add(rootPanel, BorderLayout.CENTER);
 
-        // Connect edit button
+        // Attach edit button listener
         profilePanel.getEditDetailsButton().addActionListener(e ->
                 new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
         );
     }
+
 
 }
