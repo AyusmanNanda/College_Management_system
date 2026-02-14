@@ -114,16 +114,43 @@ public class AdminMain extends ApplicationWindow {
         panel.setBackground(UITheme.PRIMARY_BLUE);
 
         JButton profileButton = createSidebarButton("Profile");
+        JButton attendanceButton = createSidebarButton("Attendance");
 
-        profileButton.addActionListener(e -> {
-            switchSection("PROFILE", profileButton);
-        });
+        profileButton.addActionListener(e ->
+                switchSection("PROFILE", profileButton)
+        );
+
+        attendanceButton.addActionListener(e ->
+                switchSection("ATTENDANCE", attendanceButton)
+        );
 
         panel.add(Box.createVerticalStrut(20));
         panel.add(profileButton);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(attendanceButton);
 
         return panel;
     }
+
+
+    /**
+     * Creates a temporary Attendance panel.
+     * This validates CardLayout scalability.
+     */
+    private JPanel createAttendancePanel() {
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(UITheme.BACKGROUND_WHITE);
+
+        JLabel label = new JLabel("Attendance Section");
+        label.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+
+        panel.add(label, BorderLayout.CENTER);
+
+        return panel;
+    }
+
 
 
 
@@ -144,6 +171,7 @@ public class AdminMain extends ApplicationWindow {
 
         profilePanel = new AdminProfilePanel(admin);
         contentPanel.add(profilePanel, "PROFILE");
+        contentPanel.add(createAttendancePanel(), "ATTENDANCE");
 
         // Now create sidebar (cardLayout is ready)
         sidebarPanel = createSidebar();
