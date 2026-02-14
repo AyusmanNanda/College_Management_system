@@ -3,24 +3,25 @@ package college.libs;
 import java.awt.*;
 
 /**
- * UITheme defines the color palette and visual identity
- * for the College Management System.
+ * UITheme defines the official visual identity
+ * of the College Management System.
  *
- * This file will act as the foundation for future UI modernization.
+ * This is aligned with LoginPageFrame.
  */
 public class UITheme {
 
-    // Primary blue color for headers, buttons, accents
-    public static final Color PRIMARY_BLUE = new Color(33, 150, 243);
+    // Official CMS theme blue (from LoginPageFrame)
+    public static final Color PRIMARY_BLUE = new Color(39, 71, 122);
 
-    // Darker blue for hover or emphasis
-    public static final Color PRIMARY_BLUE_DARK = new Color(25, 118, 210);
+    // White background used in login
+    public static final Color BACKGROUND_WHITE = Color.WHITE;
 
-    // Light background color for content areas
-    public static final Color BACKGROUND_LIGHT = Color.WHITE;
+    // Primary text color
+    public static final Color TEXT_WHITE = Color.WHITE;
 
-    // Neutral text color
-    public static final Color TEXT_PRIMARY = new Color(33, 33, 33);
+    // Header font used in LoginPageFrame
+    public static final Font HEADER_FONT =
+            new Font("Segoe UI", Font.BOLD, 22);
 
     private UITheme() {
         // Prevent instantiation

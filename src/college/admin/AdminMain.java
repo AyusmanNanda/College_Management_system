@@ -35,19 +35,18 @@ public class AdminMain extends ApplicationWindow {
     private JPanel createHeaderPanel() {
 
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setPreferredSize(new Dimension(0, 60));
+        panel.setPreferredSize(new Dimension(0, 70));
         panel.setBackground(UITheme.PRIMARY_BLUE);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 25, 0, 0));
 
         JLabel titleLabel = new JLabel("Admin Dashboard");
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        titleLabel.setForeground(UITheme.TEXT_WHITE);
+        titleLabel.setFont(UITheme.HEADER_FONT);
 
         panel.add(titleLabel, BorderLayout.WEST);
 
         return panel;
     }
-
 
 
     private void initializeWindow() {
@@ -56,7 +55,7 @@ public class AdminMain extends ApplicationWindow {
 
         // Root container
         JPanel rootPanel = new JPanel(new BorderLayout());
-        rootPanel.setBackground(UITheme.BACKGROUND_LIGHT);
+        rootPanel.setBackground(UITheme.BACKGROUND_WHITE);
 
         // Header panel (blue theme)
         JPanel headerPanel = createHeaderPanel();
@@ -64,7 +63,7 @@ public class AdminMain extends ApplicationWindow {
         // Main content panel
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        contentPanel.setBackground(UITheme.BACKGROUND_LIGHT);
+        contentPanel.setBackground(UITheme.BACKGROUND_WHITE);
 
         profilePanel = new AdminProfilePanel(admin);
         contentPanel.add(profilePanel, BorderLayout.CENTER);
@@ -74,11 +73,11 @@ public class AdminMain extends ApplicationWindow {
 
         getContentPane().add(rootPanel, BorderLayout.CENTER);
 
-        // Edit button listener
         profilePanel.getEditDetailsButton().addActionListener(e ->
                 new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
         );
     }
+
 
 
 
