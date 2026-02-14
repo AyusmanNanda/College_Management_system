@@ -19,6 +19,8 @@ public class AdminMain extends ApplicationWindow {
     private JPanel contentPanel;
     private CardLayout cardLayout;
     private JPanel sidebarPanel;
+    private JButton activeSidebarButton;
+
 
     public AdminMain() {
 
@@ -51,7 +53,7 @@ public class AdminMain extends ApplicationWindow {
         return panel;
     }
     /**
-     * Creates styled sidebar button.
+     * Creates styled sidebar button with hover and active behavior.
      */
     private JButton createSidebarButton(String text) {
 
@@ -63,11 +65,43 @@ public class AdminMain extends ApplicationWindow {
         button.setBorderPainted(false);
         button.setBackground(UITheme.PRIMARY_BLUE);
         button.setForeground(Color.WHITE);
-
         button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        // Hover effect
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (!button.getBackground().equals(UITheme.PRIMARY_BLUE_DARK)) {
+                    button.setBackground(UITheme.PRIMARY_BLUE_DARK);
+                }
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (!button.getBackground().equals(UITheme.PRIMARY_BLUE_DARK)) {
+                    button.setBackground(UITheme.PRIMARY_BLUE);
+                }
+            }
+        });
 
         return button;
     }
+    /**
+     * Switches content section and updates active sidebar button.
+     */
+    private void switchSection(String cardName, JButton clickedButton) {
+
+        cardLayout.show(contentPanel, cardName);
+
+        if (activeSidebarButton != null) {
+            activeSidebarButton.setBackground(UITheme.PRIMARY_BLUE);
+        }
+
+        activeSidebarButton = clickedButton;
+        activeSidebarButton.setBackground(UITheme.PRIMARY_BLUE_DARK);
+    }
+
 
     /**
      * Creates left sidebar navigation panel.
@@ -81,15 +115,16 @@ public class AdminMain extends ApplicationWindow {
 
         JButton profileButton = createSidebarButton("Profile");
 
-        profileButton.addActionListener(e ->
-                cardLayout.show(contentPanel, "PROFILE")
-        );
+        profileButton.addActionListener(e -> {
+            switchSection("PROFILE", profileButton);
+        });
 
         panel.add(Box.createVerticalStrut(20));
         panel.add(profileButton);
 
         return panel;
     }
+
 
 
     private void initializeWindow() {
@@ -101,10 +136,7 @@ public class AdminMain extends ApplicationWindow {
 
         JPanel headerPanel = createHeaderPanel();
 
-        // Sidebar
-        sidebarPanel = createSidebar();
-
-        // Card layout area
+        // Initialize CardLayout FIRST
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
         contentPanel.setBackground(UITheme.BACKGROUND_WHITE);
@@ -112,6 +144,9 @@ public class AdminMain extends ApplicationWindow {
 
         profilePanel = new AdminProfilePanel(admin);
         contentPanel.add(profilePanel, "PROFILE");
+
+        // Now create sidebar (cardLayout is ready)
+        sidebarPanel = createSidebar();
 
         rootPanel.add(headerPanel, BorderLayout.NORTH);
         rootPanel.add(sidebarPanel, BorderLayout.WEST);
@@ -123,8 +158,10 @@ public class AdminMain extends ApplicationWindow {
                 new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
         );
 
+        // Set default active AFTER everything is initialized
         cardLayout.show(contentPanel, "PROFILE");
     }
+
 
 
 

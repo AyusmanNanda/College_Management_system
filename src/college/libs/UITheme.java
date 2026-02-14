@@ -19,6 +19,9 @@ public class UITheme {
     // Primary text color
     public static final Color TEXT_WHITE = Color.WHITE;
 
+    // Slightly darker blue for hover/active state
+    public static final Color PRIMARY_BLUE_DARK = new Color(30, 60, 105);
+
     // Header font used in LoginPageFrame
     public static final Font HEADER_FONT =
             new Font("Segoe UI", Font.BOLD, 22);
