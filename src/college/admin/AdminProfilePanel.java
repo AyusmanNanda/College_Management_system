@@ -1,13 +1,15 @@
 package college.admin;
 
+import college.libs.UITheme;
+
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * AdminProfilePanel is responsible only for UI rendering.
+ * AdminProfilePanel is responsible for displaying
+ * admin information inside the dashboard.
  *
- * AdminMain should not contain layout logic.
- * This improves separation of concerns.
+ * This version aligns with CMS theme and improves spacing.
  */
 public class AdminProfilePanel extends JPanel {
 
@@ -25,31 +27,41 @@ public class AdminProfilePanel extends JPanel {
         initializeUI();
     }
 
-    /**
-     * Initializes UI components and layout.
-     */
     private void initializeUI() {
 
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setBackground(UITheme.BACKGROUND_WHITE);
 
-        JPanel infoPanel = new JPanel();
-        infoPanel.setLayout(new GridLayout(4, 1, 10, 10));
+        // Container panel with padding
+        JPanel container = new JPanel();
+        container.setLayout(new GridLayout(5, 1, 0, 12));
+        container.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        container.setBackground(UITheme.BACKGROUND_WHITE);
 
-        nameLabel = new JLabel("Name: " + admin.getName());
-        emailLabel = new JLabel("Email: " + admin.getEmail());
-        phoneLabel = new JLabel("Phone: " + admin.getPhone());
-        designationLabel = new JLabel("Designation: " + admin.getDesignation());
-
-        infoPanel.add(nameLabel);
-        infoPanel.add(emailLabel);
-        infoPanel.add(phoneLabel);
-        infoPanel.add(designationLabel);
+        nameLabel = createInfoLabel("Name: " + admin.getName());
+        emailLabel = createInfoLabel("Email: " + admin.getEmail());
+        phoneLabel = createInfoLabel("Phone: " + admin.getPhone());
+        designationLabel = createInfoLabel("Designation: " + admin.getDesignation());
 
         editDetailsButton = new JButton("Edit Details");
+        editDetailsButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        add(infoPanel, BorderLayout.CENTER);
-        add(editDetailsButton, BorderLayout.SOUTH);
+        container.add(nameLabel);
+        container.add(emailLabel);
+        container.add(phoneLabel);
+        container.add(designationLabel);
+        container.add(editDetailsButton);
+
+        add(container, BorderLayout.NORTH);
+    }
+
+    /**
+     * Creates a styled label for displaying admin information.
+     */
+    private JLabel createInfoLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        return label;
     }
 
     public JButton getEditDetailsButton() {
