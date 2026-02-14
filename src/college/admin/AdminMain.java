@@ -1,6 +1,7 @@
 package college.admin;
 
 import college.libs.ApplicationWindow;
+import college.libs.UITheme;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,14 +30,17 @@ public class AdminMain extends ApplicationWindow {
         initializeWindow();
     }
     /**
-     * Creates top header panel for dashboard.
+     * Creates modern blue header panel.
      */
     private JPanel createHeaderPanel() {
 
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        panel.setPreferredSize(new Dimension(0, 60));
+        panel.setBackground(UITheme.PRIMARY_BLUE);
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 25, 0, 0));
 
         JLabel titleLabel = new JLabel("Admin Dashboard");
+        titleLabel.setForeground(Color.WHITE);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
 
         panel.add(titleLabel, BorderLayout.WEST);
@@ -45,29 +49,37 @@ public class AdminMain extends ApplicationWindow {
     }
 
 
+
     private void initializeWindow() {
 
         setTitle("Admin");
 
-        // Root container using BorderLayout (standard CMS structure)
+        // Root container
         JPanel rootPanel = new JPanel(new BorderLayout());
+        rootPanel.setBackground(UITheme.BACKGROUND_LIGHT);
 
-        // Maintain standard padding used across CMS
-        rootPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        // Header panel (blue theme)
+        JPanel headerPanel = createHeaderPanel();
 
-        // Profile panel (main content)
+        // Main content panel
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        contentPanel.setBackground(UITheme.BACKGROUND_LIGHT);
+
         profilePanel = new AdminProfilePanel(admin);
+        contentPanel.add(profilePanel, BorderLayout.CENTER);
 
-        rootPanel.add(profilePanel, BorderLayout.CENTER);
+        rootPanel.add(headerPanel, BorderLayout.NORTH);
+        rootPanel.add(contentPanel, BorderLayout.CENTER);
 
-        // Add root panel to ApplicationWindow
         getContentPane().add(rootPanel, BorderLayout.CENTER);
 
-        // Attach edit button listener
+        // Edit button listener
         profilePanel.getEditDetailsButton().addActionListener(e ->
                 new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
         );
     }
+
 
 
 }
