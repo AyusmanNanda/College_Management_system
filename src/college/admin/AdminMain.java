@@ -1,53 +1,45 @@
 package college.admin;
 
-import college.libs.ApplicationWindow;
+import javax.swing.*;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
-
-/*
- * Temporary Admin main screen.
- * Shows "Hello Admin".
+/**
+ * AdminMain acts as controller and frame holder.
+ *
+ * UI logic is delegated to AdminProfilePanel.
  */
-public class AdminMain extends ApplicationWindow {
+public class AdminMain extends JFrame {
 
-    private JPanel contentPane;
-    private JLabel titleLabel;
+    private Admin admin;
+    private AdminProfilePanel profilePanel;
 
     public AdminMain() {
 
-        setTitle("Admin Panel");
+        // Temporary dummy data (later connect to AdminData)
+        admin = new Admin(
+                "A001",
+                "Default Admin",
+                "admin@college.com",
+                "9999999999",
+                "System Administrator"
+        );
 
-        contentPane = new JPanel(null);
-        contentPane.setBackground(Color.WHITE);
-        setContentPane(contentPane);
-
-        titleLabel = new JLabel("Hello Admin");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        titleLabel.setForeground(new Color(39, 71, 122));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        contentPane.add(titleLabel);
-
-        updateLayout();  // Apply layout immediately
-
-        // Keep label centered on resize (layout only)
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                updateLayout();
-            }
-        });
+        initializeFrame();
     }
 
-    private void updateLayout() {
-        int width = getWidth();
-        int height = getHeight();
-        titleLabel.setBounds(0, height / 2 - 20, width, 40);
+    /**
+     * Initializes main frame settings.
+     */
+    private void initializeFrame() {
+
+        setTitle("Admin Dashboard");
+        setSize(600, 400);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        profilePanel = new AdminProfilePanel(admin);
+
+        add(profilePanel);
+
+        setVisible(true);
     }
 }
