@@ -16,6 +16,8 @@ public class AdminMain extends ApplicationWindow {
 
     private Admin admin;
     private AdminProfilePanel profilePanel;
+    private JPanel contentPanel;
+    private CardLayout cardLayout;
 
     public AdminMain() {
 
@@ -48,35 +50,40 @@ public class AdminMain extends ApplicationWindow {
         return panel;
     }
 
-
     private void initializeWindow() {
 
         setTitle("Admin");
 
-        // Root container
         JPanel rootPanel = new JPanel(new BorderLayout());
         rootPanel.setBackground(UITheme.BACKGROUND_WHITE);
 
-        // Header panel (blue theme)
         JPanel headerPanel = createHeaderPanel();
 
-        // Main content panel
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        // Card layout for future section switching
+        cardLayout = new CardLayout();
+        contentPanel = new JPanel(cardLayout);
         contentPanel.setBackground(UITheme.BACKGROUND_WHITE);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
+        // Profile section
         profilePanel = new AdminProfilePanel(admin);
-        contentPanel.add(profilePanel, BorderLayout.CENTER);
+
+        contentPanel.add(profilePanel, "PROFILE");
 
         rootPanel.add(headerPanel, BorderLayout.NORTH);
         rootPanel.add(contentPanel, BorderLayout.CENTER);
 
         getContentPane().add(rootPanel, BorderLayout.CENTER);
 
+        // Button action
         profilePanel.getEditDetailsButton().addActionListener(e ->
                 new EditAdminDetailsDialog(this, admin, profilePanel).setVisible(true)
         );
+
+        // Show default card
+        cardLayout.show(contentPanel, "PROFILE");
     }
+
 
 
 
