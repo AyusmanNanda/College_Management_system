@@ -102,25 +102,17 @@ public class EditAdminDetailsDialog extends JDialog {
      */
     private void saveChanges() {
 
-        Admin updatedAdmin = new Admin(
-                collegeNameField.getText(),
-                addressField.getText(),
-                emailField.getText(),
-                contactField.getText(),
-                websiteField.getText(),
-                admin.getLastlogin(),
-                admin.getFacebook(),
-                admin.getInstagram(),
-                admin.getTwitter(),
-                admin.getLinkedin(),
-                admin.isActivestatus()
-        );
+        // Update existing admin object (do NOT create new object)
+        admin.setCollagename(collegeNameField.getText());
+        admin.setAddress(addressField.getText());
+        admin.setEmailid(emailField.getText());
+        admin.setContactnumber(contactField.getText());
+        admin.setWebsite(websiteField.getText());
 
         AdminData adminData = new AdminData();
-        boolean success = adminData.updateAdminDetails(updatedAdmin);
+        boolean success = adminData.updateAdminDetails(admin);
 
         if (success) {
-            this.admin = updatedAdmin;
             profilePanel.refreshData();
             dispose();
         } else {
@@ -132,5 +124,6 @@ public class EditAdminDetailsDialog extends JDialog {
             );
         }
     }
+
 
 }
