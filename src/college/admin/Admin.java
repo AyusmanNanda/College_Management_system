@@ -56,4 +56,26 @@ public class Admin {
     public String getTwitter() { return twitter; }
     public String getLinkedin() { return linkedin; }
     public boolean isActivestatus() { return activestatus; }
+
+    public void setCollagename(String collagename) {
+        this.collagename = collagename;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public void setEmailid(String emailid) {
+        this.emailid = emailid;
+    }
+
+    public void setContactnumber(String contactnumber) {
+        this.contactnumber = contactnumber;
+    }
+
+    public void setWebsite(String website) {
+        this.website = website;
+    }
+
 }
+
