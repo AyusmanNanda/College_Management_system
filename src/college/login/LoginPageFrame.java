@@ -1,6 +1,7 @@
 package college.login;
 
 import college.libs.ApplicationWindow;
+import college.libs.UITheme;
 
 import java.awt.Color;
 import java.awt.EventQueue;
@@ -15,9 +16,6 @@ import javax.swing.JPanel;
 
 // Main login window frame
 class LoginPageFrame extends ApplicationWindow {
-
-    // Global theme color
-    private static final Color THEME_BLUE = new Color(39, 71, 122);
 
     // Root container panel
     private JPanel contentPane;
@@ -43,12 +41,12 @@ class LoginPageFrame extends ApplicationWindow {
         setContentPane(contentPane);
 
         headerPanel = new JPanel(null);
-        headerPanel.setBackground(THEME_BLUE);
+        headerPanel.setBackground(UITheme.PRIMARY_BLUE);
         contentPane.add(headerPanel);
 
         titleLabel = new JLabel("College Login System");
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setFont(UITheme.HEADER_FONT);
         headerPanel.add(titleLabel);
 
         centerPanel = new JPanel(null) {
