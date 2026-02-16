@@ -102,7 +102,7 @@ public class EditAdminDetailsDialog extends JDialog {
      */
     private void saveChanges() {
 
-        admin = new Admin(
+        Admin updatedAdmin = new Admin(
                 collegeNameField.getText(),
                 addressField.getText(),
                 emailField.getText(),
@@ -116,7 +116,21 @@ public class EditAdminDetailsDialog extends JDialog {
                 admin.isActivestatus()
         );
 
-        profilePanel.refreshData();
-        dispose();
+        AdminData adminData = new AdminData();
+        boolean success = adminData.updateAdminDetails(updatedAdmin);
+
+        if (success) {
+            this.admin = updatedAdmin;
+            profilePanel.refreshData();
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Failed to update details.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
+
 }
