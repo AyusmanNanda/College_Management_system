@@ -1,7 +1,6 @@
 package college.login;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -25,15 +24,13 @@ import college.student.StudentMain;
 
 import college.faculty.FacultyData;
 import college.faculty.FacultyMain;
+import college.libs.UITheme;
 
 /*
  * Common login panel for Admin / Faculty / Student.
  * This class only handles input and button clicks.
  */
 class LoginPanel extends JPanel implements ActionListener {
-
-    private static final Color THEME_BLUE = new Color(39, 71, 122);
-
     // UI
     private JLabel titleLabel;
     private JTextField userIdField;
@@ -50,28 +47,28 @@ class LoginPanel extends JPanel implements ActionListener {
 
         setLayout(null);
         setOpaque(false);
-        setBorder(new LineBorder(THEME_BLUE));
+        setBorder(new LineBorder(UITheme.PRIMARY_BLUE));
 
         titleLabel = new JLabel("College Login");
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setFont(UITheme.HEADER_FONT);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         add(titleLabel);
 
         userIdField = new JTextField();
-        userIdField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        userIdField.setFont(UITheme.HEADER_FONT);
         userIdField.setBorder(new EmptyBorder(0, 8, 0, 0));
         add(userIdField);
 
         passwordField = new JPasswordField();
-        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        passwordField.setFont(UITheme.HEADER_FONT);
         passwordField.setBorder(userIdField.getBorder());
         add(passwordField);
 
         loginButton = new JButton("Login");
-        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        loginButton.setFont(UITheme.HEADER_FONT);
         loginButton.setForeground(Color.WHITE);
-        loginButton.setBackground(THEME_BLUE);
+        loginButton.setBackground(UITheme.PRIMARY_BLUE);
         loginButton.setFocusable(false);
         loginButton.setBorderPainted(false);
         loginButton.addActionListener(this);

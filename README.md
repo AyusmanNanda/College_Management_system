@@ -34,7 +34,7 @@ The College Management System provides a simple yet extensible platform for mana
 
 ---
 -->
-## 📂 Recommended Project Structure
+## 📂 Project Structure
 
 > This structure is **ideal for GitHub and college submissions**.  
 > Avoid pushing compiled files (`.class`) or IDE configs.
