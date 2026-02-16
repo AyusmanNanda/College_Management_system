@@ -73,5 +73,35 @@ public class AdminData {
 
         return null;
     }
+    // Updates admin table with new details
+    public boolean updateAdminDetails(Admin admin) {
+
+        try {
+            String query = "UPDATE admin SET "
+                    + "collagename = ?, "
+                    + "address = ?, "
+                    + "emailid = ?, "
+                    + "contactnumber = ?, "
+                    + "website = ?";
+
+            java.sql.PreparedStatement ps = con.prepareStatement(query);
+
+            ps.setString(1, admin.getCollagename());
+            ps.setString(2, admin.getAddress());
+            ps.setString(3, admin.getEmailid());
+            ps.setString(4, admin.getContactnumber());
+            ps.setString(5, admin.getWebsite());
+
+            int rows = ps.executeUpdate();
+
+            return rows > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
 
 }
