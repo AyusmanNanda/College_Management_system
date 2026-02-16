@@ -7,25 +7,25 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * EditAdminDetailsDialog allows editing of admin details.
- *
- * Styled to align with CMS theme and spacing.
+ * EditAdminDetailsDialog allows editing of
+ * college information stored in admin table.
  */
 public class EditAdminDetailsDialog extends JDialog {
 
     private Admin admin;
     private AdminProfilePanel profilePanel;
 
-    private JTextField nameField;
+    private JTextField collegeNameField;
+    private JTextField addressField;
     private JTextField emailField;
-    private JTextField phoneField;
-    private JTextField designationField;
+    private JTextField contactField;
+    private JTextField websiteField;
 
     public EditAdminDetailsDialog(ApplicationWindow parent,
                                   Admin admin,
                                   AdminProfilePanel profilePanel) {
 
-        super(parent, "Edit Admin Details", true);
+        super(parent, "Edit College Details", true);
 
         this.admin = admin;
         this.profilePanel = profilePanel;
@@ -35,32 +35,36 @@ public class EditAdminDetailsDialog extends JDialog {
 
     private void initializeDialog() {
 
-        setSize(420, 320);
+        setSize(450, 350);
         setLocationRelativeTo(getParent());
 
         JPanel rootPanel = new JPanel(new BorderLayout());
         rootPanel.setBackground(UITheme.BACKGROUND_WHITE);
         rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
 
-        JPanel formPanel = new JPanel(new GridLayout(4, 2, 10, 15));
+        JPanel formPanel = new JPanel(new GridLayout(5, 2, 10, 15));
         formPanel.setBackground(UITheme.BACKGROUND_WHITE);
 
-        nameField = createTextField(admin.getName());
-        emailField = createTextField(admin.getEmail());
-        phoneField = createTextField(admin.getPhone());
-        designationField = createTextField(admin.getDesignation());
+        collegeNameField = createTextField(admin.getCollagename());
+        addressField = createTextField(admin.getAddress());
+        emailField = createTextField(admin.getEmailid());
+        contactField = createTextField(admin.getContactnumber());
+        websiteField = createTextField(admin.getWebsite());
 
-        formPanel.add(createLabel("Name"));
-        formPanel.add(nameField);
+        formPanel.add(createLabel("College Name"));
+        formPanel.add(collegeNameField);
+
+        formPanel.add(createLabel("Address"));
+        formPanel.add(addressField);
 
         formPanel.add(createLabel("Email"));
         formPanel.add(emailField);
 
-        formPanel.add(createLabel("Phone"));
-        formPanel.add(phoneField);
+        formPanel.add(createLabel("Contact"));
+        formPanel.add(contactField);
 
-        formPanel.add(createLabel("Designation"));
-        formPanel.add(designationField);
+        formPanel.add(createLabel("Website"));
+        formPanel.add(websiteField);
 
         JButton saveButton = new JButton("Save");
         saveButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -80,18 +84,12 @@ public class EditAdminDetailsDialog extends JDialog {
         saveButton.addActionListener(e -> saveChanges());
     }
 
-    /**
-     * Creates styled label.
-     */
     private JLabel createLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         return label;
     }
 
-    /**
-     * Creates styled text field.
-     */
     private JTextField createTextField(String value) {
         JTextField field = new JTextField(value);
         field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -99,14 +97,24 @@ public class EditAdminDetailsDialog extends JDialog {
     }
 
     /**
-     * Saves updated admin details and refreshes UI.
+     * Updates admin object locally and refreshes UI.
+     * (Database update logic should be added later)
      */
     private void saveChanges() {
 
-        admin.setName(nameField.getText());
-        admin.setEmail(emailField.getText());
-        admin.setPhone(phoneField.getText());
-        admin.setDesignation(designationField.getText());
+        admin = new Admin(
+                collegeNameField.getText(),
+                addressField.getText(),
+                emailField.getText(),
+                contactField.getText(),
+                websiteField.getText(),
+                admin.getLastlogin(),
+                admin.getFacebook(),
+                admin.getInstagram(),
+                admin.getTwitter(),
+                admin.getLinkedin(),
+                admin.isActivestatus()
+        );
 
         profilePanel.refreshData();
         dispose();

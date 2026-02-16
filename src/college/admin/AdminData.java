@@ -42,4 +42,36 @@ public class AdminData {
 
         return false;
     }
+    // Fetch full admin details (single row system)
+    public Admin getAdminDetails() {
+
+        try {
+            String query = "SELECT * FROM admin";
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery(query);
+
+            if (rs.next()) {
+
+                return new Admin(
+                        rs.getString("collagename"),
+                        rs.getString("address"),
+                        rs.getString("emailid"),
+                        rs.getString("contactnumber"),
+                        rs.getString("website"),
+                        rs.getString("lastlogin"),
+                        rs.getString("facebook"),
+                        rs.getString("instagram"),
+                        rs.getString("twitter"),
+                        rs.getString("linkedin"),
+                        rs.getInt("activestatus") == 1
+                );
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
 }

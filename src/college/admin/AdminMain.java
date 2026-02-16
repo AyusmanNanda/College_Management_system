@@ -24,16 +24,22 @@ public class AdminMain extends ApplicationWindow {
 
     public AdminMain() {
 
-        admin = new Admin(
-                "A001",
-                "Default Admin",
-                "admin@college.com",
-                "9999999999",
-                "System Administrator"
-        );
+        AdminData adminData = new AdminData();
+        this.admin = adminData.getAdminDetails();
+
+        if (this.admin == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Unable to load admin details.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
 
         initializeWindow();
     }
+
     /**
      * Creates modern blue header panel.
      */

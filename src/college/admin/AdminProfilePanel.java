@@ -6,19 +6,19 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * AdminProfilePanel is responsible for displaying
- * admin information inside the dashboard.
- *
- * This version aligns with CMS theme and improves spacing.
+ * AdminProfilePanel displays college information
+ * stored in the admin table.
  */
 public class AdminProfilePanel extends JPanel {
 
     private Admin admin;
 
-    private JLabel nameLabel;
+    private JLabel collegeNameLabel;
+    private JLabel addressLabel;
     private JLabel emailLabel;
-    private JLabel phoneLabel;
-    private JLabel designationLabel;
+    private JLabel contactLabel;
+    private JLabel websiteLabel;
+    private JLabel lastLoginLabel;
 
     private JButton editDetailsButton;
 
@@ -32,32 +32,32 @@ public class AdminProfilePanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(UITheme.BACKGROUND_WHITE);
 
-        // Container panel with padding
         JPanel container = new JPanel();
-        container.setLayout(new GridLayout(5, 1, 0, 12));
+        container.setLayout(new GridLayout(7, 1, 0, 12));
         container.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         container.setBackground(UITheme.BACKGROUND_WHITE);
 
-        nameLabel = createInfoLabel("Name: " + admin.getName());
-        emailLabel = createInfoLabel("Email: " + admin.getEmail());
-        phoneLabel = createInfoLabel("Phone: " + admin.getPhone());
-        designationLabel = createInfoLabel("Designation: " + admin.getDesignation());
+        collegeNameLabel = createInfoLabel("College Name: " + admin.getCollagename());
+        addressLabel = createInfoLabel("Address: " + admin.getAddress());
+        emailLabel = createInfoLabel("Email: " + admin.getEmailid());
+        contactLabel = createInfoLabel("Contact: " + admin.getContactnumber());
+        websiteLabel = createInfoLabel("Website: " + admin.getWebsite());
+        lastLoginLabel = createInfoLabel("Last Login: " + admin.getLastlogin());
 
         editDetailsButton = new JButton("Edit Details");
         editDetailsButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        container.add(nameLabel);
+        container.add(collegeNameLabel);
+        container.add(addressLabel);
         container.add(emailLabel);
-        container.add(phoneLabel);
-        container.add(designationLabel);
+        container.add(contactLabel);
+        container.add(websiteLabel);
+        container.add(lastLoginLabel);
         container.add(editDetailsButton);
 
         add(container, BorderLayout.NORTH);
     }
 
-    /**
-     * Creates a styled label for displaying admin information.
-     */
     private JLabel createInfoLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -72,9 +72,12 @@ public class AdminProfilePanel extends JPanel {
      * Refresh UI when admin data changes.
      */
     public void refreshData() {
-        nameLabel.setText("Name: " + admin.getName());
-        emailLabel.setText("Email: " + admin.getEmail());
-        phoneLabel.setText("Phone: " + admin.getPhone());
-        designationLabel.setText("Designation: " + admin.getDesignation());
+
+        collegeNameLabel.setText("College Name: " + admin.getCollagename());
+        addressLabel.setText("Address: " + admin.getAddress());
+        emailLabel.setText("Email: " + admin.getEmailid());
+        contactLabel.setText("Contact: " + admin.getContactnumber());
+        websiteLabel.setText("Website: " + admin.getWebsite());
+        lastLoginLabel.setText("Last Login: " + admin.getLastlogin());
     }
 }
