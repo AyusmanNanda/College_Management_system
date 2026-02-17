@@ -25,5 +25,20 @@ router.post(
     adminController.createFaculty
 );
 
+router.get(
+    "/faculties",
+    authMiddleware,
+    roleMiddleware("admin"),
+    adminController.getAllFaculties
+);
+
+router.put(
+    "/faculty/:id",
+    authMiddleware,
+    roleMiddleware("admin"),
+    adminController.updateFaculty
+);
+
+
 
 module.exports = router;
