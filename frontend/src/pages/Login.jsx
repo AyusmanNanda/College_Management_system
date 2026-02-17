@@ -1,50 +1,83 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-function Login() {
+const Login = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
+    const handleLogin = () => {
+        if (!email || !password) {
+            alert("Please enter email and password");
+            return;
+        }
 
-        const response = await fetch("http://localhost:5000/api/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            localStorage.setItem("token", data.token);
-            window.location.href = "/admin";
+        // TEMP role simulation (replace later with backend API)
+        if (email.includes("admin")) {
+            navigate("/admin/dashboard");
+        } else if (email.includes("faculty")) {
+            navigate("/faculty/dashboard");
         } else {
-            alert(data.message);
+            navigate("/student/dashboard");
         }
     };
 
     return (
-        <div>
-            <h2>Admin Login</h2>
-            <form onSubmit={handleLogin}>
+        <div style={styles.container}>
+            <div style={styles.card}>
+                <h2>College Management Login</h2>
+
                 <input
                     type="email"
-                    placeholder="Email"
+                    placeholder="Enter Email"
+                    style={styles.input}
                     onChange={(e) => setEmail(e.target.value)}
                 />
-                <br />
+
                 <input
                     type="password"
-                    placeholder="Password"
+                    placeholder="Enter Password"
+                    style={styles.input}
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                <br />
-                <button type="submit">Login</button>
-            </form>
+
+                <button style={styles.button} onClick={handleLogin}>
+                    Login
+                </button>
+            </div>
         </div>
     );
-}
+};
+
+const styles = {
+    container: {
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        backgroundColor: "#f0f2f5",
+    },
+    card: {
+        background: "white",
+        padding: "40px",
+        borderRadius: "10px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        width: "320px",
+        textAlign: "center",
+    },
+    input: {
+        width: "100%",
+        padding: "10px",
+        margin: "10px 0",
+    },
+    button: {
+        width: "100%",
+        padding: "10px",
+        backgroundColor: "#2d89ef",
+        color: "white",
+        border: "none",
+        cursor: "pointer",
+    },
+};
 
 export default Login;
