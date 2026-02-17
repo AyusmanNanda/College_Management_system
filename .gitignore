@@ -1,30 +1,33 @@
-# Compiled class file
-*.class
+# =========================
+# Node modules (both backend & frontend)
+# =========================
+node_modules/
 
-# Log file
-*.log
-*.iml
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# BlueJ files
-*.ctxt
+# Environment variables
+.env
 
-# Special files
-.classpath
-.project
+# Build folders
+dist/
+build/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+# Vite cache
+.vite/
 
-# Package Files #
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+# OS files
+.DS_Store
+Thumbs.db
 
-#folders
+# IDE files
+.vscode/
 .idea/
-out/
-src/META-INF/
-/bin/
+
+# Coverage
+coverage/
+
+# Temporary files
+*.log
