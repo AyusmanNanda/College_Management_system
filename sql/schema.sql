@@ -18,8 +18,11 @@ CREATE TABLE users (
                        email VARCHAR(100) UNIQUE NOT NULL,
                        password VARCHAR(255) NOT NULL, -- bcrypt hashed
                        role ENUM('admin', 'faculty', 'student') NOT NULL,
+                       last_login DATETIME NULL,
+                       active_status TINYINT DEFAULT 1,
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- =====================================================
 -- COURSES
@@ -134,9 +137,14 @@ CREATE TABLE college_info (
                               email VARCHAR(100),
                               contact_number VARCHAR(30),
                               website VARCHAR(100),
+                              facebook VARCHAR(255),
+                              instagram VARCHAR(255),
+                              twitter VARCHAR(255),
+                              linkedin VARCHAR(255),
                               logo VARCHAR(255),
                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- =====================================================
 -- DEFAULT ADMIN USER
