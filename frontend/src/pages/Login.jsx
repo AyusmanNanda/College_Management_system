@@ -30,13 +30,14 @@ const Login = () => {
                 { email, password }
             );
 
-            const { token, role } = response.data;
+            const { token, user } = response.data;
+            const role = user.role;
 
             localStorage.setItem("token", token);
 
-            if (role === "admin") navigate("/admin");
-            else if (role === "faculty") navigate("/faculty");
-            else if (role === "student") navigate("/student");
+            if (role === "admin") navigate("/admin/dashboard");
+            else if (role === "faculty") navigate("/faculty/dashboard");
+            else if (role === "student") navigate("/student/dashboard");
 
         } catch (err) {
             setError("Invalid email or password");
