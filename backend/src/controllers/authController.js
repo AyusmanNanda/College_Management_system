@@ -2,50 +2,65 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-// LOGIN CONTROLLER
+/*
+  Admin Login
+*/
+
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1️⃣ Check if user exists
-        const [users] = await db.query(
-            "SELECT * FROM users WHERE email = ?",
+        const [rows] = await db.query(
+            "SELECT * FROM admin WHERE emailid = ?",
             [email]
         );
 
-        if (users.length === 0) {
-            return res.status(401).json({ message: "Invalid email or password" });
+        if (rows.length === 0) {
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        const user = users[0];
+        const admin = rows[0];
 
-        // 2️⃣ Compare password
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, admin.password);
 
         if (!isMatch) {
-            return res.status(401).json({ message: "Invalid email or password" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // 3️⃣ Generate JWT
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            { email: admin.emailid },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
 
-        // 4️⃣ Send response
+        await db.query(
+            "UPDATE admin SET activestatus = 1 WHERE emailid = ?",
+            [email]
+        );
+
         res.json({
             message: "Login successful",
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                role: user.role
-            }
+            token
         });
 
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error" });
+    }
+};
+
+/*
+  Admin Logout
+*/
+
+exports.logout = async (req, res) => {
+    try {
+        await db.query("UPDATE admin SET activestatus = 0");
+
+        res.json({ message: "Logged out" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Logout failed" });
     }
 };
