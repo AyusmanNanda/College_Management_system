@@ -3,12 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 /*
-  Modern Professional Login UI
-  ----------------------------
-  - Clean layout
-  - Soft background
-  - Subtle glass card
-  - No change to authentication logic
+  Admin Login Page
+  ----------------
+  Single admin system
 */
 
 const Login = () => {
@@ -30,14 +27,12 @@ const Login = () => {
                 { email, password }
             );
 
-            const { token, user } = response.data;
-            const role = user.role;
+            const { token } = response.data;
 
             localStorage.setItem("token", token);
 
-            if (role === "admin") navigate("/admin/dashboard");
-            else if (role === "faculty") navigate("/faculty/dashboard");
-            else if (role === "student") navigate("/student/dashboard");
+            // Redirect to admin dashboard
+            navigate("/admin/dashboard");
 
         } catch (err) {
             setError("Invalid email or password");
@@ -47,32 +42,24 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
 
-            <div className="w-full max-w-md bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-slate-200">
+            <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-sm">
 
-                {/* Title */}
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-semibold text-slate-800">
-                        College Management
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-2">
-                        Sign in to continue
-                    </p>
-                </div>
+                <h1 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+                    Admin Login
+                </h1>
 
-                {/* Error Message */}
                 {error && (
-                    <div className="mb-4 text-sm text-red-600 bg-red-100 border border-red-200 px-4 py-2 rounded-lg">
+                    <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
                         {error}
                     </div>
                 )}
 
                 <form onSubmit={handleLogin} className="space-y-5">
 
-                    {/* Email */}
                     <div>
-                        <label className="block text-sm text-slate-600 mb-2">
+                        <label className="block mb-2 text-sm text-gray-600">
                             Email
                         </label>
                         <input
@@ -80,14 +67,13 @@ const Login = () => {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                            placeholder="Enter your email"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-gray-900"
+                            placeholder="admin@college.com"
                         />
                     </div>
 
-                    {/* Password */}
                     <div>
-                        <label className="block text-sm text-slate-600 mb-2">
+                        <label className="block mb-2 text-sm text-gray-600">
                             Password
                         </label>
                         <input
@@ -95,18 +81,17 @@ const Login = () => {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                            placeholder="Enter your password"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-gray-900"
+                            placeholder="Enter password"
                         />
                     </div>
 
-                    {/* Button */}
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition duration-200 shadow-md"
+                        className="w-full py-2.5 bg-gray-900 text-white rounded-md hover:bg-black transition"
                     >
-                        {loading ? "Signing in..." : "Sign In"}
+                        {loading ? "Signing in..." : "Login"}
                     </button>
 
                 </form>
