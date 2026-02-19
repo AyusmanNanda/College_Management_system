@@ -1,4 +1,4 @@
-name: CI Build Check
+name: Build
 
 on:
   push:
