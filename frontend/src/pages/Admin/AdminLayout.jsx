@@ -8,6 +8,7 @@ import axios from "axios";
   - Single admin system
   - Fetches logo from admin profile
   - Clean sidebar + header layout
+  - Logout moved to header (top right)
 */
 
 const AdminLayout = () => {
@@ -82,8 +83,8 @@ const AdminLayout = () => {
                             />
                         ) : (
                             <span className="text-gray-500 text-xs font-semibold">
-                CM
-              </span>
+                                CM
+                            </span>
                         )}
                     </div>
 
@@ -119,16 +120,6 @@ const AdminLayout = () => {
                     })}
                 </nav>
 
-                {/* Logout */}
-                <div className="px-4 py-4 border-t border-gray-200">
-                    <button
-                        onClick={handleLogout}
-                        className="w-full text-sm text-gray-600 hover:text-gray-900 transition"
-                    >
-                        Logout
-                    </button>
-                </div>
-
             </aside>
 
             {/* Main Area */}
@@ -139,6 +130,14 @@ const AdminLayout = () => {
                     <h1 className="text-lg font-semibold text-gray-800">
                         Admin Panel
                     </h1>
+
+                    {/* Logout moved here */}
+                    <button
+                        onClick={handleLogout}
+                        className="text-sm text-gray-600 hover:text-gray-900 transition"
+                    >
+                        Logout
+                    </button>
                 </header>
 
                 {/* Content */}
