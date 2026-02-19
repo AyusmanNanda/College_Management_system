@@ -7,6 +7,8 @@ import AdminProfile from "../pages/Admin/AdminProfile";
 import CollegeInfo from "../pages/Admin/CollegeInfo";
 import StudentDashboard from "../pages/Student/StudentDashboard";
 import FacultyDashboard from "../pages/Faculty/FacultyDashboard";
+import Courses from "../pages/Admin/Courses";
+
 
 const AppRoutes = () => {
     return (
@@ -19,6 +21,8 @@ const AppRoutes = () => {
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="college" element={<CollegeInfo />} />
+                    <Route path="courses" element={<Courses />} />
+
                 </Route>
 
                 <Route path="/student/dashboard" element={<StudentDashboard />} />
