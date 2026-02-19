@@ -11,6 +11,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 const adminRoutes = require("./routes/adminRoutes");
 app.use("/api/admin", adminRoutes);
+const courseRoutes = require("./routes/courseRoutes");
+app.use("/api/courses", courseRoutes);
 
 
 app.get("/", (req, res) => {
