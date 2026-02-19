@@ -1,6 +1,6 @@
 -- =====================================================
--- College Management System - Web Version
--- Clean Production-Ready Schema
+-- College Management System (Strict Migration Version)
+-- Source of Truth: Testing Java Project
 -- Database: collegedata
 -- =====================================================
 
@@ -9,28 +9,55 @@ CREATE DATABASE collegedata;
 USE collegedata;
 
 -- =====================================================
--- USERS (Central Authentication Table)
+-- ADMIN TABLE (Single Admin System)
 -- =====================================================
 
-CREATE TABLE users (
-                       id INT AUTO_INCREMENT PRIMARY KEY,
-                       username VARCHAR(50) UNIQUE NOT NULL,
-                       email VARCHAR(100) UNIQUE NOT NULL,
-                       password VARCHAR(255) NOT NULL, -- bcrypt hashed
-                       role ENUM('admin', 'faculty', 'student') NOT NULL,
-                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE admin (
+                       collagename VARCHAR(50),
+                       address VARCHAR(100),
+                       emailid VARCHAR(50),
+                       contactnumber VARCHAR(40),
+                       website VARCHAR(30),
+                       lastlogin VARCHAR(40),
+                       password VARCHAR(255), -- bcrypt hashed
+                       facebook VARCHAR(100),
+                       instagram VARCHAR(100),
+                       twitter VARCHAR(100),
+                       linkedin VARCHAR(100),
+                       logo VARCHAR(255), -- store file path
+                       activestatus TINYINT DEFAULT 0
 );
+
+-- Default Admin (Password will be hashed later)
+INSERT INTO admin (
+    collagename,
+    address,
+    emailid,
+    contactnumber,
+    website,
+    password,
+    activestatus
+)
+VALUES (
+           'Government College Of Engineering',
+           'Default Address',
+           'admin@college.com',
+           '1234567890',
+           'https://college.com',
+           'admin123',
+           0
+       );
 
 -- =====================================================
 -- COURSES
 -- =====================================================
 
-CREATE TABLE courses (
-                         id INT AUTO_INCREMENT PRIMARY KEY,
-                         course_code VARCHAR(20) UNIQUE NOT NULL,
-                         course_name VARCHAR(100) NOT NULL,
-                         total_semesters INT NOT NULL,
-                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE cources (
+                         sr_no INT AUTO_INCREMENT PRIMARY KEY,
+                         Courcecode VARCHAR(20),
+                         CourceName VARCHAR(30),
+                         semoryear VARCHAR(5),
+                         totalsemoryear INT
 );
 
 -- =====================================================
@@ -38,20 +65,29 @@ CREATE TABLE courses (
 -- =====================================================
 
 CREATE TABLE students (
-                          id INT AUTO_INCREMENT PRIMARY KEY,
-                          user_id INT NOT NULL,
-                          roll_number BIGINT UNIQUE NOT NULL,
-                          course_id INT,
-                          semester INT,
-                          first_name VARCHAR(50),
-                          last_name VARCHAR(50),
+                          Courcecode VARCHAR(20),
+                          semoryear INT,
+                          rollnumber BIGINT,
+                          optionalsubject VARCHAR(30),
+                          firstname VARCHAR(20),
+                          lastname VARCHAR(20),
+                          emailid VARCHAR(50),
+                          contactnumber VARCHAR(20),
+                          dateofbirth VARCHAR(15),
                           gender VARCHAR(10),
-                          contact_number VARCHAR(20),
-                          admission_date DATE,
-                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                          FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
+                          state VARCHAR(30),
+                          city VARCHAR(30),
+                          fathername VARCHAR(20),
+                          fatheroccupation VARCHAR(30),
+                          mothername VARCHAR(30),
+                          motheroccupation VARCHAR(30),
+                          profilepic VARCHAR(255),
+                          sr_no INT AUTO_INCREMENT PRIMARY KEY,
+                          lastlogin VARCHAR(100),
+                          userid VARCHAR(50),
+                          password VARCHAR(255),
+                          activestatus TINYINT DEFAULT 0,
+                          admissiondate VARCHAR(50)
 );
 
 -- =====================================================
@@ -59,50 +95,53 @@ CREATE TABLE students (
 -- =====================================================
 
 CREATE TABLE faculties (
-                           id INT AUTO_INCREMENT PRIMARY KEY,
-                           user_id INT NOT NULL,
-                           faculty_name VARCHAR(100),
-                           qualification VARCHAR(100),
-                           experience VARCHAR(50),
-                           joined_date DATE,
-                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                           facultyid INT,
+                           facultyname VARCHAR(30),
+                           state VARCHAR(30),
+                           city VARCHAR(30),
+                           emailid VARCHAR(50),
+                           contactnumber VARCHAR(20),
+                           qualification VARCHAR(30),
+                           experience VARCHAR(30),
+                           birthdate VARCHAR(30),
+                           gender VARCHAR(10),
+                           profilepic VARCHAR(255),
+                           courcecode VARCHAR(20) DEFAULT 'NOT ASSIGNED',
+                           semoryear INT DEFAULT 0,
+                           subject VARCHAR(40) DEFAULT 'NOT ASSIGNED',
+                           position VARCHAR(40) DEFAULT 'NOT ASSIGNED',
+                           sr_no INT AUTO_INCREMENT PRIMARY KEY,
+                           lastlogin VARCHAR(100),
+                           password VARCHAR(255),
+                           activestatus TINYINT DEFAULT 0,
+                           joineddate VARCHAR(50)
 );
 
 -- =====================================================
 -- SUBJECTS
 -- =====================================================
 
-CREATE TABLE subjects (
-                          id INT AUTO_INCREMENT PRIMARY KEY,
-                          subject_code VARCHAR(20) UNIQUE NOT NULL,
-                          subject_name VARCHAR(100) NOT NULL,
-                          course_id INT,
-                          semester INT,
-                          theory_marks INT,
-                          practical_marks INT,
-                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                          FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+CREATE TABLE subject (
+                         subjectcode VARCHAR(20) UNIQUE,
+                         subjectname VARCHAR(50),
+                         courcecode VARCHAR(20),
+                         semoryear INT,
+                         subjecttype VARCHAR(30),
+                         theorymarks INT,
+                         practicalmarks INT
 );
 
 -- =====================================================
 -- ATTENDANCE
 -- =====================================================
 
-CREATE TABLE attendance (
-                            id INT AUTO_INCREMENT PRIMARY KEY,
-                            student_id INT NOT NULL,
-                            subject_id INT NOT NULL,
-                            attendance_date DATE NOT NULL,
-                            status ENUM('present', 'absent') NOT NULL,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-                            FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-
-                            UNIQUE(student_id, subject_id, attendance_date)
+CREATE TABLE attandance (
+                            subjectcode VARCHAR(30),
+                            date VARCHAR(30),
+                            rollnumber BIGINT,
+                            present TINYINT DEFAULT 0,
+                            courcecode VARCHAR(20),
+                            semoryear INT
 );
 
 -- =====================================================
@@ -110,38 +149,62 @@ CREATE TABLE attendance (
 -- =====================================================
 
 CREATE TABLE marks (
-                       id INT AUTO_INCREMENT PRIMARY KEY,
-                       student_id INT NOT NULL,
-                       subject_id INT NOT NULL,
-                       theory_marks INT,
-                       practical_marks INT,
-                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                       FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-                       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-
-                       UNIQUE(student_id, subject_id)
+                       courcecode VARCHAR(20),
+                       semoryear INT,
+                       subjectcode VARCHAR(20),
+                       subjectname VARCHAR(40),
+                       rollnumber BIGINT,
+                       theorymarks INT,
+                       practicalmarks INT
 );
 
 -- =====================================================
--- COLLEGE INFO (Optional)
+-- RESULT DECLARATION
 -- =====================================================
 
-CREATE TABLE college_info (
-                              id INT AUTO_INCREMENT PRIMARY KEY,
-                              college_name VARCHAR(100),
-                              address VARCHAR(255),
-                              email VARCHAR(100),
-                              contact_number VARCHAR(30),
-                              website VARCHAR(100),
-                              logo VARCHAR(255),
-                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE result (
+                        courcecode VARCHAR(30),
+                        semoryear INT,
+                        isdeclared TINYINT
 );
 
 -- =====================================================
--- DEFAULT ADMIN USER
--- Password: admin123 (temporary plain text)
+-- ROLL GENERATOR
 -- =====================================================
 
-INSERT INTO users (username, email, password, role)
-VALUES ('admin', 'admin@college.com', 'admin123', 'admin');
+CREATE TABLE rollgenerator (
+                               courcecode VARCHAR(20),
+                               semoryear INT,
+                               rollnumber BIGINT
+);
+
+-- =====================================================
+-- NOTIFICATIONS
+-- =====================================================
+
+CREATE TABLE notification (
+                              sr_no INT AUTO_INCREMENT PRIMARY KEY,
+                              userprofile VARCHAR(30),
+                              courcecode VARCHAR(30),
+                              semoryear INT,
+                              userid VARCHAR(30),
+                              title VARCHAR(100),
+                              message VARCHAR(1000),
+                              time VARCHAR(100),
+                              readby TEXT
+);
+
+-- =====================================================
+-- CHAT SYSTEM
+-- =====================================================
+
+CREATE TABLE chat (
+                      sr_no INT AUTO_INCREMENT PRIMARY KEY,
+                      fromuserid VARCHAR(70),
+                      fromusername VARCHAR(50),
+                      touserid VARCHAR(70),
+                      message TEXT,
+                      messagetime VARCHAR(20),
+                      messagedate VARCHAR(40),
+                      readby TEXT
+);

@@ -1,44 +1,40 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
 
 const authMiddleware = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
 const adminController = require("../controllers/adminController");
 
+/* Multer Setup */
 
-router.get(
-    "/dashboard",
-    authMiddleware,
-    roleMiddleware("admin"),
-    (req, res) => {
-        res.json({
-            message: "Welcome Admin",
-            user: req.user
-        });
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/");
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
     }
-);
+});
 
-router.post(
-    "/create-faculty",
-    authMiddleware,
-    roleMiddleware("admin"),
-    adminController.createFaculty
-);
+const upload = multer({
+    storage,
+    limits: { fileSize: 1024 * 1024 }
+});
+
+/* Routes */
 
 router.get(
-    "/faculties",
+    "/profile",
     authMiddleware,
-    roleMiddleware("admin"),
-    adminController.getAllFaculties
+    adminController.getAdminProfile
 );
 
 router.put(
-    "/faculty/:id",
+    "/profile",
     authMiddleware,
-    roleMiddleware("admin"),
-    adminController.updateFaculty
+    upload.single("logo"),
+    adminController.updateAdminProfile
 );
-
-
 
 module.exports = router;
