@@ -99,3 +99,132 @@ exports.updateFaculty = async (req, res) => {
         res.status(500).json({ message: "Error updating faculty" });
     }
 };
+// Get Admin Profile
+exports.getAdminProfile = async (req, res) => {
+    try {
+        const adminId = req.user.id; // From auth middleware
+
+        const [rows] = await db.query(
+            "SELECT id, username, email, last_login, active_status FROM users WHERE id = ? AND role = 'admin'",
+            [adminId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Admin not found" });
+        }
+
+        res.json(rows[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching admin profile" });
+    }
+};
+// Update Admin Profile
+exports.updateAdminProfile = async (req, res) => {
+    const adminId = req.user.id;
+    const { email, password, active_status } = req.body;
+
+    try {
+        let hashedPassword = null;
+
+        // Hash new password if provided
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
+
+        await db.query(
+            `
+            UPDATE users
+            SET email = ?, 
+                password = COALESCE(?, password),
+                active_status = ?
+            WHERE id = ? AND role = 'admin'
+            `,
+            [email, hashedPassword, active_status, adminId]
+        );
+
+        res.json({ message: "Admin profile updated successfully" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating admin profile" });
+    }
+};
+// Get College Info
+exports.getCollegeInfo = async (req, res) => {
+    try {
+        const [rows] = await db.query("SELECT * FROM college_info LIMIT 1");
+
+        if (rows.length === 0) {
+            return res.json({});
+        }
+
+        res.json(rows[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching college info" });
+    }
+};
+// Update College Info
+exports.updateCollegeInfo = async (req, res) => {
+    const {
+        college_name,
+        address,
+        email,
+        contact_number,
+        website,
+        facebook,
+        instagram,
+        twitter,
+        linkedin,
+        logo
+    } = req.body;
+
+    try {
+        const [rows] = await db.query("SELECT id FROM college_info LIMIT 1");
+
+        if (rows.length === 0) {
+            // Insert if not exists
+            await db.query(
+                `
+                INSERT INTO college_info 
+                (college_name, address, email, contact_number, website, facebook, instagram, twitter, linkedin, logo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `,
+                [college_name, address, email, contact_number, website, facebook, instagram, twitter, linkedin, logo]
+            );
+        } else {
+            // Update existing
+            await db.query(
+                `
+                UPDATE college_info
+                SET college_name = ?, address = ?, email = ?, contact_number = ?, website = ?, 
+                    facebook = ?, instagram = ?, twitter = ?, linkedin = ?, logo = ?
+                WHERE id = ?
+                `,
+                [
+                    college_name,
+                    address,
+                    email,
+                    contact_number,
+                    website,
+                    facebook,
+                    instagram,
+                    twitter,
+                    linkedin,
+                    logo,
+                    rows[0].id
+                ]
+            );
+        }
+
+        res.json({ message: "College info updated successfully" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error updating college info" });
+    }
+};
+

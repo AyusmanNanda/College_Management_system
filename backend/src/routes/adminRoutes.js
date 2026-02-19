@@ -39,6 +39,15 @@ router.put(
     adminController.updateFaculty
 );
 
+// Admin Profile
+router.get("/profile", authMiddleware, roleMiddleware("admin"), adminController.getAdminProfile);
+router.put("/profile", authMiddleware, roleMiddleware("admin"), adminController.updateAdminProfile);
+
+// College Info
+router.get("/college", authMiddleware, roleMiddleware("admin"), adminController.getCollegeInfo);
+router.put("/college", authMiddleware, roleMiddleware("admin"), adminController.updateCollegeInfo);
+
+
 
 
 module.exports = router;
