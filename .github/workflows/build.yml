@@ -14,11 +14,9 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -26,24 +24,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      # -----------------
       # Backend
-      # -----------------
-
       - name: Install Backend Dependencies
         working-directory: backend
         run: npm install
 
-      - name: Check Backend Syntax
-        working-directory: backend
-        run: node -c server.js || echo "Backend syntax OK"
-
-      # -----------------
       # Frontend
-      # -----------------
-
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm install
@@ -51,6 +38,3 @@ jobs:
       - name: Build Frontend
         working-directory: frontend
         run: npm run build
-
-      - name: Build Successful
-        run: echo "All builds passed ✅"
