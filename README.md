@@ -35,7 +35,6 @@ suitable for academic submission and GitHub presentation.
 -   🗄️ MySQL database integration
 -   ⚙️ Modular backend API structure
 -   📦 Organized React component architecture
--   🟢 GitHub Actions build monitoring
 
 ------------------------------------------------------------------------
 
