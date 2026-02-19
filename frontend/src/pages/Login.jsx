@@ -1,83 +1,105 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+/*
+  Admin Login Page
+  ----------------
+  Single admin system
+*/
 
 const Login = () => {
     const navigate = useNavigate();
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = () => {
-        if (!email || !password) {
-            alert("Please enter email and password");
-            return;
-        }
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
 
-        // TEMP role simulation (replace later with backend API)
-        if (email.includes("admin")) {
+        try {
+            const response = await axios.post(
+                "http://localhost:5000/api/auth/login",
+                { email, password }
+            );
+
+            const { token } = response.data;
+
+            localStorage.setItem("token", token);
+
+            // Redirect to admin dashboard
             navigate("/admin/dashboard");
-        } else if (email.includes("faculty")) {
-            navigate("/faculty/dashboard");
-        } else {
-            navigate("/student/dashboard");
+
+        } catch (err) {
+            setError("Invalid email or password");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h2>College Management Login</h2>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
 
-                <input
-                    type="email"
-                    placeholder="Enter Email"
-                    style={styles.input}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+            <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-sm">
 
-                <input
-                    type="password"
-                    placeholder="Enter Password"
-                    style={styles.input}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+                <h1 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+                    Admin Login
+                </h1>
 
-                <button style={styles.button} onClick={handleLogin}>
-                    Login
-                </button>
+                {error && (
+                    <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleLogin} className="space-y-5">
+
+                    <div>
+                        <label className="block mb-2 text-sm text-gray-600">
+                            Email
+                        </label>
+                        <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-gray-900"
+                            placeholder="admin@college.com"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-2 text-sm text-gray-600">
+                            Password
+                        </label>
+                        <input
+                            type="password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-gray-900"
+                            placeholder="Enter password"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-2.5 bg-gray-900 text-white rounded-md hover:bg-black transition"
+                    >
+                        {loading ? "Signing in..." : "Login"}
+                    </button>
+
+                </form>
+
             </div>
+
         </div>
     );
-};
-
-const styles = {
-    container: {
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        backgroundColor: "#f0f2f5",
-    },
-    card: {
-        background: "white",
-        padding: "40px",
-        borderRadius: "10px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        width: "320px",
-        textAlign: "center",
-    },
-    input: {
-        width: "100%",
-        padding: "10px",
-        margin: "10px 0",
-    },
-    button: {
-        width: "100%",
-        padding: "10px",
-        backgroundColor: "#2d89ef",
-        color: "white",
-        border: "none",
-        cursor: "pointer",
-    },
 };
 
 export default Login;

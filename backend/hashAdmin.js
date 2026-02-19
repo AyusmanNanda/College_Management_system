@@ -1,14 +1,21 @@
+require("dotenv").config();   // 🔥 ADD THIS
+
 const bcrypt = require("bcrypt");
 const db = require("./src/config/db");
 
 (async () => {
-    const hashedPassword = await bcrypt.hash("admin123", 10);
+    try {
+        const hashedPassword = await bcrypt.hash("admin123", 10);
 
-    await db.query(
-        "UPDATE users SET password = ? WHERE email = ?",
-        [hashedPassword, "admin@college.com"]
-    );
+        await db.query(
+            "UPDATE admin SET password = ? WHERE emailid = ?",
+            [hashedPassword, "admin@college.com"]
+        );
 
-    console.log("Admin password hashed successfully");
-    process.exit();
+        console.log("Admin password hashed successfully");
+        process.exit();
+    } catch (error) {
+        console.error(error);
+        process.exit(1);
+    }
 })();
