@@ -35,10 +35,10 @@ exports.login = async (req, res) => {
 
         await db.query(
             `
-            UPDATE admin 
-            SET activestatus = 1,
-            lastlogin = ?
-            WHERE emailid = ?
+                UPDATE admin
+                SET activestatus = 1,
+                    lastlogin = ?
+                WHERE emailid = ?
             `,
             [new Date().toISOString(), email]
         );
@@ -60,7 +60,9 @@ exports.login = async (req, res) => {
 
 exports.logout = async (req, res) => {
     try {
-        await db.query("UPDATE admin SET activestatus = 0");
+        await db.query(
+            "UPDATE admin SET activestatus = 0"
+        );
 
         res.json({ message: "Logged out" });
 

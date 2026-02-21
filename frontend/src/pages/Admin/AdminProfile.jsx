@@ -42,7 +42,6 @@ const AdminProfile = () => {
 
             {/* Header */}
             <div className="flex items-center justify-between border-b pb-6">
-
                 <div className="flex items-center gap-6">
                     {admin.logo && (
                         <img
@@ -76,6 +75,27 @@ const AdminProfile = () => {
                     >
                         Edit Details
                     </button>
+                </div>
+            </div>
+
+            {/* Status Row */}
+            <div className="flex items-center gap-8">
+                <div className="flex items-center gap-2">
+                    <span
+                        className={`h-3 w-3 rounded-full ${
+                            admin.activestatus ? "bg-green-500" : "bg-red-500"
+                        }`}
+                    />
+                    <span className="text-sm text-gray-600">
+                        {admin.activestatus ? "Active" : "Inactive"}
+                    </span>
+                </div>
+
+                <div className="text-sm text-gray-500">
+                    Last Login:{" "}
+                    {admin.lastlogin
+                        ? new Date(admin.lastlogin).toLocaleString()
+                        : "Not available"}
                 </div>
             </div>
 
@@ -133,11 +153,7 @@ const AdminProfile = () => {
                 <EditDetailsModal
                     admin={admin}
                     token={token}
-                    onClose={() => {
-                        setShowDetailsModal(false);
-                        setAdmin(null);
-                        setTimeout(() => window.location.reload(), 100);
-                    }}
+                    onClose={() => setShowDetailsModal(false)}
                 />
             )}
 
@@ -145,11 +161,7 @@ const AdminProfile = () => {
                 <EditLinksModal
                     admin={admin}
                     token={token}
-                    onClose={() => {
-                        setShowLinksModal(false);
-                        setAdmin(null);
-                        setTimeout(() => window.location.reload(), 100);
-                    }}
+                    onClose={() => setShowLinksModal(false)}
                 />
             )}
         </div>
@@ -167,24 +179,14 @@ const InfoField = ({ label, value }) => (
 
 /* ---------------- Styled Input ---------------- */
 
-const StyledInput = ({
-                         label,
-                         name,
-                         value,
-                         onChange,
-                         type = "text",
-                         placeholder
-                     }) => (
+const StyledInput = ({ label, name, value, onChange, type = "text" }) => (
     <div>
-        <label className="block text-xs text-gray-500 mb-1">
-            {label}
-        </label>
+        <label className="block text-xs text-gray-500 mb-1">{label}</label>
         <input
             type={type}
             name={name}
             value={value}
             onChange={onChange}
-            placeholder={placeholder}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
         />
     </div>
@@ -194,26 +196,9 @@ const StyledInput = ({
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({ ...admin, password: "" });
-    const [logoFile, setLogoFile] = useState(null);
-    const [preview, setPreview] = useState(
-        admin.logo ? `http://localhost:5000${admin.logo}` : null
-    );
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        if (file.size > 1024 * 1024) {
-            alert("Image size must be less than 1MB");
-            return;
-        }
-
-        setLogoFile(file);
-        setPreview(URL.createObjectURL(file));
     };
 
     const handleSubmit = async () => {
@@ -225,10 +210,6 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                     formData.append(key, form[key]);
                 }
             });
-
-            if (logoFile) {
-                formData.append("logo", logoFile);
-            }
 
             await axios.put(
                 "http://localhost:5000/api/admin/profile",
@@ -249,23 +230,12 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                 Edit Basic Details
             </h2>
 
-            {preview && (
-                <div className="flex justify-center mb-6">
-                    <img
-                        src={preview}
-                        alt="Preview"
-                        className="h-24 w-24 object-cover rounded-md border border-gray-200"
-                    />
-                </div>
-            )}
-
             <div className="space-y-4">
-                <input type="file" accept="image/*" onChange={handleFileChange} />
                 <StyledInput label="College Name" name="collagename" value={form.collagename} onChange={handleChange} />
                 <StyledInput label="Email" name="emailid" value={form.emailid} onChange={handleChange} />
                 <StyledInput label="Contact Number" name="contactnumber" value={form.contactnumber} onChange={handleChange} />
                 <StyledInput label="Website" name="website" value={form.website} onChange={handleChange} />
-                <StyledInput type="password" label="New Password" name="password" value={form.password} onChange={handleChange} placeholder="Leave blank to keep current" />
+                <StyledInput type="password" label="New Password" name="password" value={form.password} onChange={handleChange} />
             </div>
 
             <div className="flex justify-end mt-6">
@@ -280,7 +250,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
     );
 };
 
-/* ---------------- Edit Links (FIXED) ---------------- */
+/* ---------------- Edit Links ---------------- */
 
 const EditLinksModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({
