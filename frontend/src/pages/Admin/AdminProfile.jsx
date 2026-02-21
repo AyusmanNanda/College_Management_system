@@ -79,7 +79,7 @@ const AdminProfile = () => {
                 </div>
             </div>
 
-            {/* Basic Information */}
+            {/* Basic Info */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-6">
                     Basic Information
@@ -88,7 +88,6 @@ const AdminProfile = () => {
                 <div className="grid grid-cols-2 gap-8 text-sm">
                     <InfoField label="Email" value={admin.emailid} />
                     <InfoField label="Contact Number" value={admin.contactnumber} />
-
                     <InfoField
                         label="Website"
                         value={
@@ -100,12 +99,11 @@ const AdminProfile = () => {
                             </span>
                         }
                     />
-
                     <InfoField label="Address" value={admin.address} />
                 </div>
             </div>
 
-            {/* Social Media */}
+            {/* Social */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-6">
                     Social Media
@@ -135,7 +133,11 @@ const AdminProfile = () => {
                 <EditDetailsModal
                     admin={admin}
                     token={token}
-                    onClose={() => setShowDetailsModal(false)}
+                    onClose={() => {
+                        setShowDetailsModal(false);
+                        setAdmin(null);
+                        setTimeout(() => window.location.reload(), 100);
+                    }}
                 />
             )}
 
@@ -143,14 +145,18 @@ const AdminProfile = () => {
                 <EditLinksModal
                     admin={admin}
                     token={token}
-                    onClose={() => setShowLinksModal(false)}
+                    onClose={() => {
+                        setShowLinksModal(false);
+                        setAdmin(null);
+                        setTimeout(() => window.location.reload(), 100);
+                    }}
                 />
             )}
         </div>
     );
 };
 
-/* ---------------- Reusable Info Field ---------------- */
+/* ---------------- Reusable Field ---------------- */
 
 const InfoField = ({ label, value }) => (
     <div>
@@ -184,7 +190,7 @@ const StyledInput = ({
     </div>
 );
 
-/* ---------------- Edit Details Modal ---------------- */
+/* ---------------- Edit Details ---------------- */
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({ ...admin, password: "" });
@@ -227,13 +233,10 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
             await axios.put(
                 "http://localhost:5000/api/admin/profile",
                 formData,
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
             onClose();
-            window.location.reload();
 
         } catch (error) {
             console.error(error);
@@ -257,48 +260,12 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
             )}
 
             <div className="space-y-4">
-
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                        Logo
-                    </label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="text-sm"
-                    />
-                </div>
-
+                <input type="file" accept="image/*" onChange={handleFileChange} />
                 <StyledInput label="College Name" name="collagename" value={form.collagename} onChange={handleChange} />
                 <StyledInput label="Email" name="emailid" value={form.emailid} onChange={handleChange} />
                 <StyledInput label="Contact Number" name="contactnumber" value={form.contactnumber} onChange={handleChange} />
                 <StyledInput label="Website" name="website" value={form.website} onChange={handleChange} />
-
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                        Address
-                    </label>
-                    <textarea
-                        name="address"
-                        value={form.address}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
-                    />
-                </div>
-
-                <StyledInput
-                    type="password"
-                    label="New Password"
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder="Leave blank to keep current"
-                />
-
-                <p className="text-xs text-gray-400">
-                    Password will only change if filled.
-                </p>
+                <StyledInput type="password" label="New Password" name="password" value={form.password} onChange={handleChange} placeholder="Leave blank to keep current" />
             </div>
 
             <div className="flex justify-end mt-6">
@@ -313,7 +280,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
     );
 };
 
-/* ---------------- Edit Links Modal ---------------- */
+/* ---------------- Edit Links (FIXED) ---------------- */
 
 const EditLinksModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({
@@ -329,16 +296,15 @@ const EditLinksModal = ({ admin, token, onClose }) => {
 
     const handleSubmit = async () => {
         try {
+            const updatedData = { ...admin, ...form };
+
             await axios.put(
                 "http://localhost:5000/api/admin/profile",
-                form,
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
+                updatedData,
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
             onClose();
-            window.location.reload();
 
         } catch (error) {
             console.error(error);
