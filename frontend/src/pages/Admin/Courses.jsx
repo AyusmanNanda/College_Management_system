@@ -12,21 +12,29 @@ const Courses = () => {
     });
     const [editingId, setEditingId] = useState(null);
 
+    /* ---------------- Fetch Courses ---------------- */
+
     useEffect(() => {
         if (!token) return;
-        fetchCourses();
+
+        const fetchData = async () => {
+            try {
+                const res = await axios.get(
+                    "http://localhost:5000/api/courses",
+                    {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }
+                );
+                setCourses(res.data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchData();
     }, [token]);
 
-    const fetchCourses = async () => {
-        try {
-            const res = await axios.get("http://localhost:5000/api/courses", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCourses(res.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
+    /* ---------------- Handlers ---------------- */
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -56,7 +64,15 @@ const Courses = () => {
                 total_semesters: ""
             });
             setEditingId(null);
-            fetchCourses();
+
+            // Refresh after update
+            const res = await axios.get(
+                "http://localhost:5000/api/courses",
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            setCourses(res.data);
 
         } catch (error) {
             console.error(error);
@@ -73,7 +89,9 @@ const Courses = () => {
     };
 
     const handleDelete = async (id) => {
-        const confirmDelete = window.confirm("Are you sure you want to delete this course?");
+        const confirmDelete = window.confirm(
+            "Are you sure you want to delete this course?"
+        );
         if (!confirmDelete) return;
 
         try {
@@ -81,7 +99,15 @@ const Courses = () => {
                 `http://localhost:5000/api/courses/${id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            fetchCourses();
+
+            const res = await axios.get(
+                "http://localhost:5000/api/courses",
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            setCourses(res.data);
+
         } catch (error) {
             console.error(error);
         }
@@ -90,7 +116,6 @@ const Courses = () => {
     return (
         <div className="space-y-10">
 
-            {/* Page Title */}
             <div>
                 <h2 className="text-2xl font-semibold text-gray-800">
                     Course Management
@@ -100,7 +125,6 @@ const Courses = () => {
                 </p>
             </div>
 
-            {/* Course Form */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-6">
                     {editingId ? "Edit Course" : "Add New Course"}
@@ -160,7 +184,6 @@ const Courses = () => {
                 </form>
             </div>
 
-            {/* Courses Table */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
@@ -209,8 +232,6 @@ const Courses = () => {
         </div>
     );
 };
-
-/* ---------------- Input Field ---------------- */
 
 const InputField = ({ type = "text", name, value, onChange, placeholder }) => (
     <input
