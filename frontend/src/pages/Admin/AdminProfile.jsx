@@ -42,6 +42,7 @@ const AdminProfile = () => {
 
             {/* Header */}
             <div className="flex items-center justify-between border-b pb-6">
+
                 <div className="flex items-center gap-6">
                     {admin.logo && (
                         <img
@@ -61,41 +62,20 @@ const AdminProfile = () => {
                     </div>
                 </div>
 
-                <div className="flex gap-6">
-                    <button
-                        onClick={() => setShowLinksModal(true)}
-                        className="text-sm font-medium text-teal-600 hover:text-teal-700 hover:underline transition"
-                    >
-                        Edit Links
-                    </button>
-
+                <div className="flex gap-3">
                     <button
                         onClick={() => setShowDetailsModal(true)}
-                        className="text-sm font-medium text-teal-600 hover:text-teal-700 hover:underline transition"
+                        className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
                     >
                         Edit Details
                     </button>
-                </div>
-            </div>
 
-            {/* Status Row */}
-            <div className="flex items-center gap-8">
-                <div className="flex items-center gap-2">
-                    <span
-                        className={`h-3 w-3 rounded-full ${
-                            admin.activestatus ? "bg-green-500" : "bg-red-500"
-                        }`}
-                    />
-                    <span className="text-sm text-gray-600">
-                        {admin.activestatus ? "Active" : "Inactive"}
-                    </span>
-                </div>
-
-                <div className="text-sm text-gray-500">
-                    Last Login:{" "}
-                    {admin.lastlogin
-                        ? new Date(admin.lastlogin).toLocaleString()
-                        : "Not available"}
+                    <button
+                        onClick={() => setShowLinksModal(true)}
+                        className="px-5 py-2 bg-gray-200 text-gray-800 text-sm rounded-md hover:bg-gray-300 transition"
+                    >
+                        Edit Links
+                    </button>
                 </div>
             </div>
 
@@ -177,22 +157,23 @@ const InfoField = ({ label, value }) => (
     </div>
 );
 
-/* ---------------- Styled Input ---------------- */
+/* ---------------- Modal Wrapper ---------------- */
 
-const StyledInput = ({ label, name, value, onChange, type = "text" }) => (
-    <div>
-        <label className="block text-xs text-gray-500 mb-1">{label}</label>
-        <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
-        />
+const ModalWrapper = ({ children, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-md w-[500px] relative shadow-lg">
+            <button
+                onClick={onClose}
+                className="absolute top-2 right-3 text-gray-500 hover:text-black"
+            >
+                ✕
+            </button>
+            {children}
+        </div>
     </div>
 );
 
-/* ---------------- Edit Details ---------------- */
+/* ---------------- Edit Details Modal ---------------- */
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({ ...admin, password: "" });
@@ -203,22 +184,12 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
 
     const handleSubmit = async () => {
         try {
-            const formData = new FormData();
-
-            Object.keys(form).forEach((key) => {
-                if (form[key]) {
-                    formData.append(key, form[key]);
-                }
-            });
-
             await axios.put(
                 "http://localhost:5000/api/admin/profile",
-                formData,
+                form,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-
             onClose();
-
         } catch (error) {
             console.error(error);
         }
@@ -250,7 +221,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
     );
 };
 
-/* ---------------- Edit Links ---------------- */
+/* ---------------- Edit Links Modal ---------------- */
 
 const EditLinksModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({
@@ -266,16 +237,12 @@ const EditLinksModal = ({ admin, token, onClose }) => {
 
     const handleSubmit = async () => {
         try {
-            const updatedData = { ...admin, ...form };
-
             await axios.put(
                 "http://localhost:5000/api/admin/profile",
-                updatedData,
+                form,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-
             onClose();
-
         } catch (error) {
             console.error(error);
         }
@@ -306,19 +273,18 @@ const EditLinksModal = ({ admin, token, onClose }) => {
     );
 };
 
-/* ---------------- Modal Wrapper ---------------- */
+/* ---------------- Styled Input ---------------- */
 
-const ModalWrapper = ({ children, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-md w-[500px] relative shadow-lg">
-            <button
-                onClick={onClose}
-                className="absolute top-2 right-3 text-gray-500 hover:text-black"
-            >
-                ✕
-            </button>
-            {children}
-        </div>
+const StyledInput = ({ label, name, value, onChange, type = "text" }) => (
+    <div>
+        <label className="block text-xs text-gray-500 mb-1">{label}</label>
+        <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={onChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+        />
     </div>
 );
 

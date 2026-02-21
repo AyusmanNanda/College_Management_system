@@ -5,10 +5,10 @@ import axios from "axios";
 /*
   Admin Layout
   ------------
-  - Single admin system
-  - Fetches full admin profile
-  - Displays logo + active status + last login
-  - Sidebar + header layout
+  - Green/Red status dot
+  - Neutral status text
+  - Full timestamp
+  - Minimal clean sidebar
 */
 
 const AdminLayout = () => {
@@ -29,9 +29,7 @@ const AdminLayout = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     }
                 );
-
                 setAdmin(res.data);
-
             } catch (error) {
                 console.error(error);
             }
@@ -52,7 +50,6 @@ const AdminLayout = () => {
 
             localStorage.removeItem("token");
             navigate("/");
-
         } catch (error) {
             console.error(error);
         }
@@ -69,11 +66,11 @@ const AdminLayout = () => {
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
 
-                {/* Logo + Title */}
+                {/* Identity Section */}
                 <div className="px-6 py-6 border-b border-gray-200">
 
+                    {/* Logo + Title */}
                     <div className="flex items-center gap-3">
-
                         <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
                             {admin?.logo ? (
                                 <img
@@ -98,30 +95,40 @@ const AdminLayout = () => {
                         </div>
                     </div>
 
-                    {/* Status Section */}
+                    {/* Status + Last Login */}
                     {admin && (
-                        <div className="mt-4 space-y-1 text-xs text-gray-500">
+                        <div className="mt-3 text-xs space-y-1 leading-relaxed">
 
+                            {/* Status Line */}
                             <div className="flex items-center gap-2">
-                                <span
-                                    className={`h-2 w-2 rounded-full ${
-                                        admin.activestatus
-                                            ? "bg-green-500"
-                                            : "bg-red-500"
-                                    }`}
-                                />
-                                <span>
-                                    {admin.activestatus ? "Active" : "Inactive"}
+                                <span className="text-gray-400">
+                                    Status:
+                                </span>
+
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className={`h-2 w-2 rounded-full ${
+                                            admin.activestatus
+                                                ? "bg-green-500"
+                                                : "bg-red-500"
+                                        }`}
+                                    />
+                                    <span className="text-gray-600">
+                                        {admin.activestatus ? "Active" : "Inactive"}
+                                    </span>
                                 </span>
                             </div>
 
-                            <div className="text-gray-400">
-                                Last Login:
-                            </div>
-                            <div className="text-gray-500">
-                                {admin.lastlogin
-                                    ? new Date(admin.lastlogin).toLocaleString()
-                                    : "Not available"}
+                            {/* Last Login */}
+                            <div>
+                                <span className="text-gray-400">
+                                    Last login:
+                                </span>{" "}
+                                <span className="text-gray-600 break-words">
+                                    {admin.lastlogin
+                                        ? new Date(admin.lastlogin).toLocaleString()
+                                        : "Not available"}
+                                </span>
                             </div>
 
                         </div>
@@ -155,7 +162,6 @@ const AdminLayout = () => {
             {/* Main Area */}
             <div className="flex-1 flex flex-col">
 
-                {/* Header */}
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
                     <h1 className="text-lg font-semibold text-gray-800">
                         Admin Panel
@@ -169,7 +175,6 @@ const AdminLayout = () => {
                     </button>
                 </header>
 
-                {/* Content */}
                 <main className="flex-1 p-8">
                     <div className="bg-white rounded-lg shadow-sm p-8 min-h-[80vh]">
                         <Outlet />
