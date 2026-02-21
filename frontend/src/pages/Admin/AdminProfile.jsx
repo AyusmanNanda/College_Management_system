@@ -20,7 +20,6 @@ const AdminProfile = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 }
             );
-
             setAdmin(res.data);
         } catch (error) {
             console.error(error);
@@ -39,7 +38,6 @@ const AdminProfile = () => {
     return (
         <div className="space-y-6 text-sm text-gray-700">
 
-            {/* Top Right Buttons (Java Style) */}
             <div className="flex justify-end gap-4">
                 <button
                     onClick={() => setShowLinksModal(true)}
@@ -56,7 +54,6 @@ const AdminProfile = () => {
                 </button>
             </div>
 
-            {/* Profile Info */}
             <div className="space-y-2">
                 <p><strong>College Name:</strong> {admin.collagename}</p>
                 <p><strong>Email ID:</strong> {admin.emailid}</p>
@@ -78,48 +75,12 @@ const AdminProfile = () => {
             <hr />
 
             <div className="space-y-2">
-                <p>
-                    <strong>Facebook:</strong>{" "}
-                    <span
-                        onClick={() => openLink(admin.facebook)}
-                        className="text-blue-600 cursor-pointer hover:underline"
-                    >
-                        {admin.facebook}
-                    </span>
-                </p>
-
-                <p>
-                    <strong>Instagram:</strong>{" "}
-                    <span
-                        onClick={() => openLink(admin.instagram)}
-                        className="text-blue-600 cursor-pointer hover:underline"
-                    >
-                        {admin.instagram}
-                    </span>
-                </p>
-
-                <p>
-                    <strong>Twitter:</strong>{" "}
-                    <span
-                        onClick={() => openLink(admin.twitter)}
-                        className="text-blue-600 cursor-pointer hover:underline"
-                    >
-                        {admin.twitter}
-                    </span>
-                </p>
-
-                <p>
-                    <strong>LinkedIn:</strong>{" "}
-                    <span
-                        onClick={() => openLink(admin.linkedin)}
-                        className="text-blue-600 cursor-pointer hover:underline"
-                    >
-                        {admin.linkedin}
-                    </span>
-                </p>
+                <p><strong>Facebook:</strong> {admin.facebook}</p>
+                <p><strong>Instagram:</strong> {admin.instagram}</p>
+                <p><strong>Twitter:</strong> {admin.twitter}</p>
+                <p><strong>LinkedIn:</strong> {admin.linkedin}</p>
             </div>
 
-            {/* Modals */}
             {showDetailsModal && (
                 <EditDetailsModal
                     admin={admin}
@@ -149,18 +110,48 @@ const AdminProfile = () => {
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({ ...admin });
+    const [logoFile, setLogoFile] = useState(null);
+    const [preview, setPreview] = useState(
+        admin.logo ? `http://localhost:5000${admin.logo}` : null
+    );
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 1024 * 1024) {
+            alert("Image size must be less than 1MB");
+            return;
+        }
+
+        setLogoFile(file);
+        setPreview(URL.createObjectURL(file));
+    };
+
     const handleSubmit = async () => {
         try {
+            const formData = new FormData();
+
+            Object.keys(form).forEach((key) => {
+                formData.append(key, form[key]);
+            });
+
+            if (logoFile) {
+                formData.append("logo", logoFile);
+            }
+
             await axios.put(
                 "http://localhost:5000/api/admin/profile",
-                form,
+                formData,
                 {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "multipart/form-data"
+                    }
                 }
             );
 
@@ -174,12 +165,24 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
         <ModalWrapper onClose={onClose}>
             <h2 className="text-lg font-semibold mb-4">Edit Details</h2>
 
-            <div className="space-y-3">
-                <input name="collagename" value={form.collagename} onChange={handleChange} className="input" placeholder="College Name" />
-                <input name="emailid" value={form.emailid} onChange={handleChange} className="input" placeholder="Email" />
-                <input name="contactnumber" value={form.contactnumber} onChange={handleChange} className="input" placeholder="Contact" />
-                <input name="website" value={form.website} onChange={handleChange} className="input" placeholder="Website" />
-                <textarea name="address" value={form.address} onChange={handleChange} className="input" placeholder="Address" />
+            {preview && (
+                <div className="flex justify-center mb-4">
+                    <img
+                        src={preview}
+                        alt="Preview"
+                        className="h-24 w-24 object-cover rounded-md"
+                    />
+                </div>
+            )}
+
+            <input type="file" accept="image/*" onChange={handleFileChange} />
+
+            <div className="space-y-3 mt-3">
+                <input name="collagename" value={form.collagename} onChange={handleChange} className="input" />
+                <input name="emailid" value={form.emailid} onChange={handleChange} className="input" />
+                <input name="contactnumber" value={form.contactnumber} onChange={handleChange} className="input" />
+                <input name="website" value={form.website} onChange={handleChange} className="input" />
+                <textarea name="address" value={form.address} onChange={handleChange} className="input" />
             </div>
 
             <button onClick={handleSubmit} className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-md">
@@ -207,7 +210,6 @@ const EditLinksModal = ({ admin, token, onClose }) => {
                     headers: { Authorization: `Bearer ${token}` }
                 }
             );
-
             onClose();
         } catch (error) {
             console.error(error);
@@ -216,13 +218,13 @@ const EditLinksModal = ({ admin, token, onClose }) => {
 
     return (
         <ModalWrapper onClose={onClose}>
-            <h2 className="text-lg font-semibold mb-4">Edit Social Links</h2>
+            <h2 className="text-lg font-semibold mb-4">Edit Links</h2>
 
             <div className="space-y-3">
-                <input name="facebook" value={form.facebook} onChange={handleChange} className="input" placeholder="Facebook" />
-                <input name="instagram" value={form.instagram} onChange={handleChange} className="input" placeholder="Instagram" />
-                <input name="twitter" value={form.twitter} onChange={handleChange} className="input" placeholder="Twitter" />
-                <input name="linkedin" value={form.linkedin} onChange={handleChange} className="input" placeholder="LinkedIn" />
+                <input name="facebook" value={form.facebook} onChange={handleChange} className="input" />
+                <input name="instagram" value={form.instagram} onChange={handleChange} className="input" />
+                <input name="twitter" value={form.twitter} onChange={handleChange} className="input" />
+                <input name="linkedin" value={form.linkedin} onChange={handleChange} className="input" />
             </div>
 
             <button onClick={handleSubmit} className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-md">
