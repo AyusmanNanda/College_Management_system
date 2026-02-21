@@ -26,7 +26,6 @@ const AdminProfile = () => {
         };
 
         fetchProfile();
-
     }, [token]);
 
     const openLink = (url) => {
@@ -136,10 +135,7 @@ const AdminProfile = () => {
                 <EditDetailsModal
                     admin={admin}
                     token={token}
-                    onClose={() => {
-                        setShowDetailsModal(false);
-                        fetchProfile();
-                    }}
+                    onClose={() => setShowDetailsModal(false)}
                 />
             )}
 
@@ -147,10 +143,7 @@ const AdminProfile = () => {
                 <EditLinksModal
                     admin={admin}
                     token={token}
-                    onClose={() => {
-                        setShowLinksModal(false);
-                        fetchProfile();
-                    }}
+                    onClose={() => setShowLinksModal(false)}
                 />
             )}
         </div>
@@ -166,10 +159,35 @@ const InfoField = ({ label, value }) => (
     </div>
 );
 
+/* ---------------- Styled Input ---------------- */
+
+const StyledInput = ({
+                         label,
+                         name,
+                         value,
+                         onChange,
+                         type = "text",
+                         placeholder
+                     }) => (
+    <div>
+        <label className="block text-xs text-gray-500 mb-1">
+            {label}
+        </label>
+        <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+        />
+    </div>
+);
+
 /* ---------------- Edit Details Modal ---------------- */
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
-    const [form, setForm] = useState({ ...admin });
+    const [form, setForm] = useState({ ...admin, password: "" });
     const [logoFile, setLogoFile] = useState(null);
     const [preview, setPreview] = useState(
         admin.logo ? `http://localhost:5000${admin.logo}` : null
@@ -197,7 +215,9 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
             const formData = new FormData();
 
             Object.keys(form).forEach((key) => {
-                formData.append(key, form[key]);
+                if (form[key]) {
+                    formData.append(key, form[key]);
+                }
             });
 
             if (logoFile) {
@@ -208,13 +228,13 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                 "http://localhost:5000/api/admin/profile",
                 formData,
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 }
             );
 
             onClose();
+            window.location.reload();
+
         } catch (error) {
             console.error(error);
         }
@@ -222,31 +242,73 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
 
     return (
         <ModalWrapper onClose={onClose}>
-            <h2 className="text-lg font-semibold mb-4">Edit Details</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">
+                Edit Basic Details
+            </h2>
 
             {preview && (
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center mb-6">
                     <img
                         src={preview}
                         alt="Preview"
-                        className="h-24 w-24 object-cover rounded-md"
+                        className="h-24 w-24 object-cover rounded-md border border-gray-200"
                     />
                 </div>
             )}
 
-            <input type="file" accept="image/*" onChange={handleFileChange} />
+            <div className="space-y-4">
 
-            <div className="space-y-3 mt-3">
-                <input name="collagename" value={form.collagename} onChange={handleChange} className="input" />
-                <input name="emailid" value={form.emailid} onChange={handleChange} className="input" />
-                <input name="contactnumber" value={form.contactnumber} onChange={handleChange} className="input" />
-                <input name="website" value={form.website} onChange={handleChange} className="input" />
-                <textarea name="address" value={form.address} onChange={handleChange} className="input" />
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                        Logo
+                    </label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="text-sm"
+                    />
+                </div>
+
+                <StyledInput label="College Name" name="collagename" value={form.collagename} onChange={handleChange} />
+                <StyledInput label="Email" name="emailid" value={form.emailid} onChange={handleChange} />
+                <StyledInput label="Contact Number" name="contactnumber" value={form.contactnumber} onChange={handleChange} />
+                <StyledInput label="Website" name="website" value={form.website} onChange={handleChange} />
+
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                        Address
+                    </label>
+                    <textarea
+                        name="address"
+                        value={form.address}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    />
+                </div>
+
+                <StyledInput
+                    type="password"
+                    label="New Password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Leave blank to keep current"
+                />
+
+                <p className="text-xs text-gray-400">
+                    Password will only change if filled.
+                </p>
             </div>
 
-            <button onClick={handleSubmit} className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-md">
-                Update Details
-            </button>
+            <div className="flex justify-end mt-6">
+                <button
+                    onClick={handleSubmit}
+                    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                >
+                    Update Details
+                </button>
+            </div>
         </ModalWrapper>
     );
 };
@@ -254,7 +316,12 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
 /* ---------------- Edit Links Modal ---------------- */
 
 const EditLinksModal = ({ admin, token, onClose }) => {
-    const [form, setForm] = useState({ ...admin });
+    const [form, setForm] = useState({
+        facebook: admin.facebook || "",
+        instagram: admin.instagram || "",
+        twitter: admin.twitter || "",
+        linkedin: admin.linkedin || ""
+    });
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -269,7 +336,10 @@ const EditLinksModal = ({ admin, token, onClose }) => {
                     headers: { Authorization: `Bearer ${token}` }
                 }
             );
+
             onClose();
+            window.location.reload();
+
         } catch (error) {
             console.error(error);
         }
@@ -277,18 +347,25 @@ const EditLinksModal = ({ admin, token, onClose }) => {
 
     return (
         <ModalWrapper onClose={onClose}>
-            <h2 className="text-lg font-semibold mb-4">Edit Links</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">
+                Edit Social Links
+            </h2>
 
-            <div className="space-y-3">
-                <input name="facebook" value={form.facebook} onChange={handleChange} className="input" />
-                <input name="instagram" value={form.instagram} onChange={handleChange} className="input" />
-                <input name="twitter" value={form.twitter} onChange={handleChange} className="input" />
-                <input name="linkedin" value={form.linkedin} onChange={handleChange} className="input" />
+            <div className="space-y-4">
+                <StyledInput label="Facebook" name="facebook" value={form.facebook} onChange={handleChange} />
+                <StyledInput label="Instagram" name="instagram" value={form.instagram} onChange={handleChange} />
+                <StyledInput label="Twitter" name="twitter" value={form.twitter} onChange={handleChange} />
+                <StyledInput label="LinkedIn" name="linkedin" value={form.linkedin} onChange={handleChange} />
             </div>
 
-            <button onClick={handleSubmit} className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-md">
-                Update Links
-            </button>
+            <div className="flex justify-end mt-6">
+                <button
+                    onClick={handleSubmit}
+                    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                >
+                    Update Links
+                </button>
+            </div>
         </ModalWrapper>
     );
 };
