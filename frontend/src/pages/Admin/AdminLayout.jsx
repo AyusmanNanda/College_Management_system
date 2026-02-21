@@ -5,10 +5,10 @@ import axios from "axios";
 /*
   Admin Layout
   ------------
-  - Single admin system
-  - Fetches logo from admin profile
-  - Clean sidebar + header layout
-  - Logout moved to header (top right)
+  - Green/Red status dot
+  - Neutral status text
+  - Full timestamp
+  - Minimal clean sidebar
 */
 
 const AdminLayout = () => {
@@ -16,24 +16,20 @@ const AdminLayout = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
 
-    const [logo, setLogo] = useState(null);
+    const [admin, setAdmin] = useState(null);
 
     useEffect(() => {
+        if (!token) return;
+
         const fetchAdmin = async () => {
             try {
-                if (!token) return;
-
                 const res = await axios.get(
                     "http://localhost:5000/api/admin/profile",
                     {
                         headers: { Authorization: `Bearer ${token}` }
                     }
                 );
-
-                if (res.data?.logo) {
-                    setLogo(`http://localhost:5000${res.data.logo}`);
-                }
-
+                setAdmin(res.data);
             } catch (error) {
                 console.error(error);
             }
@@ -54,7 +50,6 @@ const AdminLayout = () => {
 
             localStorage.removeItem("token");
             navigate("/");
-
         } catch (error) {
             console.error(error);
         }
@@ -71,31 +66,73 @@ const AdminLayout = () => {
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
 
-                {/* Logo + Title */}
-                <div className="px-6 py-6 border-b border-gray-200 flex items-center gap-3">
+                {/* Identity Section */}
+                <div className="px-6 py-6 border-b border-gray-200">
 
-                    <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
-                        {logo ? (
-                            <img
-                                src={logo}
-                                alt="College Logo"
-                                className="h-full w-full object-cover"
-                            />
-                        ) : (
-                            <span className="text-gray-500 text-xs font-semibold">
-                                CM
-                            </span>
-                        )}
+                    {/* Logo + Title */}
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
+                            {admin?.logo ? (
+                                <img
+                                    src={`http://localhost:5000${admin.logo}`}
+                                    alt="College Logo"
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <span className="text-gray-500 text-xs font-semibold">
+                                    CM
+                                </span>
+                            )}
+                        </div>
+
+                        <div>
+                            <p className="text-sm font-semibold text-gray-800">
+                                College Admin
+                            </p>
+                            <p className="text-xs text-gray-400">
+                                Management System
+                            </p>
+                        </div>
                     </div>
 
-                    <div>
-                        <p className="text-sm font-semibold text-gray-800">
-                            College Admin
-                        </p>
-                        <p className="text-xs text-gray-400">
-                            Management System
-                        </p>
-                    </div>
+                    {/* Status + Last Login */}
+                    {admin && (
+                        <div className="mt-3 text-xs space-y-1 leading-relaxed">
+
+                            {/* Status Line */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-400">
+                                    Status:
+                                </span>
+
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className={`h-2 w-2 rounded-full ${
+                                            admin.activestatus
+                                                ? "bg-green-500"
+                                                : "bg-red-500"
+                                        }`}
+                                    />
+                                    <span className="text-gray-600">
+                                        {admin.activestatus ? "Active" : "Inactive"}
+                                    </span>
+                                </span>
+                            </div>
+
+                            {/* Last Login */}
+                            <div>
+                                <span className="text-gray-400">
+                                    Last login:
+                                </span>{" "}
+                                <span className="text-gray-600 break-words">
+                                    {admin.lastlogin
+                                        ? new Date(admin.lastlogin).toLocaleString()
+                                        : "Not available"}
+                                </span>
+                            </div>
+
+                        </div>
+                    )}
 
                 </div>
 
@@ -125,31 +162,19 @@ const AdminLayout = () => {
             {/* Main Area */}
             <div className="flex-1 flex flex-col">
 
-                {/* Header */}
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
                     <h1 className="text-lg font-semibold text-gray-800">
                         Admin Panel
                     </h1>
 
-                    {/* Logout moved here */}
-                    {/*<button
-                        onClick={handleLogout}
-                        className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 transition"
-                    >
-                        Logout
-                    </button>*/}
                     <button
                         onClick={handleLogout}
                         className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline transition"
                     >
                         Logout
                     </button>
-
-
-
                 </header>
 
-                {/* Content */}
                 <main className="flex-1 p-8">
                     <div className="bg-white rounded-lg shadow-sm p-8 min-h-[80vh]">
                         <Outlet />
