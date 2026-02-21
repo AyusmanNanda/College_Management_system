@@ -34,8 +34,13 @@ exports.login = async (req, res) => {
         );
 
         await db.query(
-            "UPDATE admin SET activestatus = 1 WHERE emailid = ?",
-            [email]
+            `
+            UPDATE admin 
+            SET activestatus = 1,
+            lastlogin = ?
+            WHERE emailid = ?
+            `,
+            [new Date().toISOString(), email]
         );
 
         res.json({
