@@ -7,6 +7,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const coursesRoutes = require("./routes/coursesRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const subjectsRoutes = require("./routes/subjectsRoutes");
+const assignRoutes = require("./routes/assignRoutes");
 
 const app = express();
 
@@ -22,5 +23,6 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/courses", coursesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/subjects", subjectsRoutes);
+app.use("/api/assign", assignRoutes);
 
 module.exports = app;
