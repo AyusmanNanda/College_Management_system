@@ -6,11 +6,13 @@ import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import Courses from "./pages/Admin/Courses";
+import Subjects from "./pages/Admin/Subjects";
 
 import FacultyDashboard from "./pages/Faculty/FacultyDashboard";
 import StudentDashboard from "./pages/Student/StudentDashboard";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
+
 
 function App() {
     return (
@@ -30,6 +32,7 @@ function App() {
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="courses" element={<Courses />} />
+                    <Route path="subjects" element={<Subjects />} />
                 </Route>
 
                 {/* Faculty */}

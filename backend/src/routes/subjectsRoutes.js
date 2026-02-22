@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
+
 const subjectController = require("../controllers/subjectController");
-const { protect } = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
 
 // Create subject
 router.post("/", protect, subjectController.createSubject);
 
-// Get subjects by course + semester
+// Get subjects
 router.get("/", protect, subjectController.getSubjects);
 
 // Update subject
