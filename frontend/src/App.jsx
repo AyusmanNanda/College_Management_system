@@ -5,6 +5,7 @@ import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import CollegeInfo from "./pages/Admin/CollegeInfo";
+import Courses from "./pages/Admin/Courses";
 
 function App() {
     return (
@@ -15,6 +16,7 @@ function App() {
 
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="courses" element={<Courses />} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="college" element={<CollegeInfo />} />
                 </Route>
