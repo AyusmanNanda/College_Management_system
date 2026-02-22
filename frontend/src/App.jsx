@@ -7,6 +7,7 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import Courses from "./pages/Admin/Courses";
 import Subjects from "./pages/Admin/Subjects";
+import AssignSubjects from "./pages/Admin/AssignSubjects";
 
 import FacultyDashboard from "./pages/Faculty/FacultyDashboard";
 import StudentDashboard from "./pages/Student/StudentDashboard";
@@ -33,6 +34,7 @@ function App() {
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="courses" element={<Courses />} />
                     <Route path="subjects" element={<Subjects />} />
+                    <Route path="assign-subjects" element={<AssignSubjects />} />
                 </Route>
 
                 {/* Faculty */}
