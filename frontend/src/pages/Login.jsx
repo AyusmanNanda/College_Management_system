@@ -27,12 +27,19 @@ const Login = () => {
                 { email, password }
             );
 
-            const { token } = response.data;
+            const { token, role } = response.data;
 
             localStorage.setItem("token", token);
+            localStorage.setItem("role", role);
 
-            // Redirect to admin dashboard
-            navigate("/admin/dashboard");
+            // Redirect based on role
+            if (role === "admin") {
+                navigate("/admin/dashboard");
+            } else if (role === "faculty") {
+                navigate("/faculty/dashboard");
+            } else if (role === "student") {
+                navigate("/student/dashboard");
+            }
 
         } catch (err) {
             setError("Invalid email or password");
