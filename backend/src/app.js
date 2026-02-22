@@ -8,6 +8,7 @@ const coursesRoutes = require("./routes/coursesRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const subjectsRoutes = require("./routes/subjectsRoutes");
 const assignRoutes = require("./routes/assignRoutes");
+const facultyRoutes = require("./routes/facultyRoutes");
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.use("/api/courses", coursesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/subjects", subjectsRoutes);
 app.use("/api/assign", assignRoutes);
+app.use("/api/faculty", facultyRoutes);
 
 module.exports = app;
