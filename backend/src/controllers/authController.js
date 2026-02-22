@@ -3,39 +3,87 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 /*
-  Admin Login
+  Role-Based Login
+  Supports bcrypt OR plain text passwords
 */
 
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const [rows] = await db.query(
+        let user = null;
+        let role = null;
+        let table = null;
+
+        // Check admin
+        const [adminRows] = await db.query(
             "SELECT * FROM admin WHERE emailid = ?",
             [email]
         );
 
-        if (rows.length === 0) {
+        if (adminRows.length > 0) {
+            user = adminRows[0];
+            role = "admin";
+            table = "admin";
+        }
+
+        // Check faculties
+        if (!user) {
+            const [facultyRows] = await db.query(
+                "SELECT * FROM faculties WHERE emailid = ?",
+                [email]
+            );
+
+            if (facultyRows.length > 0) {
+                user = facultyRows[0];
+                role = "faculty";
+                table = "faculties";
+            }
+        }
+
+        // Check students
+        if (!user) {
+            const [studentRows] = await db.query(
+                "SELECT * FROM students WHERE emailid = ?",
+                [email]
+            );
+
+            if (studentRows.length > 0) {
+                user = studentRows[0];
+                role = "student";
+                table = "students";
+            }
+        }
+
+        // No user found
+        if (!user) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        const admin = rows[0];
+        // Check password (bcrypt OR plain text)
+        let isMatch = false;
 
-        const isMatch = await bcrypt.compare(password, admin.password);
+        if (user.password.startsWith("$2")) {
+            // bcrypt hash
+            isMatch = await bcrypt.compare(password, user.password);
+        } else {
+            // plain text fallback
+            isMatch = password === user.password;
+        }
 
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
         const token = jwt.sign(
-            { email: admin.emailid },
+            { email: user.emailid, role },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
 
         await db.query(
             `
-                UPDATE admin
+                UPDATE ${table}
                 SET activestatus = 1,
                     lastlogin = ?
                 WHERE emailid = ?
@@ -45,7 +93,8 @@ exports.login = async (req, res) => {
 
         res.json({
             message: "Login successful",
-            token
+            token,
+            role
         });
 
     } catch (error) {
@@ -54,17 +103,44 @@ exports.login = async (req, res) => {
     }
 };
 
+
 /*
-  Admin Logout
+  Role-Based Logout
 */
 
 exports.logout = async (req, res) => {
     try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            return res.status(401).json({ message: "No token provided" });
+        }
+
+        const token = authHeader.split(" ")[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const { email, role } = decoded;
+
+        let table = null;
+
+        if (role === "admin") table = "admin";
+        if (role === "faculty") table = "faculties";
+        if (role === "student") table = "students";
+
+        if (!table) {
+            return res.status(400).json({ message: "Invalid role" });
+        }
+
         await db.query(
-            "UPDATE admin SET activestatus = 0"
+            `
+                UPDATE ${table}
+                SET activestatus = 0
+                WHERE emailid = ?
+            `,
+            [email]
         );
 
-        res.json({ message: "Logged out" });
+        res.json({ message: "Logged out successfully" });
 
     } catch (error) {
         console.error(error);
