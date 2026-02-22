@@ -12,6 +12,8 @@ const Subjects = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    const [editingCode, setEditingCode] = useState(null);
+
     const [form, setForm] = useState({
         subjectcode: "",
         subjectname: "",
@@ -20,7 +22,6 @@ const Subjects = () => {
         practicalmarks: ""
     });
 
-    // Fetch courses
     const fetchCourses = async () => {
         try {
             const res = await axios.get(
@@ -29,12 +30,10 @@ const Subjects = () => {
             );
             setCourses(res.data);
         } catch (err) {
-            console.error(err);
             setError("Failed to load courses.");
         }
     };
 
-    // Fetch subjects
     const fetchSubjects = async (courseCode, sem) => {
         try {
             setLoading(true);
@@ -43,9 +42,7 @@ const Subjects = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setSubjects(res.data);
-            setError("");
         } catch (err) {
-            console.error(err);
             setError("Failed to load subjects.");
         } finally {
             setLoading(false);
@@ -72,7 +69,18 @@ const Subjects = () => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handleAddSubject = async (e) => {
+    const resetForm = () => {
+        setForm({
+            subjectcode: "",
+            subjectname: "",
+            subjecttype: "core",
+            theorymarks: "",
+            practicalmarks: ""
+        });
+        setEditingCode(null);
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!selectedCourse || !selectedSem) {
@@ -83,29 +91,63 @@ const Subjects = () => {
         try {
             setLoading(true);
 
-            await axios.post(
-                "http://localhost:5000/api/subjects",
-                {
-                    ...form,
-                    courcecode: selectedCourse,
-                    semoryear: selectedSem
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            if (editingCode) {
+                await axios.put(
+                    `http://localhost:5000/api/subjects/${editingCode}`,
+                    {
+                        subjectname: form.subjectname,
+                        subjecttype: form.subjecttype,
+                        theorymarks: form.theorymarks,
+                        practicalmarks: form.practicalmarks
+                    },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+            } else {
+                await axios.post(
+                    "http://localhost:5000/api/subjects",
+                    {
+                        ...form,
+                        courcecode: selectedCourse,
+                        semoryear: selectedSem
+                    },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+            }
 
-            setForm({
-                subjectcode: "",
-                subjectname: "",
-                subjecttype: "core",
-                theorymarks: "",
-                practicalmarks: ""
-            });
-
+            resetForm();
             fetchSubjects(selectedCourse, selectedSem);
 
         } catch (err) {
-            console.error(err);
-            setError(err.response?.data?.message || "Failed to add subject.");
+            setError(err.response?.data?.message || "Operation failed.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEdit = (subject) => {
+        setForm({
+            subjectcode: subject.subjectcode,
+            subjectname: subject.subjectname,
+            subjecttype: subject.subjecttype,
+            theorymarks: subject.theorymarks,
+            practicalmarks: subject.practicalmarks
+        });
+        setEditingCode(subject.subjectcode);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleDelete = async (code) => {
+        if (!window.confirm("Delete this subject?")) return;
+
+        try {
+            setLoading(true);
+            await axios.delete(
+                `http://localhost:5000/api/subjects/${code}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchSubjects(selectedCourse, selectedSem);
+        } catch (err) {
+            setError("Failed to delete subject.");
         } finally {
             setLoading(false);
         }
@@ -114,7 +156,6 @@ const Subjects = () => {
     return (
         <div className="space-y-10">
 
-            {/* Header */}
             <div>
                 <h2 className="text-2xl font-semibold text-gray-800">
                     Subject Management
@@ -124,14 +165,12 @@ const Subjects = () => {
                 </p>
             </div>
 
-            {/* Error */}
             {error && (
                 <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md">
                     {error}
                 </div>
             )}
 
-            {/* Filters */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm grid md:grid-cols-2 gap-6">
 
                 <select
@@ -139,8 +178,9 @@ const Subjects = () => {
                     onChange={(e) => {
                         setSelectedCourse(e.target.value);
                         setSelectedSem("");
+                        resetForm();
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
                     {courses.map((course) => (
@@ -154,7 +194,7 @@ const Subjects = () => {
                     value={selectedSem}
                     onChange={(e) => setSelectedSem(e.target.value)}
                     disabled={!selectedCourse}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                     <option value="">Select Semester</option>
                     {selectedCourseData &&
@@ -169,28 +209,26 @@ const Subjects = () => {
                             </option>
                         ))}
                 </select>
-
             </div>
 
-            {/* Add Subject Form */}
             {selectedCourse && selectedSem && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                     <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-6">
-                        Add New Subject
+                        {editingCode ? "Edit Subject" : "Add New Subject"}
                     </h3>
 
-                    <form
-                        onSubmit={handleAddSubject}
-                        className="grid grid-cols-1 md:grid-cols-5 gap-6"
-                    >
-                        <input
-                            name="subjectcode"
-                            placeholder="Subject Code"
-                            value={form.subjectcode}
-                            onChange={handleFormChange}
-                            required
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        />
+                    <form onSubmit={handleSubmit} className="grid md:grid-cols-5 gap-6">
+
+                        {!editingCode && (
+                            <input
+                                name="subjectcode"
+                                placeholder="Subject Code"
+                                value={form.subjectcode}
+                                onChange={handleFormChange}
+                                required
+                                className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            />
+                        )}
 
                         <input
                             name="subjectname"
@@ -214,7 +252,7 @@ const Subjects = () => {
                         <input
                             type="number"
                             name="theorymarks"
-                            placeholder="Theory Marks"
+                            placeholder="Theory"
                             value={form.theorymarks}
                             onChange={handleFormChange}
                             required
@@ -224,27 +262,35 @@ const Subjects = () => {
                         <input
                             type="number"
                             name="practicalmarks"
-                            placeholder="Practical Marks"
+                            placeholder="Practical"
                             value={form.practicalmarks}
                             onChange={handleFormChange}
                             required
                             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
 
-                        <div className="md:col-span-5">
+                        <div className="md:col-span-5 flex gap-3">
                             <button
                                 type="submit"
-                                disabled={loading}
-                                className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-60"
+                                className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black"
                             >
-                                Add Subject
+                                {editingCode ? "Update Subject" : "Add Subject"}
                             </button>
+
+                            {editingCode && (
+                                <button
+                                    type="button"
+                                    onClick={resetForm}
+                                    className="px-5 py-2 bg-gray-200 text-gray-800 rounded-md"
+                                >
+                                    Cancel
+                                </button>
+                            )}
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* Table */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
@@ -254,13 +300,13 @@ const Subjects = () => {
                         <th className="p-4">Type</th>
                         <th className="p-4">Theory</th>
                         <th className="p-4">Practical</th>
+                        <th className="p-4">Actions</th>
                     </tr>
                     </thead>
-
                     <tbody>
                     {loading ? (
                         <tr>
-                            <td colSpan="5" className="p-6 text-center text-gray-500">
+                            <td colSpan="6" className="p-6 text-center">
                                 Loading...
                             </td>
                         </tr>
@@ -272,21 +318,32 @@ const Subjects = () => {
                                 <td className="p-4 capitalize">{sub.subjecttype}</td>
                                 <td className="p-4">{sub.theorymarks}</td>
                                 <td className="p-4">{sub.practicalmarks}</td>
+                                <td className="p-4 flex gap-2">
+                                    <button
+                                        onClick={() => handleEdit(sub)}
+                                        className="px-3 py-1 bg-gray-200 rounded"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(sub.subjectcode)}
+                                        className="px-3 py-1 bg-red-600 text-white rounded"
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
                             </tr>
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="5" className="p-6 text-center text-gray-500">
-                                {selectedCourse && selectedSem
-                                    ? "No subjects found."
-                                    : "Select course and semester."}
+                            <td colSpan="6" className="p-6 text-center text-gray-500">
+                                Select course and semester.
                             </td>
                         </tr>
                     )}
                     </tbody>
                 </table>
             </div>
-
         </div>
     );
 };
