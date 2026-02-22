@@ -47,7 +47,7 @@ const Login = () => {
             <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-sm">
 
                 <h1 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-                    Admin Login
+                    College Login
                 </h1>
 
                 {error && (
