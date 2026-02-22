@@ -57,6 +57,7 @@ const AdminLayout = () => {
 
     const menuItems = [
         { name: "Dashboard", path: "/admin/dashboard" },
+        { name: "Courses", path: "/admin/courses" },
         { name: "Profile", path: "/admin/profile" }
     ];
 
