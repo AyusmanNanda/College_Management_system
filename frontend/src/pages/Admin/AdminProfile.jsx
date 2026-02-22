@@ -50,7 +50,6 @@ const AdminProfile = () => {
                             className="h-20 w-20 object-cover rounded-lg border border-gray-200 shadow-sm"
                         />
                     )}
-
                     <div>
                         <h2 className="text-2xl font-semibold text-gray-800">
                             {admin.collagename}
@@ -68,7 +67,6 @@ const AdminProfile = () => {
                     >
                         Edit Details
                     </button>
-
                     <button
                         onClick={() => setShowLinksModal(true)}
                         className="px-5 py-2 bg-gray-200 text-gray-800 text-sm rounded-md hover:bg-gray-300 transition"
@@ -178,7 +176,7 @@ const ModalWrapper = ({ children, onClose }) => (
     </div>
 );
 
-/* ---------------- Edit Details Modal (WITH LOGO UPLOAD) ---------------- */
+/* ---------------- Edit Details Modal ---------------- */
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({ ...admin, password: "" });
@@ -194,12 +192,10 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         if (file.size > 1024 * 1024) {
             alert("Image must be less than 1MB");
             return;
         }
-
         setLogoFile(file);
         setPreview(URL.createObjectURL(file));
     };
@@ -209,7 +205,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
             const formData = new FormData();
 
             Object.keys(form).forEach((key) => {
-                if (form[key]) {
+                if (form[key] !== undefined && form[key] !== "") {
                     formData.append(key, form[key]);
                 }
             });
@@ -231,9 +227,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
 
             const res = await axios.get(
                 "http://localhost:5000/api/admin/profile",
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
             onClose(res.data);
@@ -249,28 +243,45 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                 Edit Basic Details
             </h2>
 
-            {preview && (
-                <div className="flex justify-center mb-4">
+            {/* Profile Upload */}
+            <div className="mb-6 flex flex-col items-center gap-3">
+                {preview && (
                     <img
                         src={preview}
                         alt="Preview"
-                        className="h-24 w-24 object-cover rounded-md border border-gray-200"
+                        className="h-24 w-24 object-cover rounded-md border border-gray-200 shadow-sm"
                     />
-                </div>
-            )}
-
-            <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="mb-4"
-            />
+                )}
+                <label className="cursor-pointer">
+                    <span className="px-4 py-2 bg-gray-100 border border-gray-300 text-sm rounded-md hover:bg-gray-200 transition">
+                        Change Profile Picture
+                    </span>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+                </label>
+            </div>
 
             <div className="space-y-4">
                 <StyledInput label="College Name" name="collagename" value={form.collagename} onChange={handleChange} />
                 <StyledInput label="Email" name="emailid" value={form.emailid} onChange={handleChange} />
                 <StyledInput label="Contact Number" name="contactnumber" value={form.contactnumber} onChange={handleChange} />
                 <StyledInput label="Website" name="website" value={form.website} onChange={handleChange} />
+
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Address</label>
+                    <textarea
+                        name="address"
+                        value={form.address || ""}
+                        onChange={handleChange}
+                        rows="3"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    />
+                </div>
+
                 <StyledInput type="password" label="New Password" name="password" value={form.password} onChange={handleChange} />
             </div>
 
@@ -302,17 +313,17 @@ const EditLinksModal = ({ admin, token, onClose }) => {
 
     const handleSubmit = async () => {
         try {
+            const updatedData = { ...admin, ...form };
+
             await axios.put(
                 "http://localhost:5000/api/admin/profile",
-                form,
+                updatedData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
             const res = await axios.get(
                 "http://localhost:5000/api/admin/profile",
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
             onClose(res.data);
