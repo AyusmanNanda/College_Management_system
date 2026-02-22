@@ -44,7 +44,11 @@ exports.assignSubject = async (req, res) => {
     const { facultyId } = req.params;
     const { subjectcode, courcecode, semoryear } = req.body;
 
-    if (!subjectcode || !courcecode || !semoryear) {
+    if (
+        subjectcode === undefined ||
+        courcecode === undefined ||
+        semoryear === undefined
+    ) {
         return res.status(400).json({
             message: "All fields are required"
         });
