@@ -1,14 +1,34 @@
 const db = require("../config/db");
+const bcrypt = require("bcrypt");
+const multer = require("multer");
+const path = require("path");
 
 /*
   Faculty Controller
   ------------------
   Handles:
   - Create faculty
-  - Get all faculties
+  - Get faculties
   - Update faculty
   - Delete faculty
 */
+
+
+// ============================
+// Multer Storage Configuration
+// ============================
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/faculties");
+    },
+    filename: (req, file, cb) => {
+        const uniqueName =
+            Date.now() + "-" + file.originalname.replace(/\s+/g, "_");
+        cb(null, uniqueName);
+    }
+});
+
+exports.upload = multer({ storage });
 
 
 // ============================
@@ -44,10 +64,16 @@ exports.createFaculty = async (req, res) => {
     }
 
     try {
+        // Default password = birthdate
+        const defaultPassword = birthdate;
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+        const profilepic = req.file ? req.file.filename : null;
+
         await db.query(
             `INSERT INTO faculties
-             (facultyid, facultyname, state, city, emailid, contactnumber, qualification, experience, birthdate, gender, activestatus)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+             (facultyid, facultyname, state, city, emailid, contactnumber, qualification, experience, birthdate, gender, profilepic, password, activestatus)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
             [
                 facultyid,
                 facultyname.trim(),
@@ -58,7 +84,9 @@ exports.createFaculty = async (req, res) => {
                 qualification.trim(),
                 experience.trim(),
                 birthdate,
-                gender
+                gender,
+                profilepic,
+                hashedPassword
             ]
         );
 
@@ -84,14 +112,15 @@ exports.createFaculty = async (req, res) => {
 exports.getFaculties = async (req, res) => {
     try {
         const [faculties] = await db.query(
-            `SELECT
-                 sr_no,
-                 facultyid,
-                 facultyname,
-                 emailid,
-                 qualification,
-                 experience,
-                 activestatus
+            `SELECT 
+                sr_no,
+                facultyid,
+                facultyname,
+                emailid,
+                qualification,
+                experience,
+                activestatus,
+                profilepic
              FROM faculties
              ORDER BY sr_no DESC`
         );
@@ -140,33 +169,45 @@ exports.updateFaculty = async (req, res) => {
     }
 
     try {
-        const [result] = await db.query(
-            `UPDATE faculties SET
-                                  facultyid = ?,
-                                  facultyname = ?,
-                                  state = ?,
-                                  city = ?,
-                                  emailid = ?,
-                                  contactnumber = ?,
-                                  qualification = ?,
-                                  experience = ?,
-                                  birthdate = ?,
-                                  gender = ?
-             WHERE sr_no = ?`,
-            [
-                facultyid,
-                facultyname.trim(),
-                state.trim(),
-                city.trim(),
-                emailid.trim(),
-                contactnumber.trim(),
-                qualification.trim(),
-                experience.trim(),
-                birthdate,
-                gender,
-                id
-            ]
-        );
+        const profilepic = req.file ? req.file.filename : null;
+
+        let query = `
+            UPDATE faculties SET 
+                facultyid = ?, 
+                facultyname = ?, 
+                state = ?, 
+                city = ?, 
+                emailid = ?, 
+                contactnumber = ?, 
+                qualification = ?, 
+                experience = ?, 
+                birthdate = ?, 
+                gender = ?
+        `;
+
+        const values = [
+            facultyid,
+            facultyname.trim(),
+            state.trim(),
+            city.trim(),
+            emailid.trim(),
+            contactnumber.trim(),
+            qualification.trim(),
+            experience.trim(),
+            birthdate,
+            gender
+        ];
+
+        // Update image only if new file uploaded
+        if (profilepic) {
+            query += `, profilepic = ?`;
+            values.push(profilepic);
+        }
+
+        query += ` WHERE sr_no = ?`;
+        values.push(id);
+
+        const [result] = await db.query(query, values);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Faculty not found" });
