@@ -9,7 +9,7 @@ const db = require("./src/config/db");
 
         await db.query(
             "UPDATE admin SET password = ? WHERE emailid = ?",
-            [hashedPassword, "admin@college.com"]
+            [hashedPassword, "admin@gcekjr.ac.in"]
         );
 
         console.log("Admin password hashed successfully");
