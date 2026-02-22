@@ -10,16 +10,34 @@ const facultyController = require("../controllers/facultyController");
   Admin CRUD Operations
 */
 
-// Create faculty
-router.post("/", authMiddleware, facultyController.createFaculty);
+// Create faculty with image upload
+router.post(
+    "/",
+    authMiddleware,
+    facultyController.upload.single("profilepic"),
+    facultyController.createFaculty
+);
 
 // Get all faculties
-router.get("/", authMiddleware, facultyController.getFaculties);
+router.get(
+    "/",
+    authMiddleware,
+    facultyController.getFaculties
+);
 
-// Update faculty
-router.put("/:id", authMiddleware, facultyController.updateFaculty);
+// Update faculty with optional image update
+router.put(
+    "/:id",
+    authMiddleware,
+    facultyController.upload.single("profilepic"),
+    facultyController.updateFaculty
+);
 
 // Delete faculty
-router.delete("/:id", authMiddleware, facultyController.deleteFaculty);
+router.delete(
+    "/:id",
+    authMiddleware,
+    facultyController.deleteFaculty
+);
 
 module.exports = router;
