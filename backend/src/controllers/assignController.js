@@ -13,21 +13,19 @@ const db = require("../config/db");
 // Get Faculties By Course + Semester
 // ============================
 exports.getFaculties = async (req, res) => {
-    const { course_code, sem } = req.query;
-
-    if (!course_code || !sem) {
-        return res.status(400).json({
-            message: "Course code and semester are required"
-        });
-    }
-
     try {
         const [faculties] = await db.query(
-            `SELECT sr_no, facultyname, emailid, subject
-             FROM faculties
-             WHERE courcecode = ? AND semoryear = ?
-             ORDER BY facultyname ASC`,
-            [course_code, sem]
+            `SELECT
+                 f.sr_no,
+                 COALESCE(f.facultyname, f.emailid) AS facultyname,
+                 f.emailid,
+                 f.subject,
+                 s.subjectname,
+                 f.courcecode,
+                 f.semoryear
+             FROM faculties f
+                      LEFT JOIN subject s ON f.subject = s.subjectcode
+             ORDER BY f.sr_no ASC`
         );
 
         res.json(faculties);
