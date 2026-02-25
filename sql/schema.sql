@@ -30,7 +30,7 @@ CREATE TABLE `admin` (
 
 -- Data for table `admin`
 INSERT INTO `admin` (`collagename`, `address`, `emailid`, `contactnumber`, `website`, `lastlogin`, `password`, `facebook`, `instagram`, `twitter`, `linkedin`, `logo`, `activestatus`) VALUES
-    ('Government College of Engineering, Keonjhar', 'Jamunalia, Keonjhar, Odisha ', 'admin@gcekjr.ac.in', '0000000000', 'http://geckjr.ac.in', '2026-02-22T10:13:36.075Z', '$2b$10$DLdljUn/zIMIzYer4rU8m.MaMweTY2ggRpPwonWDNvj7KV7S9cl5m', 'https://facebook.com/gcekjr', 'https://instagram.com/gcekjr', 'https://x.com/gcekjr', 'https://linkedin.com/gcekjr ', '/uploads/1771738447938.jpg', 0);
+    ('Government College of Engineering, Keonjhar', 'Jamunalia, Keonjhar, Odisha ', 'admin@gcekjr.ac.in', '0000000000', 'http://geckjr.ac.in', '2026-02-22T10:13:36.075Z', '$2b$10$DLdljUn/zIMIzYer4rU8m.MaMweTY2ggRpPwonWDNvj7KV7S9cl5m', 'https://facebook.com/gcekjr', 'https://instagram.com/gcekjr', 'https://x.com/gcekjr', 'https://linkedin.com/gcekjr ', '/uploads/admin/default.png', 0);
 
 -- --------------------------------------------------------
 -- Table structure for table `attandance`
