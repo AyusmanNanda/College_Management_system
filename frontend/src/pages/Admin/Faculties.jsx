@@ -201,17 +201,20 @@ const Faculties = () => {
 
                                     {/* Profile */}
                                     <td className="p-4">
-                                        {faculty.profilepic ? (
-                                            <img
-                                                src={`http://localhost:5000/uploads/faculties/${faculty.profilepic}`}
-                                                alt="profile"
-                                                className="h-10 w-10 rounded-full object-cover border border-gray-200"
-                                            />
-                                        ) : (
-                                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                                                {faculty.facultyname?.charAt(0)?.toUpperCase() || "?"}
-                                            </div>
-                                        )}
+                                        <img
+                                            src={
+                                                faculty.profilepic
+                                                    ? `http://localhost:5000/uploads/faculties/${faculty.profilepic}`
+                                                    : `http://localhost:5000/uploads/faculties/default.png`
+                                            }
+                                            alt="profile"
+                                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src =
+                                                    "http://localhost:5000/uploads/faculties/default.png";
+                                            }}
+                                        />
                                     </td>
 
                                     <td className="p-4 max-w-[220px]">
