@@ -408,11 +408,11 @@ exports.downloadFacultyTemplate = async (req, res) => {
             "contactnumber",
             "qualification",
             "experience",
-            "birthdate (YYYY-MM-DD)",
+            "birthdate",
             "gender",
             "courcecode",
             "position",
-            "joineddate (YYYY-MM-DD optional)"
+            "joineddate"
         ];
 
         sheet.addRow(headers);
@@ -474,7 +474,7 @@ exports.downloadFacultyTemplate = async (req, res) => {
             "9876543210",
             "MCA",
             "5 Years",
-            "1990-01-01",
+            "01-01-2000",
             "Male",
             courses[0]?.course_code || "",
             "Assistant Professor",
@@ -533,27 +533,89 @@ exports.importFacultiesFromExcel = async (req, res) => {
         totalRows = data.length;
 
         for (let i = 0; i < data.length; i++) {
+
             const row = data[i];
 
-            const {
-                facultyid,
-                facultyname,
-                state,
-                city,
-                emailid,
-                contactnumber,
-                qualification,
-                experience,
-                birthdate,
-                gender,
-                courcecode,
-                position,
-                joineddate
-            } = row;
+            // ============================
+            // Extract & Normalize Fields
+            // ============================
 
-            // Validate required fields
+            let facultyid = row.facultyid;
+            let facultyname = row.facultyname;
+            let state = row.state;
+            let city = row.city;
+            let emailid = row.emailid;
+            let contactnumber = row.contactnumber;
+            let qualification = row.qualification;
+            let experience = row.experience;
+            let birthdate = row.birthdate;
+            let gender = row.gender;
+            let courcecode = row.courcecode;
+            let position = row.position;
+            let joineddate = row.joineddate;
+
+            // ============================
+            // Skip Completely Empty Rows
+            // ============================
+
             if (
-                !facultyid ||
+                !facultyid &&
+                !facultyname &&
+                !emailid
+            ) {
+                continue;
+            }
+
+            // ============================
+            // Clean Faculty ID
+            // ============================
+
+            if (!facultyid) {
+                invalidRows++;
+                errors.push({
+                    row: i + 2,
+                    reason: "Missing Faculty ID"
+                });
+                continue;
+            }
+
+            facultyid = String(facultyid)
+                .replace(/'/g, "")
+                .trim();
+
+            if (isNaN(facultyid)) {
+                invalidRows++;
+                errors.push({
+                    row: i + 2,
+                    reason: "Invalid Faculty ID format"
+                });
+                continue;
+            }
+
+            facultyid = parseInt(facultyid);
+
+            // ============================
+            // Trim Other Fields
+            // ============================
+
+            facultyname = facultyname ? String(facultyname).trim() : "";
+            state = state ? String(state).trim() : "";
+            city = city ? String(city).trim() : "";
+            emailid = emailid ? String(emailid).trim() : "";
+            contactnumber = contactnumber ? String(contactnumber).trim() : "";
+            qualification = qualification ? String(qualification).trim() : "";
+            experience = experience ? String(experience).trim() : "";
+            birthdate = birthdate ? String(birthdate).trim() : "";
+            gender = gender ? String(gender).trim() : "";
+            courcecode = courcecode ? String(courcecode).trim() : "";
+            position = position ? String(position).trim() : "NOT ASSIGNED";
+            joineddate = joineddate ? String(joineddate).trim() : null;
+
+            // ============================
+            // Validate Required Fields
+            // ============================
+
+            if (
                 !facultyname ||
                 !state ||
                 !city ||
@@ -574,35 +636,44 @@ exports.importFacultiesFromExcel = async (req, res) => {
             }
 
             try {
+
+                // ============================
+                // Default Password = DOB
+                // ============================
+
                 const hashedPassword = await bcrypt.hash(
-                    birthdate.toString(),
+                    birthdate,
                     10
                 );
 
+                // ============================
+                // Insert Into Database
+                // ============================
+
                 await db.query(
                     `INSERT INTO faculties
-                     (facultyid, facultyname, state, city, emailid,
-                      contactnumber, qualification, experience,
-                      birthdate, gender, profilepic, courcecode,
-                      semoryear, subject, position,
-                      joineddate, password, activestatus)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (facultyid, facultyname, state, city, emailid,
+              contactnumber, qualification, experience,
+              birthdate, gender, profilepic, courcecode,
+              semoryear, subject, position,
+              joineddate, password, activestatus)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         facultyid,
-                        facultyname.trim(),
-                        state.trim(),
-                        city.trim(),
-                        emailid.trim(),
-                        contactnumber.trim(),
-                        qualification.trim(),
-                        experience.trim(),
+                        facultyname,
+                        state,
+                        city,
+                        emailid,
+                        contactnumber,
+                        qualification,
+                        experience,
                         birthdate,
                         gender,
                         "default.png",
                         courcecode,
                         0,
                         "NOT ASSIGNED",
-                        position || "NOT ASSIGNED",
+                        position,
                         joineddate || new Date().toISOString(),
                         hashedPassword,
                         0
@@ -612,6 +683,7 @@ exports.importFacultiesFromExcel = async (req, res) => {
                 inserted++;
 
             } catch (error) {
+
                 if (error.code === "ER_DUP_ENTRY") {
                     duplicates++;
                     errors.push({
