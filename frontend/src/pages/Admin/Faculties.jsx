@@ -42,7 +42,7 @@ const Faculties = () => {
     };
 
     // =========================
-    // Fetch Courses (For Filter)
+    // Fetch Courses
     // =========================
     const fetchCourses = async () => {
         try {
@@ -62,7 +62,26 @@ const Faculties = () => {
     }, []);
 
     // =========================
-    // Filter Logic
+    // Delete Faculty
+    // =========================
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this faculty?"))
+            return;
+
+        try {
+            await axios.delete(
+                `http://localhost:5000/api/faculty/${id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchFaculties();
+        } catch (err) {
+            console.error(err);
+            setError("Failed to delete faculty.");
+        }
+    };
+
+    // =========================
+    // Filtering
     // =========================
     const filteredFaculties = faculties.filter((faculty) => {
         const matchesSearch =
@@ -105,7 +124,7 @@ const Faculties = () => {
                 </button>
             </div>
 
-            {/* Filter Section */}
+            {/* Filters */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm grid md:grid-cols-3 gap-6">
 
                 <input
@@ -122,8 +141,8 @@ const Faculties = () => {
                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                     <option value="">All Status</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
+                    <option value="1">Online</option>
+                    <option value="0">Offline</option>
                 </select>
 
                 <select
@@ -147,17 +166,17 @@ const Faculties = () => {
                 </div>
             )}
 
-            {/* Faculty Table */}
+            {/* Table */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                     <tr>
                         <th className="p-4">Profile</th>
-                        <th className="p-4">ID</th>
                         <th className="p-4">Name</th>
                         <th className="p-4">Email</th>
-                        <th className="p-4">Course</th>
-                        <th className="p-4">Designation</th>
+                        <th className="p-4">Contact</th>
+                        <th className="p-4">Qualification</th>
+                        <th className="p-4">Course Code</th>
                         <th className="p-4">Status</th>
                         <th className="p-4">Actions</th>
                     </tr>
@@ -194,20 +213,20 @@ const Faculties = () => {
                                     )}
                                 </td>
 
-                                <td className="p-4">{faculty.facultyid}</td>
                                 <td className="p-4 font-medium">{faculty.facultyname}</td>
                                 <td className="p-4">{faculty.emailid}</td>
-                                <td className="p-4">{faculty.courcecode || "-"}</td>
-                                <td className="p-4">{faculty.position || "-"}</td>
+                                <td className="p-4">{faculty.contactnumber}</td>
+                                <td className="p-4">{faculty.qualification}</td>
+                                <td className="p-4">{faculty.courcecode}</td>
 
                                 <td className="p-4">
                                     {faculty.activestatus ? (
                                         <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
-                                                Active
+                                                Online
                                             </span>
                                     ) : (
                                         <span className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
-                                                Inactive
+                                                Offline
                                             </span>
                                     )}
                                 </td>
@@ -246,7 +265,6 @@ const Faculties = () => {
                     onUpdated={fetchFaculties}
                 />
             )}
-
         </div>
     );
 };

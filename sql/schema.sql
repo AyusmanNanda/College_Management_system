@@ -30,7 +30,7 @@ CREATE TABLE `admin` (
 
 -- Data for table `admin`
 INSERT INTO `admin` (`collagename`, `address`, `emailid`, `contactnumber`, `website`, `lastlogin`, `password`, `facebook`, `instagram`, `twitter`, `linkedin`, `logo`, `activestatus`) VALUES
-    ('Government College of Engineering, Keonjhar', 'Jamunalia, Keonjhar, Odisha ', 'admin@gcekjr.ac.in', '00000000000', 'http://geckjr.ac.in', '2026-02-22T10:13:36.075Z', '$2b$10$DLdljUn/zIMIzYer4rU8m.MaMweTY2ggRpPwonWDNvj7KV7S9cl5m', 'https://facebook.com/gcekjr', 'https://instagram.com/gcekjr', 'https://x.com/gcekjr', 'https://linkedin.com/gcekjr ', '/uploads/1771738447938.jpg', 0);
+    ('Government College of Engineering, Keonjhar', 'Jamunalia, Keonjhar, Odisha ', 'admin@gcekjr.ac.in', '0000000000', 'http://geckjr.ac.in', '2026-02-22T10:13:36.075Z', '$2b$10$DLdljUn/zIMIzYer4rU8m.MaMweTY2ggRpPwonWDNvj7KV7S9cl5m', 'https://facebook.com/gcekjr', 'https://instagram.com/gcekjr', 'https://x.com/gcekjr', 'https://linkedin.com/gcekjr ', '/uploads/1771738447938.jpg', 0);
 
 -- --------------------------------------------------------
 -- Table structure for table `attandance`
@@ -112,8 +112,8 @@ CREATE TABLE `faculties` (
 
 -- Data for table `faculties`
 INSERT INTO `faculties` (`facultyid`, `facultyname`, `state`, `city`, `emailid`, `contactnumber`, `qualification`, `experience`, `birthdate`, `gender`, `profilepic`, `courcecode`, `semoryear`, `subject`, `position`, `sr_no`, `lastlogin`, `password`, `activestatus`, `joineddate`) VALUES
-                                                                                                                                                                                                                                                                                            (23011040, 'Muna Samal', 'Odisha', 'Keonjhar', 'muna@gcekjr.ac.in', '00000000000', 'M.Tech', '10 Yrs', '2005-02-12', 'Male', '1771757222471-IMG_20250514_225859_485.jpg', 'NOT ASSIGNED', 0, 'NOT ASSIGNED', 'NOT ASSIGNED', 2, NULL, '$2b$10$57k9twGrTS3gMX.g6QcUYOJylQTXE6.Val5V7fJ.LNcgYAf3gSkka', 0, NULL),
-                                                                                                                                                                                                                                                                                            (23011041, 'Ayusman', 'Odisha', 'Keonjhar', 'faculty1@gcekjr.ac.in', '00000000000', 'M.Tech', '10 Yrs', '2004-10-05', 'Male', '1771757746884-IMG_20250514_225922_626.jpg', 'NOT ASSIGNED', 0, 'NOT ASSIGNED', 'NOT ASSIGNED', 3, NULL, '$2b$10$JBzAW2/VmgydNE233e4RquJfr3DTEDygQK6t7Q5pfR8K8LWLlMdr6', 0, NULL);
+                                                                                                                                                                                                                                                                                            (23011040, 'Faculty', 'Odisha', 'Keonjhar', 'faculty@gcekjr.ac.in', '1111111111', 'M.Tech', '10 Yrs', '2000-02-01', 'Male', '1771757222471-IMG_20250514_225859_485.jpg', 'NOT ASSIGNED', 0, 'NOT ASSIGNED', 'NOT ASSIGNED', 2, NULL, '$2b$10$57k9twGrTS3gMX.g6QcUYOJylQTXE6.Val5V7fJ.LNcgYAf3gSkka', 0, NULL),
+                                                                                                                                                                                                                                                                                            (23011041, 'Faculty1', 'Odisha', 'Keonjhar', 'faculty1@gcekjr.ac.in', '2222222222', 'M.Tech', '10 Yrs', '2000-01-01', 'Male', '1771757746884-IMG_20250514_225922_626.jpg', 'NOT ASSIGNED', 0, 'NOT ASSIGNED', 'NOT ASSIGNED', 3, NULL, '$2b$10$JBzAW2/VmgydNE233e4RquJfr3DTEDygQK6t7Q5pfR8K8LWLlMdr6', 0, NULL);
 
 -- --------------------------------------------------------
 -- Table structure for table `marks`
