@@ -15,33 +15,40 @@ import StudentDashboard from "./pages/Student/StudentDashboard";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-function App() {
+/* ===================== Root Redirect ===================== */
+
+function RootRedirect() {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
 
+    if (!token) {
+        return <Login />;
+    }
+
+    if (role === "admin") {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
+
+    if (role === "faculty") {
+        return <Navigate to="/faculty/dashboard" replace />;
+    }
+
+    if (role === "student") {
+        return <Navigate to="/student/dashboard" replace />;
+    }
+
+    return <Login />;
+}
+
+/* ===================== App ===================== */
+
+function App() {
     return (
         <Router>
             <Routes>
 
-                {/* Root Route - Auto Redirect If Logged In */}
-                <Route
-                    path="/"
-                    element={
-                        token ? (
-                            role === "admin" ? (
-                                <Navigate to="/admin/dashboard" />
-                            ) : role === "faculty" ? (
-                                <Navigate to="/faculty/dashboard" />
-                            ) : role === "student" ? (
-                                <Navigate to="/student/dashboard" />
-                            ) : (
-                                <Login />
-                            )
-                        ) : (
-                            <Login />
-                        )
-                    }
-                />
+                {/* Root Route */}
+                <Route path="/" element={<RootRedirect />} />
 
                 {/* ===================== Admin Section ===================== */}
                 <Route
@@ -60,7 +67,7 @@ function App() {
                     <Route path="faculties" element={<Faculties />} />
                 </Route>
 
-                {/* ===================== Faculty Section ===================== */}
+                {/* ===================== Faculty ===================== */}
                 <Route
                     path="/faculty/dashboard"
                     element={
@@ -70,7 +77,7 @@ function App() {
                     }
                 />
 
-                {/* ===================== Student Section ===================== */}
+                {/* ===================== Student ===================== */}
                 <Route
                     path="/student/dashboard"
                     element={
@@ -79,6 +86,9 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Optional: Catch All */}
+                <Route path="*" element={<Navigate to="/" replace />} />
 
             </Routes>
         </Router>
