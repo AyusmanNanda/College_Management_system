@@ -171,8 +171,7 @@ const Faculties = () => {
                         <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                         <tr>
                             <th className="p-4">Profile</th>
-                            <th className="p-4">Faculty ID</th>
-                            <th className="p-4">Name</th>
+                            <th className="p-4">Faculty</th>
                             <th className="p-4">Position</th>
                             <th className="p-4">Course</th>
                             <th className="p-4">Semester</th>
@@ -215,10 +214,16 @@ const Faculties = () => {
                                         )}
                                     </td>
 
-                                    <td className="p-4">{faculty.facultyid}</td>
-
-                                    <td className="p-4 max-w-[180px] truncate font-medium" title={faculty.facultyname}>
-                                        {faculty.facultyname}
+                                    <td className="p-4 max-w-[220px]">
+                                        <div className="font-medium text-gray-900">
+                                            {faculty.facultyid}
+                                        </div>
+                                        <div
+                                            className="text-sm text-gray-600 truncate"
+                                            title={faculty.facultyname}
+                                        >
+                                            {faculty.facultyname}
+                                        </div>
                                     </td>
 
                                     <td className="p-4 max-w-[180px] truncate" title={faculty.position}>
