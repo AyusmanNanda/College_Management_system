@@ -40,4 +40,10 @@ router.delete(
     facultyController.deleteFaculty
 );
 
+router.get(
+    "/template",
+    authMiddleware,
+    facultyController.downloadFacultyTemplate
+);
+
 module.exports = router;

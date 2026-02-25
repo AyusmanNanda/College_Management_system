@@ -2,6 +2,7 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const multer = require("multer");
 const path = require("path");
+const ExcelJS = require("exceljs");
 
 /*
   Faculty Controller
@@ -332,5 +333,150 @@ exports.deleteFaculty = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error deleting faculty" });
+    }
+};
+exports.downloadFacultyTemplate = async (req, res) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Faculties");
+        const dropdownSheet = workbook.addWorksheet("DropdownData");
+
+        // ===============================
+        // Fetch Courses (Departments)
+        // ===============================
+        const [courses] = await db.query(
+            "SELECT course_code, course_name FROM courses"
+        );
+
+        // ===============================
+        // Dropdown Static Values
+        // ===============================
+        const genders = ["Male", "Female", "Other"];
+        const positions = [
+            "Professor",
+            "Assistant Professor",
+            "Lecturer",
+            "HOD",
+            "NOT ASSIGNED"
+        ];
+
+        // ===============================
+        // Add Dropdown Data
+        // ===============================
+        dropdownSheet.getColumn(1).values = ["Gender", ...genders];
+        dropdownSheet.getColumn(2).values = [
+            "Department",
+            ...courses.map(c => c.course_code)
+        ];
+        dropdownSheet.getColumn(3).values = ["Position", ...positions];
+
+        dropdownSheet.state = "hidden";
+
+        // ===============================
+        // Main Headers
+        // ===============================
+        const headers = [
+            "facultyid",
+            "facultyname",
+            "state",
+            "city",
+            "emailid",
+            "contactnumber",
+            "qualification",
+            "experience",
+            "birthdate (YYYY-MM-DD)",
+            "gender",
+            "courcecode",
+            "position",
+            "joineddate (YYYY-MM-DD optional)"
+        ];
+
+        sheet.addRow(headers);
+
+        sheet.columns.forEach(col => {
+            col.width = 22;
+        });
+
+        // Bold Header
+        sheet.getRow(1).font = { bold: true };
+
+        // ===============================
+        // Add Data Validation
+        // ===============================
+
+        // Gender Dropdown
+        sheet.getColumn("J").eachCell((cell, rowNumber) => {
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: "list",
+                    allowBlank: false,
+                    formulae: ["DropdownData!$A$2:$A$4"]
+                };
+            }
+        });
+
+        // Department Dropdown
+        const deptLastRow = courses.length + 1;
+        sheet.getColumn("K").eachCell((cell, rowNumber) => {
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: "list",
+                    allowBlank: false,
+                    formulae: [`DropdownData!$B$2:$B$${deptLastRow}`]
+                };
+            }
+        });
+
+        // Position Dropdown
+        sheet.getColumn("L").eachCell((cell, rowNumber) => {
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: "list",
+                    allowBlank: true,
+                    formulae: ["DropdownData!$C$2:$C$6"]
+                };
+            }
+        });
+
+        // ===============================
+        // Add Example Row (Optional but helpful)
+        // ===============================
+        sheet.addRow([
+            "1001",
+            "John Doe",
+            "Odisha",
+            "Bhubaneswar",
+            "john@example.com",
+            "9876543210",
+            "MCA",
+            "5 Years",
+            "1990-01-01",
+            "Male",
+            courses[0]?.course_code || "",
+            "Assistant Professor",
+            ""
+        ]);
+
+        // ===============================
+        // Send File
+        // ===============================
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=Faculty_Import_Template.xlsx"
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Error generating template"
+        });
     }
 };

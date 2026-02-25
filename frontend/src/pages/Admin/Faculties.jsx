@@ -100,12 +100,12 @@ const Faculties = () => {
     });
 
     return (
-        <div className="space-y-10">
+        <div className="space-y-8">
 
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-semibold text-gray-800">
+                    <h2 className="text-xl font-semibold text-gray-800">
                         Faculty Management
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">
@@ -113,19 +113,32 @@ const Faculties = () => {
                     </p>
                 </div>
 
-                <button
-                    onClick={() => {
-                        setIsNew(true);
-                        setSelectedFaculty({});
-                    }}
-                    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                >
-                    Add Faculty
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* Import Button */}
+                    <button
+                        onClick={() => {
+                            console.log("Open import modal");
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition"
+                    >
+                        Import from File
+                    </button>
+
+                    {/* Add Faculty Button */}
+                    <button
+                        onClick={() => {
+                            setIsNew(true);
+                            setSelectedFaculty({});
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                    >
+                        Add Faculty
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm grid md:grid-cols-3 gap-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm grid md:grid-cols-3 gap-4">
                 <input
                     type="text"
                     placeholder="Search by name or email"
@@ -167,31 +180,31 @@ const Faculties = () => {
             {/* Table */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="min-w-[1200px] w-full text-left text-sm">
+                    <table className="w-full text-sm">
                         <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                         <tr>
-                            <th className="p-4">Profile</th>
-                            <th className="p-4">Faculty</th>
-                            <th className="p-4">Position</th>
-                            <th className="p-4">Course</th>
-                            <th className="p-4">Semester</th>
-                            <th className="p-4">Subject</th>
-                            <th className="p-4">Experience</th>
-                            <th className="p-4">Status</th>
-                            <th className="p-4">Actions</th>
+                            <th className="px-3 py-2">Profile</th>
+                            <th className="px-3 py-2">Faculty</th>
+                            <th className="px-3 py-2">Position</th>
+                            <th className="px-3 py-2">Course</th>
+                            <th className="px-3 py-2">Semester</th>
+                            <th className="px-3 py-2">Subject</th>
+                            <th className="px-3 py-2">Experience</th>
+                            <th className="px-3 py-2">Status</th>
+                            <th className="px-3 py-2 text-center">Actions</th>
                         </tr>
                         </thead>
 
                         <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="10" className="p-6 text-center text-gray-500">
+                                <td colSpan="9" className="py-6 text-center text-gray-500">
                                     Loading...
                                 </td>
                             </tr>
                         ) : filteredFaculties.length === 0 ? (
                             <tr>
-                                <td colSpan="10" className="p-6 text-center text-gray-500">
+                                <td colSpan="9" className="py-6 text-center text-gray-500">
                                     No faculties found.
                                 </td>
                             </tr>
@@ -199,8 +212,7 @@ const Faculties = () => {
                             filteredFaculties.map((faculty) => (
                                 <tr key={faculty.sr_no} className="border-t hover:bg-gray-50">
 
-                                    {/* Profile */}
-                                    <td className="p-4">
+                                    <td className="px-3 py-2">
                                         <img
                                             src={
                                                 faculty.profilepic
@@ -208,7 +220,7 @@ const Faculties = () => {
                                                     : `http://localhost:5000/uploads/faculties/default.png`
                                             }
                                             alt="profile"
-                                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                                            className="h-8 w-8 rounded-full object-cover border"
                                             onError={(e) => {
                                                 e.target.onerror = null;
                                                 e.target.src =
@@ -217,57 +229,44 @@ const Faculties = () => {
                                         />
                                     </td>
 
-                                    <td className="p-4 max-w-[220px]">
-                                        <div className="font-medium text-gray-900">
-                                            {faculty.facultyid}
-                                        </div>
-                                        <div
-                                            className="text-sm text-gray-600 truncate"
-                                            title={faculty.facultyname}
-                                        >
+                                    <td className="px-3 py-2">
+                                        <div className="font-medium">
                                             {faculty.facultyname}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {faculty.facultyid}
                                         </div>
                                     </td>
 
-                                    <td className="p-4 max-w-[180px] truncate" title={faculty.position}>
+                                    <td className="px-3 py-2">
                                         {faculty.position}
                                     </td>
 
-                                    {/* Course ID + Name */}
-                                    <td className="p-4 max-w-[220px]">
+                                    <td className="px-3 py-2">
                                         <div className="font-medium">
                                             {faculty.courcecode}
                                         </div>
                                         {faculty.course_name && (
-                                            <div
-                                                className="text-xs text-gray-500 truncate"
-                                                title={faculty.course_name}
-                                            >
+                                            <div className="text-xs text-gray-500">
                                                 {faculty.course_name}
                                             </div>
                                         )}
                                     </td>
 
-                                    <td className="p-4">
+                                    <td className="px-3 py-2">
                                         {faculty.semoryear || "-"}
                                     </td>
 
-                                    {/* Subject ID + Name */}
-                                    <td className="p-4 max-w-[220px]">
+                                    <td className="px-3 py-2">
                                         {faculty.subject === "NOT ASSIGNED" ? (
-                                            <span className="text-yellow-600 font-medium">
+                                            <span className="text-yellow-600 text-xs font-medium">
                                                     Unassigned
                                                 </span>
                                         ) : (
                                             <>
-                                                <div className="font-medium">
-                                                    {faculty.subject}
-                                                </div>
+                                                <div>{faculty.subject}</div>
                                                 {faculty.subject_name && (
-                                                    <div
-                                                        className="text-xs text-gray-500 truncate"
-                                                        title={faculty.subject_name}
-                                                    >
+                                                    <div className="text-xs text-gray-500">
                                                         {faculty.subject_name}
                                                     </div>
                                                 )}
@@ -275,9 +274,11 @@ const Faculties = () => {
                                         )}
                                     </td>
 
-                                    <td className="p-4">{faculty.experience}</td>
+                                    <td className="px-3 py-2">
+                                        {faculty.experience}
+                                    </td>
 
-                                    <td className="p-4">
+                                    <td className="px-3 py-2">
                                         {faculty.activestatus ? (
                                             <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
                                                     Active
@@ -289,23 +290,25 @@ const Faculties = () => {
                                         )}
                                     </td>
 
-                                    <td className="p-4 flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setIsNew(false);
-                                                setSelectedFaculty(faculty);
-                                            }}
-                                            className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                                        >
-                                            Edit
-                                        </button>
+                                    <td className="px-3 py-2">
+                                        <div className="flex gap-2 justify-center">
+                                            <button
+                                                onClick={() => {
+                                                    setIsNew(false);
+                                                    setSelectedFaculty(faculty);
+                                                }}
+                                                className="px-2 py-1 bg-gray-200 text-xs rounded hover:bg-gray-300"
+                                            >
+                                                Edit
+                                            </button>
 
-                                        <button
-                                            onClick={() => handleDelete(faculty.sr_no)}
-                                            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                                        >
-                                            Delete
-                                        </button>
+                                            <button
+                                                onClick={() => handleDelete(faculty.sr_no)}
+                                                className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
 
                                 </tr>
