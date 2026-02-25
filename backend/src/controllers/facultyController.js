@@ -48,6 +48,9 @@ exports.createFaculty = async (req, res) => {
         gender
     } = req.body;
 
+    // ============================
+    // Mandatory Field Validation
+    // ============================
     if (
         !facultyid ||
         !facultyname ||
@@ -60,20 +63,41 @@ exports.createFaculty = async (req, res) => {
         !birthdate ||
         !gender
     ) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(400).json({
+            message: "All required fields must be filled"
+        });
     }
 
     try {
-        // Default password = birthdate
-        const defaultPassword = birthdate;
-        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+        // ============================
+        // Default Password = Birthdate
+        // ============================
+        const hashedPassword = await bcrypt.hash(birthdate, 10);
 
-        const profilepic = req.file ? req.file.filename : null;
+        // ============================
+        // Default Profile Pic
+        // ============================
+        const profilepic = req.file
+            ? req.file.filename
+            : "default.png";
+
+        // ============================
+        // Default Values
+        // ============================
+        const joineddate = new Date().toISOString();
+        const courcecode = "NOT ASSIGNED";
+        const semoryear = 0;
+        const subject = "NOT ASSIGNED";
+        const position = "NOT ASSIGNED";
+        const activestatus = 0;
 
         await db.query(
             `INSERT INTO faculties
-             (facultyid, facultyname, state, city, emailid, contactnumber, qualification, experience, birthdate, gender, profilepic, password, activestatus)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+             (facultyid, facultyname, state, city, emailid, contactnumber,
+              qualification, experience, birthdate, gender, profilepic,
+              courcecode, semoryear, subject, position,
+              joineddate, password, activestatus)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 facultyid,
                 facultyname.trim(),
@@ -86,22 +110,31 @@ exports.createFaculty = async (req, res) => {
                 birthdate,
                 gender,
                 profilepic,
-                hashedPassword
+                courcecode,
+                semoryear,
+                subject,
+                position,
+                joineddate,
+                hashedPassword,
+                activestatus
             ]
         );
 
-        res.status(201).json({ message: "Faculty created successfully" });
+        res.status(201).json({
+            message: "Faculty created successfully"
+        });
 
     } catch (error) {
-
         if (error.code === "ER_DUP_ENTRY") {
             return res.status(400).json({
-                message: "Faculty ID already exists"
+                message: "Email or Faculty ID already exists"
             });
         }
 
         console.error(error);
-        res.status(500).json({ message: "Error creating faculty" });
+        res.status(500).json({
+            message: "Error creating faculty"
+        });
     }
 };
 
@@ -112,15 +145,17 @@ exports.createFaculty = async (req, res) => {
 exports.getFaculties = async (req, res) => {
     try {
         const [faculties] = await db.query(
-            `SELECT 
-                sr_no,
-                facultyid,
-                facultyname,
-                emailid,
-                qualification,
-                experience,
-                activestatus,
-                profilepic
+            `SELECT
+                 sr_no,
+                 facultyid,
+                 facultyname,
+                 emailid,
+                 contactnumber,
+                 qualification,
+                 courcecode,
+                 position,
+                 activestatus,
+                 profilepic
              FROM faculties
              ORDER BY sr_no DESC`
         );
@@ -129,7 +164,9 @@ exports.getFaculties = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error fetching faculties" });
+        res.status(500).json({
+            message: "Error fetching faculties"
+        });
     }
 };
 
@@ -150,7 +187,13 @@ exports.updateFaculty = async (req, res) => {
         qualification,
         experience,
         birthdate,
-        gender
+        gender,
+        courcecode,
+        semoryear,
+        subject,
+        position,
+        joineddate,
+        password
     } = req.body;
 
     if (
@@ -165,24 +208,31 @@ exports.updateFaculty = async (req, res) => {
         !birthdate ||
         !gender
     ) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(400).json({
+            message: "All required fields must be filled"
+        });
     }
 
     try {
         const profilepic = req.file ? req.file.filename : null;
 
         let query = `
-            UPDATE faculties SET 
-                facultyid = ?, 
-                facultyname = ?, 
-                state = ?, 
-                city = ?, 
-                emailid = ?, 
-                contactnumber = ?, 
-                qualification = ?, 
-                experience = ?, 
-                birthdate = ?, 
-                gender = ?
+            UPDATE faculties SET
+                                 facultyid = ?,
+                                 facultyname = ?,
+                                 state = ?,
+                                 city = ?,
+                                 emailid = ?,
+                                 contactnumber = ?,
+                                 qualification = ?,
+                                 experience = ?,
+                                 birthdate = ?,
+                                 gender = ?,
+                                 courcecode = ?,
+                                 semoryear = ?,
+                                 subject = ?,
+                                 position = ?,
+                                 joineddate = ?
         `;
 
         const values = [
@@ -195,13 +245,25 @@ exports.updateFaculty = async (req, res) => {
             qualification.trim(),
             experience.trim(),
             birthdate,
-            gender
+            gender,
+            courcecode || "NOT ASSIGNED",
+            semoryear || 0,
+            subject || "NOT ASSIGNED",
+            position || "NOT ASSIGNED",
+            joineddate || null
         ];
 
-        // Update image only if new file uploaded
+        // Update image if uploaded
         if (profilepic) {
             query += `, profilepic = ?`;
             values.push(profilepic);
+        }
+
+        // Update password only if provided
+        if (password && password.trim() !== "") {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            query += `, password = ?`;
+            values.push(hashedPassword);
         }
 
         query += ` WHERE sr_no = ?`;
@@ -210,14 +272,20 @@ exports.updateFaculty = async (req, res) => {
         const [result] = await db.query(query, values);
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Faculty not found" });
+            return res.status(404).json({
+                message: "Faculty not found"
+            });
         }
 
-        res.json({ message: "Faculty updated successfully" });
+        res.json({
+            message: "Faculty updated successfully"
+        });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error updating faculty" });
+        res.status(500).json({
+            message: "Error updating faculty"
+        });
     }
 };
 
