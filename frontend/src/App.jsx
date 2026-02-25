@@ -1,4 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Navigate,
+    useLocation
+} from "react-router-dom";
+import { useEffect } from "react";
 
 import Login from "./pages/Login";
 
@@ -15,16 +22,39 @@ import StudentDashboard from "./pages/Student/StudentDashboard";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-/* ===================== Root Redirect ===================== */
+/* ===================== Route Tracker ===================== */
 
-function RootRedirect() {
+const RouteTracker = () => {
+    const location = useLocation();
+    const token = localStorage.getItem("token");
+
+    useEffect(() => {
+        if (token && location.pathname !== "/") {
+            localStorage.setItem("lastPage", location.pathname);
+        }
+    }, [location, token]);
+
+    return null;
+};
+
+/* ===================== Root Handler ===================== */
+
+const RootHandler = () => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
+    const lastPage = localStorage.getItem("lastPage");
 
+    // Not logged in → show Login
     if (!token) {
         return <Login />;
     }
 
+    // Logged in → go back to last visited page
+    if (lastPage) {
+        return <Navigate to={lastPage} replace />;
+    }
+
+    // Fallback by role
     if (role === "admin") {
         return <Navigate to="/admin/dashboard" replace />;
     }
@@ -38,17 +68,19 @@ function RootRedirect() {
     }
 
     return <Login />;
-}
+};
 
 /* ===================== App ===================== */
 
 function App() {
     return (
         <Router>
+            <RouteTracker />
+
             <Routes>
 
-                {/* Root Route */}
-                <Route path="/" element={<RootRedirect />} />
+                {/* Smart Root Route */}
+                <Route path="/" element={<RootHandler />} />
 
                 {/* ===================== Admin Section ===================== */}
                 <Route
@@ -87,7 +119,7 @@ function App() {
                     }
                 />
 
-                {/* Optional: Catch All */}
+                {/* Catch All */}
                 <Route path="*" element={<Navigate to="/" replace />} />
 
             </Routes>

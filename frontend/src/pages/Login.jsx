@@ -12,6 +12,7 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from;
+    const lastPage = localStorage.getItem("lastPage");
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -34,13 +35,19 @@ const Login = () => {
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
 
-            // If user was trying to access a protected page, go back there
+            // If user tried accessing protected page
             if (from) {
                 navigate(from.pathname + (from.search || ""), { replace: true });
                 return;
             }
 
-            // Otherwise go to default dashboard
+            // If returning user with saved last page
+            if (lastPage) {
+                navigate(lastPage, { replace: true });
+                return;
+            }
+
+            // Default dashboard fallback
             if (role === "admin") {
                 navigate("/admin/dashboard", { replace: true });
             } else if (role === "faculty") {
