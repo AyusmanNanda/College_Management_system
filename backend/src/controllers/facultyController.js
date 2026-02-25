@@ -150,33 +150,39 @@ exports.createFaculty = async (req, res) => {
 
 
 // ============================
-// Get All Faculties
+// Get All Faculties (WITH JOIN)
 // ============================
 exports.getFaculties = async (req, res) => {
     try {
-        const [faculties] = await db.query(
-            `SELECT
-                 sr_no,
-                 facultyid,
-                 facultyname,
-                 state,
-                 city,
-                 emailid,
-                 contactnumber,
-                 qualification,
-                 experience,
-                 birthdate,
-                 gender,
-                 courcecode,
-                 semoryear,
-                 subject,
-                 position,
-                 joineddate,
-                 activestatus,
-                 profilepic
-             FROM faculties
-             ORDER BY sr_no DESC`
-        );
+        const [faculties] = await db.query(`
+            SELECT
+                f.sr_no,
+                f.facultyid,
+                f.facultyname,
+                f.state,
+                f.city,
+                f.emailid,
+                f.contactnumber,
+                f.qualification,
+                f.experience,
+                f.birthdate,
+                f.gender,
+                f.courcecode,
+                COALESCE(c.course_name, NULL) AS course_name,
+                f.semoryear,
+                f.subject,
+                COALESCE(s.subjectname, NULL) AS subject_name,
+                f.position,
+                f.joineddate,
+                f.activestatus,
+                f.profilepic
+            FROM faculties f
+                     LEFT JOIN courses c
+                               ON f.courcecode = c.course_code
+                     LEFT JOIN subject s
+                               ON f.subject = s.subjectcode
+            ORDER BY f.sr_no DESC
+        `);
 
         res.json(faculties);
 
@@ -187,7 +193,6 @@ exports.getFaculties = async (req, res) => {
         });
     }
 };
-
 
 // ============================
 // Update Faculty
