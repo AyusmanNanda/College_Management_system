@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import FacultyProfile from "./FacultyProfile";
 import ImportFacultyModal from "./ImportFacultyModal";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const Faculties = () => {
     const token = localStorage.getItem("token");
@@ -17,6 +18,9 @@ const Faculties = () => {
     const [isNew, setIsNew] = useState(false);
 
     const [showImportModal, setShowImportModal] = useState(false);
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [facultyToDelete, setFacultyToDelete] = useState(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -65,21 +69,23 @@ const Faculties = () => {
     }, []);
 
     // =========================
-    // Delete Faculty
+    // Confirmed Delete
     // =========================
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this faculty?"))
-            return;
+    const handleDelete = async () => {
+        if (!facultyToDelete) return;
 
         try {
             await axios.delete(
-                `http://localhost:5000/api/faculty/${id}`,
+                `http://localhost:5000/api/faculty/${facultyToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             fetchFaculties();
         } catch (err) {
             console.error(err);
             setError("Failed to delete faculty.");
+        } finally {
+            setShowDeleteModal(false);
+            setFacultyToDelete(null);
         }
     };
 
@@ -117,7 +123,6 @@ const Faculties = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {/* Import Button */}
                     <button
                         onClick={() => setShowImportModal(true)}
                         className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition"
@@ -125,7 +130,6 @@ const Faculties = () => {
                         Import from File
                     </button>
 
-                    {/* Add Faculty Button */}
                     <button
                         onClick={() => {
                             setIsNew(true);
@@ -221,11 +225,6 @@ const Faculties = () => {
                                             }
                                             alt="profile"
                                             className="h-8 w-8 rounded-full object-cover border"
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src =
-                                                    "http://localhost:5000/uploads/faculties/default.png";
-                                            }}
                                         />
                                     </td>
 
@@ -238,45 +237,11 @@ const Faculties = () => {
                                         </div>
                                     </td>
 
-                                    <td className="px-3 py-2">
-                                        {faculty.position}
-                                    </td>
-
-                                    <td className="px-3 py-2">
-                                        <div className="font-medium">
-                                            {faculty.courcecode}
-                                        </div>
-                                        {faculty.course_name && (
-                                            <div className="text-xs text-gray-500">
-                                                {faculty.course_name}
-                                            </div>
-                                        )}
-                                    </td>
-
-                                    <td className="px-3 py-2">
-                                        {faculty.semoryear || "-"}
-                                    </td>
-
-                                    <td className="px-3 py-2">
-                                        {faculty.subject === "NOT ASSIGNED" ? (
-                                            <span className="text-yellow-600 text-xs font-medium">
-                                                    Unassigned
-                                                </span>
-                                        ) : (
-                                            <>
-                                                <div>{faculty.subject}</div>
-                                                {faculty.subject_name && (
-                                                    <div className="text-xs text-gray-500">
-                                                        {faculty.subject_name}
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
-                                    </td>
-
-                                    <td className="px-3 py-2">
-                                        {faculty.experience}
-                                    </td>
+                                    <td className="px-3 py-2">{faculty.position}</td>
+                                    <td className="px-3 py-2">{faculty.courcecode}</td>
+                                    <td className="px-3 py-2">{faculty.semoryear || "-"}</td>
+                                    <td className="px-3 py-2">{faculty.subject}</td>
+                                    <td className="px-3 py-2">{faculty.experience}</td>
 
                                     <td className="px-3 py-2">
                                         {faculty.activestatus ? (
@@ -303,7 +268,10 @@ const Faculties = () => {
                                             </button>
 
                                             <button
-                                                onClick={() => handleDelete(faculty.sr_no)}
+                                                onClick={() => {
+                                                    setFacultyToDelete(faculty.sr_no);
+                                                    setShowDeleteModal(true);
+                                                }}
                                                 className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                                             >
                                                 Delete
@@ -317,6 +285,18 @@ const Faculties = () => {
                     </table>
                 </div>
             </div>
+
+            <ConfirmDeleteModal
+                show={showDeleteModal}
+                title="Confirm Deletion"
+                message="Are you sure you want to delete this faculty? This action cannot be undone."
+                loading={loading}
+                onCancel={() => {
+                    setShowDeleteModal(false);
+                    setFacultyToDelete(null);
+                }}
+                onConfirm={handleDelete}
+            />
 
             {selectedFaculty !== null && (
                 <FacultyProfile

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const Subjects = () => {
     const token = localStorage.getItem("token");
@@ -13,6 +14,8 @@ const Subjects = () => {
     const [error, setError] = useState("");
 
     const [editingCode, setEditingCode] = useState(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [subjectToDelete, setSubjectToDelete] = useState(null);
 
     const [form, setForm] = useState({
         subjectcode: "",
@@ -136,13 +139,13 @@ const Subjects = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const handleDelete = async (code) => {
-        if (!window.confirm("Delete this subject?")) return;
+    const handleDelete = async () => {
+        if (!subjectToDelete) return;
 
         try {
             setLoading(true);
             await axios.delete(
-                `http://localhost:5000/api/subjects/${code}`,
+                `http://localhost:5000/api/subjects/${subjectToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             fetchSubjects(selectedCourse, selectedSem);
@@ -150,6 +153,8 @@ const Subjects = () => {
             setError("Failed to delete subject.");
         } finally {
             setLoading(false);
+            setShowDeleteModal(false);
+            setSubjectToDelete(null);
         }
     };
 
@@ -326,7 +331,10 @@ const Subjects = () => {
                                         Edit
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(sub.subjectcode)}
+                                        onClick={() => {
+                                            setSubjectToDelete(sub.subjectcode);
+                                            setShowDeleteModal(true);
+                                        }}
                                         className="px-3 py-1 bg-red-600 text-white rounded"
                                     >
                                         Delete
@@ -344,6 +352,17 @@ const Subjects = () => {
                     </tbody>
                 </table>
             </div>
+            <ConfirmDeleteModal
+                show={showDeleteModal}
+                title="Confirm Deletion"
+                message="Are you sure you want to delete this subject? This action cannot be undone."
+                loading={loading}
+                onCancel={() => {
+                    setShowDeleteModal(false);
+                    setSubjectToDelete(null);
+                }}
+                onConfirm={handleDelete}
+            />
         </div>
     );
 };
