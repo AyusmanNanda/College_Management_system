@@ -163,14 +163,23 @@ const InfoField = ({ label, value }) => (
 /* ---------------- Modal Wrapper ---------------- */
 
 const ModalWrapper = ({ children, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-md w-[500px] relative shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+
+        {/* Same overlay as FacultyProfile */}
+        <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => onClose(null)}
+        />
+
+        {/* Same card style as FacultyProfile */}
+        <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6">
             <button
                 onClick={() => onClose(null)}
-                className="absolute top-2 right-3 text-gray-500 hover:text-black"
+                className="absolute top-4 right-5 text-gray-500 hover:text-black text-sm"
             >
                 ✕
             </button>
+
             {children}
         </div>
     </div>

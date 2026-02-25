@@ -201,19 +201,32 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                     )}
 
                     {/* Profile */}
-                    <div className="flex items-center gap-8 border-b pb-6">
-                        <div className="h-28 w-28 rounded-full border overflow-hidden bg-gray-100 shadow-md">
+                    <div className="flex flex-col items-center gap-4 border-b pb-6">
+
+                        <div className="h-32 w-32 rounded-full border overflow-hidden bg-gray-100 shadow-md">
                             {selectedFile ? (
-                                <img src={URL.createObjectURL(selectedFile)} alt="preview" className="h-full w-full object-cover" />
+                                <img
+                                    src={URL.createObjectURL(selectedFile)}
+                                    alt="preview"
+                                    className="h-full w-full object-cover"
+                                />
                             ) : faculty?.profilepic ? (
-                                <img src={`http://localhost:5000/uploads/faculties/${faculty.profilepic}`} alt="profile" className="h-full w-full object-cover" />
+                                <img
+                                    src={`http://localhost:5000/uploads/faculties/${faculty.profilepic}`}
+                                    alt="profile"
+                                    className="h-full w-full object-cover"
+                                />
                             ) : (
-                                <img src={`http://localhost:5000/uploads/faculties/default.png`} alt="default" className="h-full w-full object-cover" />
+                                <img
+                                    src={`http://localhost:5000/uploads/faculties/default.png`}
+                                    alt="default"
+                                    className="h-full w-full object-cover"
+                                />
                             )}
                         </div>
 
                         <label className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition cursor-pointer">
-                            Choose Image
+                            Choose Profile Picture
                             <input
                                 type="file"
                                 accept="image/*"
@@ -221,6 +234,7 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                                 className="hidden"
                             />
                         </label>
+
                     </div>
 
                     {/* Form Grid */}
