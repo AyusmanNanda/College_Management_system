@@ -526,7 +526,7 @@ exports.downloadFacultyTemplate = async (req, res) => {
         // Add Example Row (Optional but helpful)
         // ===============================
         sheet.addRow([
-            "1001",
+            23011050,
             "John Doe",
             "Odisha",
             "Bhubaneswar",
@@ -534,7 +534,7 @@ exports.downloadFacultyTemplate = async (req, res) => {
             "9876543210",
             "MCA",
             "5 Years",
-            "01-01-2000",
+            "2000-02-01",
             "Male",
             courses[0]?.course_code || "",
             "Assistant Professor",
