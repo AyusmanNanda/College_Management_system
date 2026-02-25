@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import FacultyProfile from "./FacultyProfile";
 import ImportFacultyModal from "./ImportFacultyModal";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const Faculties = () => {
     const token = localStorage.getItem("token");
@@ -285,41 +286,17 @@ const Faculties = () => {
                 </div>
             </div>
 
-            {/* Delete Confirmation Modal */}
-            {showDeleteModal && (
-                <div className="fixed inset-0 bg-gray-100/70 backdrop-blur-[2px] flex items-center justify-center z-50">
-                    <div className="bg-white w-full max-w-md rounded-lg shadow-sm border border-gray-200 p-6">
-
-                        <h3 className="text-lg font-semibold text-gray-800">
-                            Confirm Deletion
-                        </h3>
-
-                        <p className="text-sm text-gray-500 mt-2">
-                            Are you sure you want to delete this faculty?
-                            This action cannot be undone.
-                        </p>
-
-                        <div className="flex justify-end gap-3 mt-6">
-                            <button
-                                onClick={() => {
-                                    setShowDeleteModal(false);
-                                    setFacultyToDelete(null);
-                                }}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmDeleteModal
+                show={showDeleteModal}
+                title="Confirm Deletion"
+                message="Are you sure you want to delete this faculty? This action cannot be undone."
+                loading={loading}
+                onCancel={() => {
+                    setShowDeleteModal(false);
+                    setFacultyToDelete(null);
+                }}
+                onConfirm={handleDelete}
+            />
 
             {selectedFaculty !== null && (
                 <FacultyProfile
