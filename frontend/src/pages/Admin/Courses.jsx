@@ -17,6 +17,13 @@ const Courses = () => {
 
     const [editingId, setEditingId] = useState(null);
 
+    // Delete Modal State
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState(null);
+
+    // =========================
+    // Fetch Courses
+    // =========================
     const fetchCourses = async () => {
         if (!token) return;
 
@@ -40,6 +47,9 @@ const Courses = () => {
         fetchCourses();
     }, [token]);
 
+    // =========================
+    // Form Handling
+    // =========================
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
@@ -79,7 +89,6 @@ const Courses = () => {
             setEditingId(null);
             setError("");
             fetchCourses();
-
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.message || "Something went wrong.");
@@ -100,21 +109,29 @@ const Courses = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this course?")) return;
+    // =========================
+    // Confirmed Delete
+    // =========================
+    const handleDelete = async () => {
+        if (!courseToDelete) return;
 
         try {
             setLoading(true);
+
             await axios.delete(
-                `http://localhost:5000/api/courses/${id}`,
+                `http://localhost:5000/api/courses/${courseToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+
             fetchCourses();
+            setError("");
         } catch (err) {
             console.error(err);
             setError("Failed to delete course.");
         } finally {
             setLoading(false);
+            setShowDeleteModal(false);
+            setCourseToDelete(null);
         }
     };
 
@@ -250,7 +267,10 @@ const Courses = () => {
                                         Edit
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(course.id)}
+                                        onClick={() => {
+                                            setCourseToDelete(course.id);
+                                            setShowDeleteModal(true);
+                                        }}
                                         className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
                                     >
                                         Delete
@@ -268,6 +288,42 @@ const Courses = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-gray-100/70 backdrop-blur-[2px] flex items-center justify-center z-50">
+                    <div className="bg-white w-full max-w-md rounded-lg shadow-sm border border-gray-200 p-6">
+
+                        <h3 className="text-lg font-semibold text-gray-800">
+                            Confirm Deletion
+                        </h3>
+
+                        <p className="text-sm text-gray-500 mt-2">
+                            Are you sure you want to delete this course?
+                            This action cannot be undone.
+                        </p>
+
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setCourseToDelete(null);
+                                }}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={handleDelete}
+                                className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

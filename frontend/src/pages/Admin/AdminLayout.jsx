@@ -68,16 +68,12 @@ const AdminLayout = () => {
                     {/* Logo + Title */}
                     <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
-                            {admin?.logo ? (
+                            {admin && (
                                 <img
                                     src={`http://localhost:5000${admin.logo}`}
                                     alt="College Logo"
                                     className="h-full w-full object-cover"
                                 />
-                            ) : (
-                                <span className="text-gray-500 text-xs font-semibold">
-                                    CM
-                                </span>
                             )}
                         </div>
 
