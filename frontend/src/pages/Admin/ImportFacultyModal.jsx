@@ -7,9 +7,6 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
     const [result, setResult] = useState(null);
     const [error, setError] = useState("");
 
-    // ============================
-    // Download Template
-    // ============================
     const handleDownloadTemplate = async () => {
         try {
             const response = await axios.get(
@@ -20,30 +17,18 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                 }
             );
 
-            const url = window.URL.createObjectURL(
-                new Blob([response.data])
-            );
-
+            const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute(
-                "download",
-                "Faculty_Import_Template.xlsx"
-            );
-
+            link.setAttribute("download", "Faculty_Import_Template.xlsx");
             document.body.appendChild(link);
             link.click();
             link.remove();
-
-        } catch (err) {
-            console.error(err);
+        } catch {
             setError("Failed to download template.");
         }
     };
 
-    // ============================
-    // Import File
-    // ============================
     const handleImport = async () => {
         if (!file) return;
 
@@ -67,109 +52,104 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
             );
 
             setResult(response.data);
-
-            // Refresh faculty list
             onImportSuccess();
-
         } catch (err) {
-            console.error(err);
-            setError(
-                err.response?.data?.message || "Import failed."
-            );
+            setError(err.response?.data?.message || "Import failed.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white w-full max-w-xl rounded-lg shadow-lg p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
 
-                {/* Close Button */}
+            {/* Exact same overlay as AdminProfile */}
+            <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={onClose}
+            />
+
+            {/* Exact same card style */}
+            <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6">
+
+                {/* Close Button (same style) */}
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                    className="absolute top-4 right-5 text-gray-500 hover:text-black text-sm"
                 >
                     ✕
                 </button>
 
-                <h3 className="text-lg font-semibold mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 mb-6">
                     Import Faculty from Excel
-                </h3>
+                </h2>
 
-                {/* Step 1 */}
-                <div className="mb-6">
-                    <p className="text-sm text-gray-600 mb-2">
-                        Step 1: Download the template.
-                    </p>
-                    <button
-                        onClick={handleDownloadTemplate}
-                        className="px-4 py-2 bg-gray-900 text-white text-sm rounded hover:bg-black"
-                    >
-                        Download Template
-                    </button>
-                </div>
+                <div className="space-y-6">
 
-                {/* Step 2 */}
-                <div className="mb-6">
-                    <p className="text-sm text-gray-600 mb-2">
-                        Step 2: Upload the completed file.
-                    </p>
-
-                    <input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={(e) => setFile(e.target.files[0])}
-                        className="text-sm"
-                    />
-
-                    {file && (
-                        <p className="text-xs text-gray-500 mt-2">
-                            Selected: {file.name}
+                    {/* Download Template */}
+                    <div>
+                        <p className="text-sm text-gray-600 mb-2">
+                            Download template:
                         </p>
-                    )}
-                </div>
-
-                {/* Import Button */}
-                <button
-                    onClick={handleImport}
-                    disabled={!file || loading}
-                    className={`px-4 py-2 text-sm rounded ${
-                        !file || loading
-                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            : "bg-green-600 text-white hover:bg-green-700"
-                    }`}
-                >
-                    {loading ? "Importing..." : "Import Faculties"}
-                </button>
-
-                {/* Error */}
-                {error && (
-                    <div className="mt-4 text-sm text-red-600">
-                        {error}
+                        <button
+                            onClick={handleDownloadTemplate}
+                            className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                        >
+                            Download Template
+                        </button>
                     </div>
-                )}
 
-                {/* Result Summary */}
-                {result && (
-                    <div className="mt-4 bg-gray-50 p-4 rounded text-sm border">
-                        <p><strong>Total Rows:</strong> {result.totalRows}</p>
-                        <p><strong>Inserted:</strong> {result.inserted}</p>
-                        <p><strong>Duplicates:</strong> {result.duplicates}</p>
-                        <p><strong>Invalid Rows:</strong> {result.invalidRows}</p>
+                    {/* Upload File */}
+                    <div>
+                        <p className="text-sm text-gray-600 mb-2">
+                            Upload completed file:
+                        </p>
 
-                        {result.errors?.length > 0 && (
-                            <div className="mt-2 max-h-40 overflow-y-auto text-xs text-red-600">
-                                {result.errors.map((err, index) => (
-                                    <p key={index}>
-                                        Row {err.row}: {err.reason}
-                                    </p>
-                                ))}
-                            </div>
+                        <input
+                            type="file"
+                            accept=".xlsx,.xls"
+                            onChange={(e) => setFile(e.target.files[0])}
+                            className="text-sm"
+                        />
+
+                        {file && (
+                            <p className="text-xs text-gray-500 mt-2">
+                                Selected: {file.name}
+                            </p>
                         )}
                     </div>
-                )}
 
+                    {/* Import Button */}
+                    <div className="flex justify-end">
+                        <button
+                            onClick={handleImport}
+                            disabled={!file || loading}
+                            className={`px-5 py-2 text-sm rounded-md transition ${
+                                !file || loading
+                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    : "bg-gray-900 text-white hover:bg-black"
+                            }`}
+                        >
+                            {loading ? "Importing..." : "Import Faculties"}
+                        </button>
+                    </div>
+
+                    {/* Error */}
+                    {error && (
+                        <p className="text-sm text-red-600">{error}</p>
+                    )}
+
+                    {/* Result Summary */}
+                    {result && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
+                            <p><strong>Total Rows:</strong> {result.totalRows}</p>
+                            <p><strong>Inserted:</strong> {result.inserted}</p>
+                            <p><strong>Duplicates:</strong> {result.duplicates}</p>
+                            <p><strong>Invalid Rows:</strong> {result.invalidRows}</p>
+                        </div>
+                    )}
+
+                </div>
             </div>
         </div>
     );

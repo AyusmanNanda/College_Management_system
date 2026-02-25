@@ -16,6 +16,8 @@ const Faculties = () => {
     const [selectedFaculty, setSelectedFaculty] = useState(null);
     const [isNew, setIsNew] = useState(false);
 
+    const [showImportModal, setShowImportModal] = useState(false);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -117,9 +119,7 @@ const Faculties = () => {
                 <div className="flex items-center gap-3">
                     {/* Import Button */}
                     <button
-                        onClick={() => {
-                            console.log("Open import modal");
-                        }}
+                        onClick={() => setShowImportModal(true)}
                         className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition"
                     >
                         Import from File
@@ -212,7 +212,6 @@ const Faculties = () => {
                         ) : (
                             filteredFaculties.map((faculty) => (
                                 <tr key={faculty.sr_no} className="border-t hover:bg-gray-50">
-
                                     <td className="px-3 py-2">
                                         <img
                                             src={
@@ -311,7 +310,6 @@ const Faculties = () => {
                                             </button>
                                         </div>
                                     </td>
-
                                 </tr>
                             ))
                         )}
@@ -326,6 +324,14 @@ const Faculties = () => {
                     isNew={isNew}
                     onClose={() => setSelectedFaculty(null)}
                     onUpdated={fetchFaculties}
+                />
+            )}
+
+            {showImportModal && (
+                <ImportFacultyModal
+                    token={token}
+                    onClose={() => setShowImportModal(false)}
+                    onImportSuccess={fetchFaculties}
                 />
             )}
         </div>
