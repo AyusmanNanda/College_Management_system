@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import FacultyProfile from "./FacultyProfile";
+import ImportFacultyModal from "./ImportFacultyModal";
 
 const Faculties = () => {
     const token = localStorage.getItem("token");

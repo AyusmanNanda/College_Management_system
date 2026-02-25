@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const multer = require("multer");
 const path = require("path");
 const ExcelJS = require("exceljs");
+const XLSX = require("xlsx");
+const fs = require("fs");
 
 /*
   Faculty Controller
@@ -31,6 +33,28 @@ const storage = multer.diskStorage({
 
 exports.upload = multer({ storage });
 
+// ============================
+// Excel Upload Middleware
+// ============================
+const excelStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/temp");
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+
+exports.uploadExcel = multer({
+    storage: excelStorage,
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (ext !== ".xlsx" && ext !== ".xls") {
+            return cb(new Error("Only Excel files allowed"));
+        }
+        cb(null, true);
+    }
+});
 
 // ============================
 // Create Faculty
@@ -477,6 +501,148 @@ exports.downloadFacultyTemplate = async (req, res) => {
         console.error(error);
         res.status(500).json({
             message: "Error generating template"
+        });
+    }
+};
+
+// ============================
+// Import Faculties From Excel
+// ============================
+exports.importFacultiesFromExcel = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            message: "No file uploaded"
+        });
+    }
+
+    const filePath = req.file.path;
+
+    let totalRows = 0;
+    let inserted = 0;
+    let duplicates = 0;
+    let invalidRows = 0;
+    const errors = [];
+
+    try {
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const data = XLSX.utils.sheet_to_json(sheet);
+
+        totalRows = data.length;
+
+        for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+
+            const {
+                facultyid,
+                facultyname,
+                state,
+                city,
+                emailid,
+                contactnumber,
+                qualification,
+                experience,
+                birthdate,
+                gender,
+                courcecode,
+                position,
+                joineddate
+            } = row;
+
+            // Validate required fields
+            if (
+                !facultyid ||
+                !facultyname ||
+                !state ||
+                !city ||
+                !emailid ||
+                !contactnumber ||
+                !qualification ||
+                !experience ||
+                !birthdate ||
+                !gender ||
+                !courcecode
+            ) {
+                invalidRows++;
+                errors.push({
+                    row: i + 2,
+                    reason: "Missing required fields"
+                });
+                continue;
+            }
+
+            try {
+                const hashedPassword = await bcrypt.hash(
+                    birthdate.toString(),
+                    10
+                );
+
+                await db.query(
+                    `INSERT INTO faculties
+                     (facultyid, facultyname, state, city, emailid,
+                      contactnumber, qualification, experience,
+                      birthdate, gender, profilepic, courcecode,
+                      semoryear, subject, position,
+                      joineddate, password, activestatus)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        facultyid,
+                        facultyname.trim(),
+                        state.trim(),
+                        city.trim(),
+                        emailid.trim(),
+                        contactnumber.trim(),
+                        qualification.trim(),
+                        experience.trim(),
+                        birthdate,
+                        gender,
+                        "default.png",
+                        courcecode,
+                        0,
+                        "NOT ASSIGNED",
+                        position || "NOT ASSIGNED",
+                        joineddate || new Date().toISOString(),
+                        hashedPassword,
+                        0
+                    ]
+                );
+
+                inserted++;
+
+            } catch (error) {
+                if (error.code === "ER_DUP_ENTRY") {
+                    duplicates++;
+                    errors.push({
+                        row: i + 2,
+                        reason: "Duplicate faculty ID or Email"
+                    });
+                } else {
+                    invalidRows++;
+                    errors.push({
+                        row: i + 2,
+                        reason: "Database error"
+                    });
+                }
+            }
+        }
+
+        // Delete temp file
+        fs.unlinkSync(filePath);
+
+        res.json({
+            totalRows,
+            inserted,
+            duplicates,
+            invalidRows,
+            errors
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Import failed"
         });
     }
 };
