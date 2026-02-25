@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import FacultyProfile from "./FacultyProfile";
+import ImportFacultyModal from "./ImportFacultyModal";
 
 const Faculties = () => {
     const token = localStorage.getItem("token");
@@ -14,6 +15,8 @@ const Faculties = () => {
 
     const [selectedFaculty, setSelectedFaculty] = useState(null);
     const [isNew, setIsNew] = useState(false);
+
+    const [showImportModal, setShowImportModal] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -100,33 +103,43 @@ const Faculties = () => {
     });
 
     return (
-        <div className="space-y-10">
+        <div className="space-y-8">
 
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-semibold text-gray-800">
+                    <h2 className="text-xl font-semibold text-gray-800">
                         Faculty Management
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">
-                        Manage all faculty members.
+                        Manage academic faculty assignments.
                     </p>
                 </div>
 
-                <button
-                    onClick={() => {
-                        setIsNew(true);
-                        setSelectedFaculty({});
-                    }}
-                    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                >
-                    Add Faculty
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* Import Button */}
+                    <button
+                        onClick={() => setShowImportModal(true)}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 transition"
+                    >
+                        Import from File
+                    </button>
+
+                    {/* Add Faculty Button */}
+                    <button
+                        onClick={() => {
+                            setIsNew(true);
+                            setSelectedFaculty({});
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                    >
+                        Add Faculty
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm grid md:grid-cols-3 gap-6">
-
+            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm grid md:grid-cols-3 gap-4">
                 <input
                     type="text"
                     placeholder="Search by name or email"
@@ -141,8 +154,8 @@ const Faculties = () => {
                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                     <option value="">All Status</option>
-                    <option value="1">Online</option>
-                    <option value="0">Offline</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
                 </select>
 
                 <select
@@ -157,7 +170,6 @@ const Faculties = () => {
                         </option>
                     ))}
                 </select>
-
             </div>
 
             {error && (
@@ -168,93 +180,142 @@ const Faculties = () => {
 
             {/* Table */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
-                    <tr>
-                        <th className="p-4">Profile</th>
-                        <th className="p-4">Name</th>
-                        <th className="p-4">Email</th>
-                        <th className="p-4">Contact</th>
-                        <th className="p-4">Qualification</th>
-                        <th className="p-4">Course Code</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4">Actions</th>
-                    </tr>
-                    </thead>
-
-                    <tbody>
-                    {loading ? (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                         <tr>
-                            <td colSpan="8" className="p-6 text-center text-gray-500">
-                                Loading...
-                            </td>
+                            <th className="px-3 py-2">Profile</th>
+                            <th className="px-3 py-2">Faculty</th>
+                            <th className="px-3 py-2">Position</th>
+                            <th className="px-3 py-2">Course</th>
+                            <th className="px-3 py-2">Semester</th>
+                            <th className="px-3 py-2">Subject</th>
+                            <th className="px-3 py-2">Experience</th>
+                            <th className="px-3 py-2">Status</th>
+                            <th className="px-3 py-2 text-center">Actions</th>
                         </tr>
-                    ) : filteredFaculties.length === 0 ? (
-                        <tr>
-                            <td colSpan="8" className="p-6 text-center text-gray-500">
-                                No faculties found.
-                            </td>
-                        </tr>
-                    ) : (
-                        filteredFaculties.map((faculty) => (
-                            <tr key={faculty.sr_no} className="border-t hover:bg-gray-50">
+                        </thead>
 
-                                <td className="p-4">
-                                    {faculty.profilepic ? (
-                                        <img
-                                            src={`http://localhost:5000/uploads/faculties/${faculty.profilepic}`}
-                                            alt="profile"
-                                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
-                                        />
-                                    ) : (
-                                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                                            {faculty.facultyname?.charAt(0)?.toUpperCase() || "?"}
-                                        </div>
-                                    )}
+                        <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan="9" className="py-6 text-center text-gray-500">
+                                    Loading...
                                 </td>
-
-                                <td className="p-4 font-medium">{faculty.facultyname}</td>
-                                <td className="p-4">{faculty.emailid}</td>
-                                <td className="p-4">{faculty.contactnumber}</td>
-                                <td className="p-4">{faculty.qualification}</td>
-                                <td className="p-4">{faculty.courcecode}</td>
-
-                                <td className="p-4">
-                                    {faculty.activestatus ? (
-                                        <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
-                                                Online
-                                            </span>
-                                    ) : (
-                                        <span className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
-                                                Offline
-                                            </span>
-                                    )}
-                                </td>
-
-                                <td className="p-4 flex gap-2">
-                                    <button
-                                        onClick={() => {
-                                            setIsNew(false);
-                                            setSelectedFaculty(faculty);
-                                        }}
-                                        className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        onClick={() => handleDelete(faculty.sr_no)}
-                                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-
                             </tr>
-                        ))
-                    )}
-                    </tbody>
-                </table>
+                        ) : filteredFaculties.length === 0 ? (
+                            <tr>
+                                <td colSpan="9" className="py-6 text-center text-gray-500">
+                                    No faculties found.
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredFaculties.map((faculty) => (
+                                <tr key={faculty.sr_no} className="border-t hover:bg-gray-50">
+                                    <td className="px-3 py-2">
+                                        <img
+                                            src={
+                                                faculty.profilepic
+                                                    ? `http://localhost:5000/uploads/faculties/${faculty.profilepic}`
+                                                    : `http://localhost:5000/uploads/faculties/default.png`
+                                            }
+                                            alt="profile"
+                                            className="h-8 w-8 rounded-full object-cover border"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src =
+                                                    "http://localhost:5000/uploads/faculties/default.png";
+                                            }}
+                                        />
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        <div className="font-medium">
+                                            {faculty.facultyname}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {faculty.facultyid}
+                                        </div>
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        {faculty.position}
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        <div className="font-medium">
+                                            {faculty.courcecode}
+                                        </div>
+                                        {faculty.course_name && (
+                                            <div className="text-xs text-gray-500">
+                                                {faculty.course_name}
+                                            </div>
+                                        )}
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        {faculty.semoryear || "-"}
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        {faculty.subject === "NOT ASSIGNED" ? (
+                                            <span className="text-yellow-600 text-xs font-medium">
+                                                    Unassigned
+                                                </span>
+                                        ) : (
+                                            <>
+                                                <div>{faculty.subject}</div>
+                                                {faculty.subject_name && (
+                                                    <div className="text-xs text-gray-500">
+                                                        {faculty.subject_name}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        {faculty.experience}
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        {faculty.activestatus ? (
+                                            <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                                                    Active
+                                                </span>
+                                        ) : (
+                                            <span className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
+                                                    Inactive
+                                                </span>
+                                        )}
+                                    </td>
+
+                                    <td className="px-3 py-2">
+                                        <div className="flex gap-2 justify-center">
+                                            <button
+                                                onClick={() => {
+                                                    setIsNew(false);
+                                                    setSelectedFaculty(faculty);
+                                                }}
+                                                className="px-2 py-1 bg-gray-200 text-xs rounded hover:bg-gray-300"
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                onClick={() => handleDelete(faculty.sr_no)}
+                                                className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {selectedFaculty !== null && (
@@ -263,6 +324,14 @@ const Faculties = () => {
                     isNew={isNew}
                     onClose={() => setSelectedFaculty(null)}
                     onUpdated={fetchFaculties}
+                />
+            )}
+
+            {showImportModal && (
+                <ImportFacultyModal
+                    token={token}
+                    onClose={() => setShowImportModal(false)}
+                    onImportSuccess={fetchFaculties}
                 />
             )}
         </div>

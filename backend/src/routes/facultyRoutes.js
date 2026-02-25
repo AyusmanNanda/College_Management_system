@@ -40,4 +40,17 @@ router.delete(
     facultyController.deleteFaculty
 );
 
+router.get(
+    "/template",
+    authMiddleware,
+    facultyController.downloadFacultyTemplate
+);
+
+router.post(
+    "/import",
+    authMiddleware,
+    facultyController.uploadExcel.single("file"),
+    facultyController.importFacultiesFromExcel
+);
+
 module.exports = router;

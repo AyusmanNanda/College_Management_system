@@ -38,21 +38,13 @@ const AdminLayout = () => {
         fetchAdmin();
     }, [token]);
 
-    const handleLogout = async () => {
-        try {
-            await axios.post(
-                "http://localhost:5000/api/auth/logout",
-                {},
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
+    const handleLogout = () => {
+        //Clear entire session
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("lastPage");
 
-            localStorage.removeItem("token");
-            navigate("/");
-        } catch (error) {
-            console.error(error);
-        }
+        navigate("/", { replace: true });
     };
 
     const menuItems = [

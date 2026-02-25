@@ -2,6 +2,9 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const multer = require("multer");
 const path = require("path");
+const ExcelJS = require("exceljs");
+const XLSX = require("xlsx");
+const fs = require("fs");
 
 /*
   Faculty Controller
@@ -30,6 +33,28 @@ const storage = multer.diskStorage({
 
 exports.upload = multer({ storage });
 
+// ============================
+// Excel Upload Middleware
+// ============================
+const excelStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/temp");
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+
+exports.uploadExcel = multer({
+    storage: excelStorage,
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (ext !== ".xlsx" && ext !== ".xls") {
+            return cb(new Error("Only Excel files allowed"));
+        }
+        cb(null, true);
+    }
+});
 
 // ============================
 // Create Faculty
@@ -45,7 +70,13 @@ exports.createFaculty = async (req, res) => {
         qualification,
         experience,
         birthdate,
-        gender
+        gender,
+        courcecode,
+        semoryear,
+        subject,
+        position,
+        joineddate,
+        password
     } = req.body;
 
     // ============================
@@ -70,9 +101,13 @@ exports.createFaculty = async (req, res) => {
 
     try {
         // ============================
-        // Default Password = Birthdate
+        // Default Password = DOB (if not provided)
         // ============================
-        const hashedPassword = await bcrypt.hash(birthdate, 10);
+        const finalPassword = password && password.trim() !== ""
+            ? password
+            : birthdate;
+
+        const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
         // ============================
         // Default Profile Pic
@@ -82,13 +117,13 @@ exports.createFaculty = async (req, res) => {
             : "default.png";
 
         // ============================
-        // Default Values
+        // Optional Defaults
         // ============================
-        const joineddate = new Date().toISOString();
-        const courcecode = "NOT ASSIGNED";
-        const semoryear = 0;
-        const subject = "NOT ASSIGNED";
-        const position = "NOT ASSIGNED";
+        const finalCourse = courcecode || "NOT ASSIGNED";
+        const finalSem = semoryear || 0;
+        const finalSubject = subject || "NOT ASSIGNED";
+        const finalPosition = position || "NOT ASSIGNED";
+        const finalJoinedDate = joineddate || new Date().toISOString();
         const activestatus = 0;
 
         await db.query(
@@ -110,11 +145,11 @@ exports.createFaculty = async (req, res) => {
                 birthdate,
                 gender,
                 profilepic,
-                courcecode,
-                semoryear,
-                subject,
-                position,
-                joineddate,
+                finalCourse,
+                finalSem,
+                finalSubject,
+                finalPosition,
+                finalJoinedDate,
                 hashedPassword,
                 activestatus
             ]
@@ -140,25 +175,39 @@ exports.createFaculty = async (req, res) => {
 
 
 // ============================
-// Get All Faculties
+// Get All Faculties (WITH JOIN)
 // ============================
 exports.getFaculties = async (req, res) => {
     try {
-        const [faculties] = await db.query(
-            `SELECT
-                 sr_no,
-                 facultyid,
-                 facultyname,
-                 emailid,
-                 contactnumber,
-                 qualification,
-                 courcecode,
-                 position,
-                 activestatus,
-                 profilepic
-             FROM faculties
-             ORDER BY sr_no DESC`
-        );
+        const [faculties] = await db.query(`
+            SELECT
+                f.sr_no,
+                f.facultyid,
+                f.facultyname,
+                f.state,
+                f.city,
+                f.emailid,
+                f.contactnumber,
+                f.qualification,
+                f.experience,
+                f.birthdate,
+                f.gender,
+                f.courcecode,
+                COALESCE(c.course_name, NULL) AS course_name,
+                f.semoryear,
+                f.subject,
+                COALESCE(s.subjectname, NULL) AS subject_name,
+                f.position,
+                f.joineddate,
+                f.activestatus,
+                f.profilepic
+            FROM faculties f
+                     LEFT JOIN courses c
+                               ON f.courcecode = c.course_code
+                     LEFT JOIN subject s
+                               ON f.subject = s.subjectcode
+            ORDER BY f.sr_no DESC
+        `);
 
         res.json(faculties);
 
@@ -169,7 +218,6 @@ exports.getFaculties = async (req, res) => {
         });
     }
 };
-
 
 // ============================
 // Update Faculty
@@ -253,13 +301,11 @@ exports.updateFaculty = async (req, res) => {
             joineddate || null
         ];
 
-        // Update image if uploaded
         if (profilepic) {
             query += `, profilepic = ?`;
             values.push(profilepic);
         }
 
-        // Update password only if provided
         if (password && password.trim() !== "") {
             const hashedPassword = await bcrypt.hash(password, 10);
             query += `, password = ?`;
@@ -311,5 +357,292 @@ exports.deleteFaculty = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error deleting faculty" });
+    }
+};
+exports.downloadFacultyTemplate = async (req, res) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Faculties");
+        const dropdownSheet = workbook.addWorksheet("DropdownData");
+
+        // ===============================
+        // Fetch Courses (Departments)
+        // ===============================
+        const [courses] = await db.query(
+            "SELECT course_code, course_name FROM courses"
+        );
+
+        // ===============================
+        // Dropdown Static Values
+        // ===============================
+        const genders = ["Male", "Female", "Other"];
+        const positions = [
+            "Professor",
+            "Assistant Professor",
+            "Lecturer",
+            "HOD",
+            "NOT ASSIGNED"
+        ];
+
+        // ===============================
+        // Add Dropdown Data
+        // ===============================
+        dropdownSheet.getColumn(1).values = ["Gender", ...genders];
+        dropdownSheet.getColumn(2).values = [
+            "Department",
+            ...courses.map(c => c.course_code)
+        ];
+        dropdownSheet.getColumn(3).values = ["Position", ...positions];
+
+        dropdownSheet.state = "hidden";
+
+        // ===============================
+        // Main Headers
+        // ===============================
+        const headers = [
+            "facultyid",
+            "facultyname",
+            "state",
+            "city",
+            "emailid",
+            "contactnumber",
+            "qualification",
+            "experience",
+            "birthdate (YYYY-MM-DD)",
+            "gender",
+            "courcecode",
+            "position",
+            "joineddate (YYYY-MM-DD optional)"
+        ];
+
+        sheet.addRow(headers);
+
+        sheet.columns.forEach(col => {
+            col.width = 22;
+        });
+
+        // Bold Header
+        sheet.getRow(1).font = { bold: true };
+
+        // ===============================
+        // Add Data Validation
+        // ===============================
+
+        // Gender Dropdown
+        sheet.getColumn("J").eachCell((cell, rowNumber) => {
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: "list",
+                    allowBlank: false,
+                    formulae: ["DropdownData!$A$2:$A$4"]
+                };
+            }
+        });
+
+        // Department Dropdown
+        const deptLastRow = courses.length + 1;
+        sheet.getColumn("K").eachCell((cell, rowNumber) => {
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: "list",
+                    allowBlank: false,
+                    formulae: [`DropdownData!$B$2:$B$${deptLastRow}`]
+                };
+            }
+        });
+
+        // Position Dropdown
+        sheet.getColumn("L").eachCell((cell, rowNumber) => {
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: "list",
+                    allowBlank: true,
+                    formulae: ["DropdownData!$C$2:$C$6"]
+                };
+            }
+        });
+
+        // ===============================
+        // Add Example Row (Optional but helpful)
+        // ===============================
+        sheet.addRow([
+            "1001",
+            "John Doe",
+            "Odisha",
+            "Bhubaneswar",
+            "john@example.com",
+            "9876543210",
+            "MCA",
+            "5 Years",
+            "1990-01-01",
+            "Male",
+            courses[0]?.course_code || "",
+            "Assistant Professor",
+            ""
+        ]);
+
+        // ===============================
+        // Send File
+        // ===============================
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=Faculty_Import_Template.xlsx"
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Error generating template"
+        });
+    }
+};
+
+// ============================
+// Import Faculties From Excel
+// ============================
+exports.importFacultiesFromExcel = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            message: "No file uploaded"
+        });
+    }
+
+    const filePath = req.file.path;
+
+    let totalRows = 0;
+    let inserted = 0;
+    let duplicates = 0;
+    let invalidRows = 0;
+    const errors = [];
+
+    try {
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const data = XLSX.utils.sheet_to_json(sheet);
+
+        totalRows = data.length;
+
+        for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+
+            const {
+                facultyid,
+                facultyname,
+                state,
+                city,
+                emailid,
+                contactnumber,
+                qualification,
+                experience,
+                birthdate,
+                gender,
+                courcecode,
+                position,
+                joineddate
+            } = row;
+
+            // Validate required fields
+            if (
+                !facultyid ||
+                !facultyname ||
+                !state ||
+                !city ||
+                !emailid ||
+                !contactnumber ||
+                !qualification ||
+                !experience ||
+                !birthdate ||
+                !gender ||
+                !courcecode
+            ) {
+                invalidRows++;
+                errors.push({
+                    row: i + 2,
+                    reason: "Missing required fields"
+                });
+                continue;
+            }
+
+            try {
+                const hashedPassword = await bcrypt.hash(
+                    birthdate.toString(),
+                    10
+                );
+
+                await db.query(
+                    `INSERT INTO faculties
+                     (facultyid, facultyname, state, city, emailid,
+                      contactnumber, qualification, experience,
+                      birthdate, gender, profilepic, courcecode,
+                      semoryear, subject, position,
+                      joineddate, password, activestatus)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        facultyid,
+                        facultyname.trim(),
+                        state.trim(),
+                        city.trim(),
+                        emailid.trim(),
+                        contactnumber.trim(),
+                        qualification.trim(),
+                        experience.trim(),
+                        birthdate,
+                        gender,
+                        "default.png",
+                        courcecode,
+                        0,
+                        "NOT ASSIGNED",
+                        position || "NOT ASSIGNED",
+                        joineddate || new Date().toISOString(),
+                        hashedPassword,
+                        0
+                    ]
+                );
+
+                inserted++;
+
+            } catch (error) {
+                if (error.code === "ER_DUP_ENTRY") {
+                    duplicates++;
+                    errors.push({
+                        row: i + 2,
+                        reason: "Duplicate faculty ID or Email"
+                    });
+                } else {
+                    invalidRows++;
+                    errors.push({
+                        row: i + 2,
+                        reason: "Database error"
+                    });
+                }
+            }
+        }
+
+        // Delete temp file
+        fs.unlinkSync(filePath);
+
+        res.json({
+            totalRows,
+            inserted,
+            duplicates,
+            invalidRows,
+            errors
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Import failed"
+        });
     }
 };

@@ -1,4 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Navigate,
+    useLocation
+} from "react-router-dom";
+import { useEffect } from "react";
 
 import Login from "./pages/Login";
 
@@ -15,14 +22,67 @@ import StudentDashboard from "./pages/Student/StudentDashboard";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
+/* ===================== Route Tracker ===================== */
+
+const RouteTracker = () => {
+    const location = useLocation();
+    const token = localStorage.getItem("token");
+
+    useEffect(() => {
+        if (token && location.pathname !== "/") {
+            localStorage.setItem("lastPage", location.pathname);
+        }
+    }, [location, token]);
+
+    return null;
+};
+
+/* ===================== Root Handler ===================== */
+
+const RootHandler = () => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    const lastPage = localStorage.getItem("lastPage");
+
+    // Not logged in → show Login
+    if (!token) {
+        return <Login />;
+    }
+
+    // Logged in → go back to last visited page
+    if (lastPage) {
+        return <Navigate to={lastPage} replace />;
+    }
+
+    // Fallback by role
+    if (role === "admin") {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
+
+    if (role === "faculty") {
+        return <Navigate to="/faculty/dashboard" replace />;
+    }
+
+    if (role === "student") {
+        return <Navigate to="/student/dashboard" replace />;
+    }
+
+    return <Login />;
+};
+
+/* ===================== App ===================== */
 
 function App() {
     return (
         <Router>
-            <Routes>
-                <Route path="/" element={<Login />} />
+            <RouteTracker />
 
-                {/* Admin Section */}
+            <Routes>
+
+                {/* Smart Root Route */}
+                <Route path="/" element={<RootHandler />} />
+
+                {/* ===================== Admin Section ===================== */}
                 <Route
                     path="/admin"
                     element={
@@ -39,7 +99,7 @@ function App() {
                     <Route path="faculties" element={<Faculties />} />
                 </Route>
 
-                {/* Faculty */}
+                {/* ===================== Faculty ===================== */}
                 <Route
                     path="/faculty/dashboard"
                     element={
@@ -49,7 +109,7 @@ function App() {
                     }
                 />
 
-                {/* Student */}
+                {/* ===================== Student ===================== */}
                 <Route
                     path="/student/dashboard"
                     element={
@@ -58,6 +118,10 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Catch All */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
         </Router>
     );
