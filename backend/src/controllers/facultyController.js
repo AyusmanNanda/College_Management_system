@@ -5,7 +5,7 @@ const path = require("path");
 const ExcelJS = require("exceljs");
 const XLSX = require("xlsx");
 const fs = require("fs");
-
+const facultyUploadDir = path.resolve(__dirname, "../../uploads/faculties");
 /*
   Faculty Controller
   ------------------
@@ -15,24 +15,47 @@ const fs = require("fs");
   - Update faculty
   - Delete faculty
 */
+const getFacultyImage = (facultyid) => {
+    if (!fs.existsSync(facultyUploadDir)) return "default.png";
 
+    const files = fs.readdirSync(facultyUploadDir);
 
-// ============================
-// Multer Storage Configuration
-// ============================
+    const match = files.find(file => {
+        const name = path.basename(file, path.extname(file));
+        return name === String(facultyid);
+    });
+
+    return match || "default.png";
+};
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/faculties");
+        cb(null, facultyUploadDir);
     },
     filename: (req, file, cb) => {
-        const uniqueName =
-            Date.now() + "-" + file.originalname.replace(/\s+/g, "_");
-        cb(null, uniqueName);
+        const facultyid = req.body.facultyid;
+        const ext = path.extname(file.originalname).toLowerCase();
+
+        if (!facultyid) {
+            return cb(new Error("Faculty ID required for image naming"));
+        }
+
+        // Remove any existing image with same facultyid
+        if (fs.existsSync(facultyUploadDir)) {
+            const files = fs.readdirSync(facultyUploadDir);
+            files.forEach(file => {
+                const name = path.basename(file, path.extname(file));
+                if (name === String(facultyid)) {
+                    fs.unlinkSync(path.join(facultyUploadDir, file));
+                }
+            });
+        }
+
+        cb(null, `${facultyid}${ext}`);
     }
 });
 
 exports.upload = multer({ storage });
-
 // ============================
 // Excel Upload Middleware
 // ============================
@@ -112,9 +135,13 @@ exports.createFaculty = async (req, res) => {
         // ============================
         // Default Profile Pic
         // ============================
-        const profilepic = req.file
-            ? req.file.filename
-            : "default.png";
+        let profilepic;
+
+        if (req.file) {
+            profilepic = req.file.filename;
+        } else {
+            profilepic = getFacultyImage(facultyid);
+        }
 
         // ============================
         // Optional Defaults
@@ -190,7 +217,7 @@ exports.getFaculties = async (req, res) => {
                 f.contactnumber,
                 f.qualification,
                 f.experience,
-                f.birthdate,
+                DATE_FORMAT(f.birthdate, '%Y-%m-%d') AS birthdate,
                 f.gender,
                 f.courcecode,
                 COALESCE(c.course_name, NULL) AS course_name,
@@ -198,7 +225,7 @@ exports.getFaculties = async (req, res) => {
                 f.subject,
                 COALESCE(s.subjectname, NULL) AS subject_name,
                 f.position,
-                f.joineddate,
+                DATE_FORMAT(f.joineddate, '%Y-%m-%d') AS joineddate,
                 f.activestatus,
                 f.profilepic
             FROM faculties f
@@ -262,25 +289,58 @@ exports.updateFaculty = async (req, res) => {
     }
 
     try {
-        const profilepic = req.file ? req.file.filename : null;
+        // Get existing faculty
+        const [rows] = await db.query(
+            "SELECT facultyid, profilepic FROM faculties WHERE sr_no = ?",
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Faculty not found" });
+        }
+
+        const oldFacultyId = rows[0].facultyid;
+        let finalProfilePic = rows[0].profilepic;
+
+        // If new image uploaded
+        if (req.file) {
+            finalProfilePic = req.file.filename;
+        }
+        // If facultyid changed but no new image
+        else if (
+            oldFacultyId !== facultyid &&
+            finalProfilePic &&
+            finalProfilePic !== "default.png"
+        ) {
+            const ext = path.extname(finalProfilePic);
+            const oldPath = path.join(facultyUploadDir, finalProfilePic);
+            const newFileName = `${facultyid}${ext}`;
+            const newPath = path.join(facultyUploadDir, newFileName);
+
+            if (fs.existsSync(oldPath)) {
+                fs.renameSync(oldPath, newPath);
+                finalProfilePic = newFileName;
+            }
+        }
 
         let query = `
             UPDATE faculties SET
-                                 facultyid = ?,
-                                 facultyname = ?,
-                                 state = ?,
-                                 city = ?,
-                                 emailid = ?,
-                                 contactnumber = ?,
-                                 qualification = ?,
-                                 experience = ?,
-                                 birthdate = ?,
-                                 gender = ?,
-                                 courcecode = ?,
-                                 semoryear = ?,
-                                 subject = ?,
-                                 position = ?,
-                                 joineddate = ?
+                facultyid = ?,
+                facultyname = ?,
+                state = ?,
+                city = ?,
+                emailid = ?,
+                contactnumber = ?,
+                qualification = ?,
+                experience = ?,
+                birthdate = ?,
+                gender = ?,
+                courcecode = ?,
+                semoryear = ?,
+                subject = ?,
+                position = ?,
+                joineddate = ?,
+                profilepic = ?
         `;
 
         const values = [
@@ -298,13 +358,9 @@ exports.updateFaculty = async (req, res) => {
             semoryear || 0,
             subject || "NOT ASSIGNED",
             position || "NOT ASSIGNED",
-            joineddate || null
+            joineddate || null,
+            finalProfilePic
         ];
-
-        if (profilepic) {
-            query += `, profilepic = ?`;
-            values.push(profilepic);
-        }
 
         if (password && password.trim() !== "") {
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -315,23 +371,13 @@ exports.updateFaculty = async (req, res) => {
         query += ` WHERE sr_no = ?`;
         values.push(id);
 
-        const [result] = await db.query(query, values);
+        await db.query(query, values);
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                message: "Faculty not found"
-            });
-        }
-
-        res.json({
-            message: "Faculty updated successfully"
-        });
+        res.json({ message: "Faculty updated successfully" });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: "Error updating faculty"
-        });
+        res.status(500).json({ message: "Error updating faculty" });
     }
 };
 
@@ -343,13 +389,27 @@ exports.deleteFaculty = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [result] = await db.query(
+        const [rows] = await db.query(
+            "SELECT profilepic FROM faculties WHERE sr_no = ?",
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Faculty not found" });
+        }
+
+        const profilepic = rows[0].profilepic;
+
+        await db.query(
             "DELETE FROM faculties WHERE sr_no = ?",
             [id]
         );
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Faculty not found" });
+        if (profilepic && profilepic !== "default.png") {
+            const filePath = path.join(facultyUploadDir, profilepic);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         }
 
         res.json({ message: "Faculty deleted successfully" });
@@ -408,11 +468,11 @@ exports.downloadFacultyTemplate = async (req, res) => {
             "contactnumber",
             "qualification",
             "experience",
-            "birthdate (YYYY-MM-DD)",
+            "birthdate",
             "gender",
             "courcecode",
             "position",
-            "joineddate (YYYY-MM-DD optional)"
+            "joineddate"
         ];
 
         sheet.addRow(headers);
@@ -466,7 +526,7 @@ exports.downloadFacultyTemplate = async (req, res) => {
         // Add Example Row (Optional but helpful)
         // ===============================
         sheet.addRow([
-            "1001",
+            23011050,
             "John Doe",
             "Odisha",
             "Bhubaneswar",
@@ -474,7 +534,7 @@ exports.downloadFacultyTemplate = async (req, res) => {
             "9876543210",
             "MCA",
             "5 Years",
-            "1990-01-01",
+            "2000-02-01",
             "Male",
             courses[0]?.course_code || "",
             "Assistant Professor",
@@ -533,27 +593,89 @@ exports.importFacultiesFromExcel = async (req, res) => {
         totalRows = data.length;
 
         for (let i = 0; i < data.length; i++) {
+
             const row = data[i];
 
-            const {
-                facultyid,
-                facultyname,
-                state,
-                city,
-                emailid,
-                contactnumber,
-                qualification,
-                experience,
-                birthdate,
-                gender,
-                courcecode,
-                position,
-                joineddate
-            } = row;
+            // ============================
+            // Extract & Normalize Fields
+            // ============================
 
-            // Validate required fields
+            let facultyid = row.facultyid;
+            let facultyname = row.facultyname;
+            let state = row.state;
+            let city = row.city;
+            let emailid = row.emailid;
+            let contactnumber = row.contactnumber;
+            let qualification = row.qualification;
+            let experience = row.experience;
+            let birthdate = row.birthdate;
+            let gender = row.gender;
+            let courcecode = row.courcecode;
+            let position = row.position;
+            let joineddate = row.joineddate;
+
+            // ============================
+            // Skip Completely Empty Rows
+            // ============================
+
             if (
-                !facultyid ||
+                !facultyid &&
+                !facultyname &&
+                !emailid
+            ) {
+                continue;
+            }
+
+            // ============================
+            // Clean Faculty ID
+            // ============================
+
+            if (!facultyid) {
+                invalidRows++;
+                errors.push({
+                    row: i + 2,
+                    reason: "Missing Faculty ID"
+                });
+                continue;
+            }
+
+            facultyid = String(facultyid)
+                .replace(/'/g, "")
+                .trim();
+
+            if (isNaN(facultyid)) {
+                invalidRows++;
+                errors.push({
+                    row: i + 2,
+                    reason: "Invalid Faculty ID format"
+                });
+                continue;
+            }
+
+            facultyid = parseInt(facultyid);
+
+            // ============================
+            // Trim Other Fields
+            // ============================
+
+            facultyname = facultyname ? String(facultyname).trim() : "";
+            state = state ? String(state).trim() : "";
+            city = city ? String(city).trim() : "";
+            emailid = emailid ? String(emailid).trim() : "";
+            contactnumber = contactnumber ? String(contactnumber).trim() : "";
+            qualification = qualification ? String(qualification).trim() : "";
+            experience = experience ? String(experience).trim() : "";
+            birthdate = birthdate ? String(birthdate).trim() : "";
+            gender = gender ? String(gender).trim() : "";
+            courcecode = courcecode ? String(courcecode).trim() : "";
+            position = position ? String(position).trim() : "NOT ASSIGNED";
+            joineddate = joineddate ? String(joineddate).trim() : null;
+
+            // ============================
+            // Validate Required Fields
+            // ============================
+
+            if (
                 !facultyname ||
                 !state ||
                 !city ||
@@ -574,35 +696,44 @@ exports.importFacultiesFromExcel = async (req, res) => {
             }
 
             try {
+
+                // ============================
+                // Default Password = DOB
+                // ============================
+
                 const hashedPassword = await bcrypt.hash(
-                    birthdate.toString(),
+                    birthdate,
                     10
                 );
 
+                // ============================
+                // Insert Into Database
+                // ============================
+
                 await db.query(
                     `INSERT INTO faculties
-                     (facultyid, facultyname, state, city, emailid,
-                      contactnumber, qualification, experience,
-                      birthdate, gender, profilepic, courcecode,
-                      semoryear, subject, position,
-                      joineddate, password, activestatus)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (facultyid, facultyname, state, city, emailid,
+              contactnumber, qualification, experience,
+              birthdate, gender, profilepic, courcecode,
+              semoryear, subject, position,
+              joineddate, password, activestatus)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         facultyid,
-                        facultyname.trim(),
-                        state.trim(),
-                        city.trim(),
-                        emailid.trim(),
-                        contactnumber.trim(),
-                        qualification.trim(),
-                        experience.trim(),
+                        facultyname,
+                        state,
+                        city,
+                        emailid,
+                        contactnumber,
+                        qualification,
+                        experience,
                         birthdate,
                         gender,
-                        "default.png",
+                        getFacultyImage(facultyid),
                         courcecode,
                         0,
                         "NOT ASSIGNED",
-                        position || "NOT ASSIGNED",
+                        position,
                         joineddate || new Date().toISOString(),
                         hashedPassword,
                         0
@@ -612,6 +743,7 @@ exports.importFacultiesFromExcel = async (req, res) => {
                 inserted++;
 
             } catch (error) {
+
                 if (error.code === "ER_DUP_ENTRY") {
                     duplicates++;
                     errors.push({

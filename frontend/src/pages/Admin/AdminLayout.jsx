@@ -39,7 +39,7 @@ const AdminLayout = () => {
     }, [token]);
 
     const handleLogout = () => {
-        //Clear entire session
+        // Clear entire session
         localStorage.removeItem("token");
         localStorage.removeItem("role");
         localStorage.removeItem("lastPage");
@@ -57,10 +57,10 @@ const AdminLayout = () => {
     ];
 
     return (
-        <div className="min-h-screen flex bg-gray-100">
+        <div className="h-screen flex bg-gray-100 overflow-hidden">
 
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+            <aside className="w-64 fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col">
 
                 {/* Identity Section */}
                 <div className="px-6 py-6 border-b border-gray-200">
@@ -68,16 +68,12 @@ const AdminLayout = () => {
                     {/* Logo + Title */}
                     <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
-                            {admin?.logo ? (
+                            {admin && (
                                 <img
                                     src={`http://localhost:5000${admin.logo}`}
                                     alt="College Logo"
                                     className="h-full w-full object-cover"
                                 />
-                            ) : (
-                                <span className="text-gray-500 text-xs font-semibold">
-                                    CM
-                                </span>
                             )}
                         </div>
 
@@ -133,7 +129,7 @@ const AdminLayout = () => {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 py-6 space-y-2">
+                <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                     {menuItems.map((item) => {
                         const isActive = location.pathname === item.path;
 
@@ -156,7 +152,7 @@ const AdminLayout = () => {
             </aside>
 
             {/* Main Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col ml-64">
 
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
                     <h1 className="text-lg font-semibold text-gray-800">
@@ -171,7 +167,7 @@ const AdminLayout = () => {
                     </button>
                 </header>
 
-                <main className="flex-1 p-8">
+                <main className="flex-1 p-8 overflow-y-auto">
                     <div className="bg-white rounded-lg shadow-sm p-8 min-h-[80vh]">
                         <Outlet />
                     </div>

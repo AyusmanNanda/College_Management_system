@@ -15,13 +15,37 @@ exports.getAdminProfile = async (req, res) => {
             return res.status(404).json({ message: "Admin not found" });
         }
 
-        res.json(rows[0]);
+        const admin = rows[0];
+
+        const uploadDir = path.join(__dirname, "../../uploads/admin");
+        const allowedExt = [".png", ".jpg", ".jpeg"];
+
+        let logoPath = null;
+
+        // Check for admin image with allowed extensions
+        for (const ext of allowedExt) {
+            const filePath = path.join(uploadDir, `admin${ext}`);
+            if (fs.existsSync(filePath)) {
+                logoPath = `/uploads/admin/admin${ext}`;
+                break;
+            }
+        }
+
+        // If no admin image found, use default
+        if (!logoPath) {
+            logoPath = "/uploads/admin/default.png";
+        }
+
+        admin.logo = logoPath;
+
+        res.json(admin);
 
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error fetching admin" });
     }
 };
+
 
 /*
   Update Admin Profile
@@ -50,30 +74,40 @@ exports.updateAdminProfile = async (req, res) => {
 
         let logoPath = null;
 
-        // 🔹 If new logo uploaded
         if (req.file) {
 
-            // Get current logo from DB
-            const [rows] = await db.query("SELECT logo FROM admin LIMIT 1");
+            const uploadDir = path.join(__dirname, "../../uploads/admin");
 
-            if (rows.length > 0 && rows[0].logo) {
-
-                const oldLogo = rows[0].logo;
-
-                const fullOldPath = path.join(
-                    __dirname,
-                    "../../uploads",
-                    path.basename(oldLogo)
-                );
-
-                // Delete old file if exists
-                if (fs.existsSync(fullOldPath)) {
-                    fs.unlinkSync(fullOldPath);
-                }
+            // Ensure directory exists
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
             }
 
-            // Set new logo path
-            logoPath = `/uploads/${req.file.filename}`;
+            const ext = path.extname(req.file.originalname).toLowerCase();
+            const allowedExt = [".png", ".jpg", ".jpeg"];
+
+            if (!allowedExt.includes(ext)) {
+                if (fs.existsSync(req.file.path)) {
+                    fs.unlinkSync(req.file.path);
+                }
+                return res.status(400).json({ message: "Only PNG, JPG, JPEG allowed" });
+            }
+
+            // Delete existing admin image if present
+            allowedExt.forEach((extension) => {
+                const existingFile = path.join(uploadDir, `admin${extension}`);
+                if (fs.existsSync(existingFile)) {
+                    fs.unlinkSync(existingFile);
+                }
+            });
+
+            const newFileName = `admin${ext}`;
+            const newFilePath = path.join(uploadDir, newFileName);
+
+            // Rename uploaded file
+            fs.renameSync(req.file.path, newFilePath);
+
+            logoPath = `/uploads/admin/${newFileName}`;
         }
 
         await db.query(

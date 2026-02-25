@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const Courses = () => {
     const token = localStorage.getItem("token");
@@ -17,6 +18,13 @@ const Courses = () => {
 
     const [editingId, setEditingId] = useState(null);
 
+    // Delete Modal State
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState(null);
+
+    // =========================
+    // Fetch Courses
+    // =========================
     const fetchCourses = async () => {
         if (!token) return;
 
@@ -40,6 +48,9 @@ const Courses = () => {
         fetchCourses();
     }, [token]);
 
+    // =========================
+    // Form Handling
+    // =========================
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
@@ -79,7 +90,6 @@ const Courses = () => {
             setEditingId(null);
             setError("");
             fetchCourses();
-
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.message || "Something went wrong.");
@@ -100,21 +110,29 @@ const Courses = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this course?")) return;
+    // =========================
+    // Confirmed Delete
+    // =========================
+    const handleDelete = async () => {
+        if (!courseToDelete) return;
 
         try {
             setLoading(true);
+
             await axios.delete(
-                `http://localhost:5000/api/courses/${id}`,
+                `http://localhost:5000/api/courses/${courseToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+
             fetchCourses();
+            setError("");
         } catch (err) {
             console.error(err);
             setError("Failed to delete course.");
         } finally {
             setLoading(false);
+            setShowDeleteModal(false);
+            setCourseToDelete(null);
         }
     };
 
@@ -250,7 +268,10 @@ const Courses = () => {
                                         Edit
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(course.id)}
+                                        onClick={() => {
+                                            setCourseToDelete(course.id);
+                                            setShowDeleteModal(true);
+                                        }}
                                         className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
                                     >
                                         Delete
@@ -268,6 +289,18 @@ const Courses = () => {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmDeleteModal
+                show={showDeleteModal}
+                title="Confirm Deletion"
+                message="Are you sure you want to delete this faculty? This action cannot be undone."
+                loading={loading}
+                onCancel={() => {
+                    setShowDeleteModal(false);
+                    setFacultyToDelete(null);
+                }}
+                onConfirm={handleDelete}
+            />
 
         </div>
     );
