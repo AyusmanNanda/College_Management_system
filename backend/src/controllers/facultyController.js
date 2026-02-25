@@ -45,7 +45,13 @@ exports.createFaculty = async (req, res) => {
         qualification,
         experience,
         birthdate,
-        gender
+        gender,
+        courcecode,
+        semoryear,
+        subject,
+        position,
+        joineddate,
+        password
     } = req.body;
 
     // ============================
@@ -70,9 +76,13 @@ exports.createFaculty = async (req, res) => {
 
     try {
         // ============================
-        // Default Password = Birthdate
+        // Default Password = DOB (if not provided)
         // ============================
-        const hashedPassword = await bcrypt.hash(birthdate, 10);
+        const finalPassword = password && password.trim() !== ""
+            ? password
+            : birthdate;
+
+        const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
         // ============================
         // Default Profile Pic
@@ -82,13 +92,13 @@ exports.createFaculty = async (req, res) => {
             : "default.png";
 
         // ============================
-        // Default Values
+        // Optional Defaults
         // ============================
-        const joineddate = new Date().toISOString();
-        const courcecode = "NOT ASSIGNED";
-        const semoryear = 0;
-        const subject = "NOT ASSIGNED";
-        const position = "NOT ASSIGNED";
+        const finalCourse = courcecode || "NOT ASSIGNED";
+        const finalSem = semoryear || 0;
+        const finalSubject = subject || "NOT ASSIGNED";
+        const finalPosition = position || "NOT ASSIGNED";
+        const finalJoinedDate = joineddate || new Date().toISOString();
         const activestatus = 0;
 
         await db.query(
@@ -110,11 +120,11 @@ exports.createFaculty = async (req, res) => {
                 birthdate,
                 gender,
                 profilepic,
-                courcecode,
-                semoryear,
-                subject,
-                position,
-                joineddate,
+                finalCourse,
+                finalSem,
+                finalSubject,
+                finalPosition,
+                finalJoinedDate,
                 hashedPassword,
                 activestatus
             ]
@@ -261,13 +271,11 @@ exports.updateFaculty = async (req, res) => {
             joineddate || null
         ];
 
-        // Update image if uploaded
         if (profilepic) {
             query += `, profilepic = ?`;
             values.push(profilepic);
         }
 
-        // Update password only if provided
         if (password && password.trim() !== "") {
             const hashedPassword = await bcrypt.hash(password, 10);
             query += `, password = ?`;
