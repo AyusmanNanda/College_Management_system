@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 /*
@@ -10,6 +10,8 @@ import axios from "axios";
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from;
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -32,13 +34,19 @@ const Login = () => {
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
 
-            // Redirect based on role
+            // If user was trying to access a protected page, go back there
+            if (from) {
+                navigate(from.pathname + (from.search || ""), { replace: true });
+                return;
+            }
+
+            // Otherwise go to default dashboard
             if (role === "admin") {
-                navigate("/admin/dashboard");
+                navigate("/admin/dashboard", { replace: true });
             } else if (role === "faculty") {
-                navigate("/faculty/dashboard");
+                navigate("/faculty/dashboard", { replace: true });
             } else if (role === "student") {
-                navigate("/student/dashboard");
+                navigate("/student/dashboard", { replace: true });
             }
 
         } catch (err) {

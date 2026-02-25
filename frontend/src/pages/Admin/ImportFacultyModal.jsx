@@ -101,21 +101,26 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
 
                     {/* Upload File */}
                     <div>
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-sm text-gray-600 mb-3">
                             Upload completed file:
                         </p>
 
-                        <input
-                            type="file"
-                            accept=".xlsx,.xls"
-                            onChange={(e) => setFile(e.target.files[0])}
-                            className="text-sm"
-                        />
+                        <label className="inline-block">
+                        <span className="px-5 py-2 bg-gray-100 border border-gray-300 text-sm rounded-md hover:bg-gray-200 transition cursor-pointer">
+                                Choose Excel File
+                        </span>
+                            <input
+                                type="file"
+                                accept=".xlsx,.xls"
+                                onChange={(e) => setFile(e.target.files[0])}
+                                className="hidden"
+                            />
+                        </label>
 
                         {file && (
-                            <p className="text-xs text-gray-500 mt-2">
-                                Selected: {file.name}
-                            </p>
+                            <div className="mt-3 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+                                Selected file: <span className="font-medium">{file.name}</span>
+                            </div>
                         )}
                     </div>
 
