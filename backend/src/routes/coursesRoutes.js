@@ -7,27 +7,31 @@ const courseController = require("../controllers/courseController");
 /*
   Course Routes
   -------------
-  Single Admin System
+  Admin CRUD Operations
 */
 
+/* -------- Create Course -------- */
 router.post(
     "/",
     authMiddleware,
     courseController.createCourse
 );
 
+/* -------- Get All Courses -------- */
 router.get(
     "/",
     authMiddleware,
     courseController.getCourses
 );
 
+/* -------- Update Course -------- */
 router.put(
     "/:id",
     authMiddleware,
     courseController.updateCourse
 );
 
+/* -------- Delete Course -------- */
 router.delete(
     "/:id",
     authMiddleware,

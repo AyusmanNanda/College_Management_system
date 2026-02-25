@@ -1,4 +1,38 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 const AdminDashboard = () => {
+    const token = localStorage.getItem("token");
+
+    const [stats, setStats] = useState({
+        total_courses: 0,
+        total_faculty: 0,
+        total_students: 0
+    });
+
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await axios.get(
+                    "http://localhost:5000/api/dashboard",
+                    {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }
+                );
+
+                setStats(res.data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (token) fetchStats();
+    }, [token]);
+
     return (
         <div className="space-y-10">
 
@@ -15,9 +49,20 @@ const AdminDashboard = () => {
             {/* Metrics */}
             <div className="grid grid-cols-3 gap-6">
 
-                <DashboardCard title="Total Courses" value="--" />
-                <DashboardCard title="Total Faculty" value="--" />
-                <DashboardCard title="Total Students" value="--" />
+                <DashboardCard
+                    title="Total Courses"
+                    value={loading ? "--" : stats.total_courses}
+                />
+
+                <DashboardCard
+                    title="Total Faculty"
+                    value={loading ? "--" : stats.total_faculty}
+                />
+
+                <DashboardCard
+                    title="Total Students"
+                    value={loading ? "--" : stats.total_students}
+                />
 
             </div>
 
@@ -29,7 +74,7 @@ const AdminDashboard = () => {
 
                 <div className="space-y-2 text-sm text-gray-600">
                     <p>
-                        Manage courses, college profile, and administrative settings.
+                        Manage courses, faculty, students, and administrative settings.
                     </p>
                     <p>
                         Use the sidebar to navigate between sections.

@@ -1,5 +1,7 @@
 const db = require("../config/db");
 const bcrypt = require("bcrypt");
+const fs = require("fs");
+const path = require("path");
 
 /*
   Get Admin Profile
@@ -46,7 +48,33 @@ exports.updateAdminProfile = async (req, res) => {
             hashedPassword = await bcrypt.hash(password, 10);
         }
 
-        const logoPath = req.file ? `/uploads/${req.file.filename}` : null;
+        let logoPath = null;
+
+        // 🔹 If new logo uploaded
+        if (req.file) {
+
+            // Get current logo from DB
+            const [rows] = await db.query("SELECT logo FROM admin LIMIT 1");
+
+            if (rows.length > 0 && rows[0].logo) {
+
+                const oldLogo = rows[0].logo;
+
+                const fullOldPath = path.join(
+                    __dirname,
+                    "../../uploads",
+                    path.basename(oldLogo)
+                );
+
+                // Delete old file if exists
+                if (fs.existsSync(fullOldPath)) {
+                    fs.unlinkSync(fullOldPath);
+                }
+            }
+
+            // Set new logo path
+            logoPath = `/uploads/${req.file.filename}`;
+        }
 
         await db.query(
             `
