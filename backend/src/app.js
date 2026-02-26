@@ -14,7 +14,18 @@ const app = express();
 
 app.use(
     cors({
-        origin: true,
+        origin: function (origin, callback) {
+            if (!origin) return callback(null, true); // allow server-to-server or curl
+
+            if (
+                origin.includes("vercel.app") ||
+                origin.includes("localhost")
+            ) {
+                return callback(null, true);
+            }
+
+            return callback(new Error("Not allowed by CORS"));
+        },
         credentials: true,
     })
 );
