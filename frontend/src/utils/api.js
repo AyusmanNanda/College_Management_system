@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    //baseURL: `http://${window.location.hostname}:5000`,
-    baseURL: ``,
+    baseURL: import.meta.env.VITE_BACKEND,
     withCredentials: true,
 });
 
