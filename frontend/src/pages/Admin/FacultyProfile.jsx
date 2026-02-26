@@ -245,6 +245,55 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                         <Input required type="date" label="Birth Date" name="birthdate" value={form.birthdate} onChange={handleChange} />
 
                         <Select required label="Gender" name="gender" value={form.gender} onChange={handleChange} options={genderOptions} />
+                        {/* Course */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500 dark:text-gray-400">
+                                Course
+                            </label>
+                            <select
+                                name="courcecode"
+                                value={form.courcecode}
+                                onChange={handleChange}
+                                className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm transition"
+                            >
+                                <option value="NOT ASSIGNED">NOT ASSIGNED</option>
+                                {courses.map((c) => (
+                                    <option key={c.course_code} value={c.course_code}>
+                                        {c.course_code} - {c.course_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Semester / Year */}
+                        <Select
+                            label="Semester / Year"
+                            name="semoryear"
+                            value={form.semoryear}
+                            onChange={handleChange}
+                            options={["", ...semOptions]}
+                        />
+
+                        {/* Subject */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500 dark:text-gray-400">
+                                Subject
+                            </label>
+                            <select
+                                name="subject"
+                                value={form.subject}
+                                onChange={handleChange}
+                                disabled={!form.semoryear}
+                                className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm disabled:bg-gray-100 dark:disabled:bg-gray-600 transition"
+                            >
+                                <option value="NOT ASSIGNED">NOT ASSIGNED</option>
+                                {subjects.map((s) => (
+                                    <option key={s.subjectcode} value={s.subjectcode}>
+                                        {s.subjectcode} - {s.subjectname}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
                         <Select label="Position" name="position" value={form.position} onChange={handleChange} options={positionOptions} />
                         <Input type="date" label="Joined Date" name="joineddate" value={form.joineddate} onChange={handleChange} />
