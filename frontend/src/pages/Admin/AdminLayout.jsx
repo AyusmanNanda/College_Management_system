@@ -2,21 +2,13 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-/*
-  Admin Layout
-  ------------
-  - Green/Red status dot
-  - Neutral status text
-  - Full timestamp
-  - Minimal clean sidebar
-*/
-
 const AdminLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
 
     const [admin, setAdmin] = useState(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     useEffect(() => {
         if (!token) return;
@@ -39,11 +31,9 @@ const AdminLayout = () => {
     }, [token]);
 
     const handleLogout = () => {
-        // Clear entire session
         localStorage.removeItem("token");
         localStorage.removeItem("role");
         localStorage.removeItem("lastPage");
-
         navigate("/", { replace: true });
     };
 
@@ -59,13 +49,23 @@ const AdminLayout = () => {
     return (
         <div className="h-screen flex bg-gray-100 overflow-hidden">
 
+            {/* Overlay (Mobile only) */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col">
+            <aside
+                className={`fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-40 transform transition-transform duration-300
+                ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+                lg:translate-x-0`}
+            >
 
-                {/* Identity Section */}
+                {/* Identity */}
                 <div className="px-6 py-6 border-b border-gray-200">
-
-                    {/* Logo + Title */}
                     <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
                             {admin && (
@@ -87,16 +87,10 @@ const AdminLayout = () => {
                         </div>
                     </div>
 
-                    {/* Status + Last Login */}
                     {admin && (
                         <div className="mt-3 text-xs space-y-1 leading-relaxed">
-
-                            {/* Status Line */}
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-400">
-                                    Status:
-                                </span>
-
+                                <span className="text-gray-400">Status:</span>
                                 <span className="flex items-center gap-2">
                                     <span
                                         className={`h-2 w-2 rounded-full ${
@@ -111,7 +105,6 @@ const AdminLayout = () => {
                                 </span>
                             </div>
 
-                            {/* Last Login */}
                             <div>
                                 <span className="text-gray-400">
                                     Last login:
@@ -122,10 +115,8 @@ const AdminLayout = () => {
                                         : "Not available"}
                                 </span>
                             </div>
-
                         </div>
                     )}
-
                 </div>
 
                 {/* Navigation */}
@@ -137,6 +128,11 @@ const AdminLayout = () => {
                             <Link
                                 key={item.path}
                                 to={item.path}
+                                onClick={() => {
+                                    if (window.innerWidth < 1024) {
+                                        setIsSidebarOpen(false);
+                                    }
+                                }}
                                 className={`block px-4 py-2 rounded-md text-sm font-medium transition ${
                                     isActive
                                         ? "bg-gray-900 text-white"
@@ -148,16 +144,29 @@ const AdminLayout = () => {
                         );
                     })}
                 </nav>
-
             </aside>
 
             {/* Main Area */}
-            <div className="flex-1 flex flex-col ml-64">
+            <div className="flex-1 flex flex-col lg:ml-64 transition-all duration-300">
 
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
-                    <h1 className="text-lg font-semibold text-gray-800">
-                        Admin Panel
-                    </h1>
+                {/* Header */}
+                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-8">
+
+                    <div className="flex items-center gap-4">
+
+                        {/* Toggle Button */}
+                        <button
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="lg:hidden text-gray-700"
+                        >
+                            ☰
+                        </button>
+
+                        <h1 className="text-lg font-semibold text-gray-800">
+                            Admin Panel
+                        </h1>
+
+                    </div>
 
                     <button
                         onClick={handleLogout}
@@ -167,8 +176,8 @@ const AdminLayout = () => {
                     </button>
                 </header>
 
-                <main className="flex-1 p-8 overflow-y-auto">
-                    <div className="bg-white rounded-lg shadow-sm p-8 min-h-[80vh]">
+                <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+                    <div className="bg-white rounded-lg shadow-sm p-6 lg:p-8 min-h-[80vh]">
                         <Outlet />
                     </div>
                 </main>
