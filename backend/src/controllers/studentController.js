@@ -18,5 +18,36 @@ exports.getStudentProfile = async (req, res) => {
     res.status(500).json({ message: "Error fetching profile" });
   }
 };
+
+//Get Student Subjects
+
+exports.getStudentSubjects = async (req, res) => {
+  try {
+    const userid = req.user.userid;
+
+    const [student] = await db.query(
+      "SELECT Courcecode, semoryear FROM students WHERE userid = ?",
+      [userid]
+      );
+
+    if (student.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const { Courcecode, semoryear } = student[0];
+
+    const [subjects] = await db.query(
+      "SELECT * FROM subject WHERE courcecode = ? AND semoryear = ?",
+      [Courcecode, semoryear]
+      );
+
+    res.json(subjects);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching subjects" });
+  }
+};
+
     
     
