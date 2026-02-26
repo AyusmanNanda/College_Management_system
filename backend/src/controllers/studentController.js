@@ -49,5 +49,26 @@ exports.getStudentSubjects = async (req, res) => {
   }
 };
 
+// Update Student Profile
+
+exports.updateStudentProfile = async (req, res) => {
+  try {
+    const userid = req.user.userid;
+    const { emailid, contactnumber, state, city } = req.body;
+
+    await db.query(
+      `UPDATE students
+      SET emailid = ?, contactnumber = ?, state = ?, city = ?
+      WHERE userid = ?`,
+      [emailid, contactnumber, state, city, userid]
+      );
+    
+    res.json({ message: "Profile updated successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Update failed" });
+  }
+};
+
     
     
