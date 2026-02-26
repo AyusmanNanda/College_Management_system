@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 
 const AdminProfile = () => {
     const token = localStorage.getItem("token");
@@ -13,12 +13,9 @@ const AdminProfile = () => {
 
         const fetchProfile = async () => {
             try {
-                const res = await axios.get(
-                    "http://localhost:5000/api/admin/profile",
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
-                );
+                const res = await api.get("/api/admin/profile", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 setAdmin(res.data);
             } catch (error) {
                 console.error(error);
@@ -34,59 +31,67 @@ const AdminProfile = () => {
     };
 
     if (!admin) {
-        return <p className="text-sm text-gray-500">Loading profile...</p>;
+        return (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+                Loading profile...
+            </p>
+        );
     }
 
     return (
         <div className="space-y-10">
 
-            {/* Header */}
-            <div className="flex items-center justify-between border-b pb-6">
-                <div className="flex items-center gap-6">
+            {/* HEADER */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 border-b pb-6 dark:border-gray-700">
+
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+
                     {admin.logo && (
                         <img
                             src={
                                 admin.logo
-                                    ? `http://localhost:5000${admin.logo}`
-                                    : `http://localhost:5000/uploads/admin/default.png`
+                                    ? `${api.defaults.baseURL}${admin.logo}`
+                                    : `${api.defaults.baseURL}/uploads/admin/default.png`
                             }
                             alt="Logo"
-                            className="h-20 w-20 object-cover rounded-lg border border-gray-200 shadow-sm"
+                            className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
                         />
                     )}
+
                     <div>
-                        <h2 className="text-2xl font-semibold text-gray-800">
+                        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
                             {admin.collagename}
                         </h2>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             College Administration Profile
                         </p>
                     </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button
                         onClick={() => setShowDetailsModal(true)}
-                        className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                        className="w-full sm:w-auto px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
                     >
                         Edit Details
                     </button>
+
                     <button
                         onClick={() => setShowLinksModal(true)}
-                        className="px-5 py-2 bg-gray-200 text-gray-800 text-sm rounded-md hover:bg-gray-300 transition"
+                        className="w-full sm:w-auto px-5 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-gray-800 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                     >
                         Edit Links
                     </button>
                 </div>
             </div>
 
-            {/* Basic Info */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-6">
+            {/* BASIC INFO */}
+            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-6">
                     Basic Information
                 </h3>
 
-                <div className="grid grid-cols-2 gap-8 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
                     <InfoField label="Email" value={admin.emailid} />
                     <InfoField label="Contact Number" value={admin.contactnumber} />
                     <InfoField
@@ -94,7 +99,7 @@ const AdminProfile = () => {
                         value={
                             <span
                                 onClick={() => openLink(admin.website)}
-                                className="text-blue-600 cursor-pointer hover:underline"
+                                className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline break-words"
                             >
                                 {admin.website}
                             </span>
@@ -104,13 +109,13 @@ const AdminProfile = () => {
                 </div>
             </div>
 
-            {/* Social */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-6">
+            {/* SOCIAL */}
+            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-6">
                     Social Media
                 </h3>
 
-                <div className="grid grid-cols-2 gap-8 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
                     {["facebook", "instagram", "twitter", "linkedin"].map((key) => (
                         <InfoField
                             key={key}
@@ -119,7 +124,7 @@ const AdminProfile = () => {
                                 admin[key] ? (
                                     <span
                                         onClick={() => openLink(admin[key])}
-                                        className="text-blue-600 cursor-pointer hover:underline"
+                                        className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline break-words"
                                     >
                                         {admin[key]}
                                     </span>
@@ -155,31 +160,33 @@ const AdminProfile = () => {
     );
 };
 
-/* ---------------- Reusable Field ---------------- */
+/* ---------------- Info Field ---------------- */
 
 const InfoField = ({ label, value }) => (
     <div>
-        <p className="text-gray-500 text-xs capitalize mb-1">{label}</p>
-        <p className="text-gray-800">{value}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-xs capitalize mb-1">
+            {label}
+        </p>
+        <p className="text-gray-800 dark:text-gray-100 break-words">
+            {value}
+        </p>
     </div>
 );
 
 /* ---------------- Modal Wrapper ---------------- */
 
 const ModalWrapper = ({ children, onClose }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
 
-        {/* Same overlay as FacultyProfile */}
         <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => onClose(null)}
         />
 
-        {/* Same card style as FacultyProfile */}
-        <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6">
+        <div className="relative bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6 transition-colors">
             <button
                 onClick={() => onClose(null)}
-                className="absolute top-4 right-5 text-gray-500 hover:text-black text-sm"
+                className="absolute top-4 right-5 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white text-sm"
             >
                 ✕
             </button>
@@ -189,13 +196,30 @@ const ModalWrapper = ({ children, onClose }) => (
     </div>
 );
 
+/* ---------------- Styled Input ---------------- */
+
+const StyledInput = ({ label, name, value, onChange, type = "text" }) => (
+    <div>
+        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+            {label}
+        </label>
+        <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={onChange}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
+        />
+    </div>
+);
+
 /* ---------------- Edit Details Modal ---------------- */
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({ ...admin, password: "" });
     const [logoFile, setLogoFile] = useState(null);
     const [preview, setPreview] = useState(
-        admin.logo ? `http://localhost:5000${admin.logo}` : null
+        admin.logo ? `${api.defaults.baseURL}${admin.logo}` : null
     );
 
     const handleChange = (e) => {
@@ -227,21 +251,16 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                 formData.append("logo", logoFile);
             }
 
-            await axios.put(
-                "http://localhost:5000/api/admin/profile",
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "multipart/form-data"
-                    }
+            await api.put("/api/admin/profile", formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data"
                 }
-            );
+            });
 
-            const res = await axios.get(
-                "http://localhost:5000/api/admin/profile",
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await api.get("/api/admin/profile", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             onClose(res.data);
 
@@ -252,21 +271,21 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
 
     return (
         <ModalWrapper onClose={onClose}>
-            <h2 className="text-lg font-semibold text-gray-800 mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
                 Edit Basic Details
             </h2>
 
-            {/* Profile Upload */}
             <div className="mb-6 flex flex-col items-center gap-3">
                 {preview && (
                     <img
                         src={preview}
                         alt="Preview"
-                        className="h-24 w-24 object-cover rounded-md border border-gray-200 shadow-sm"
+                        className="h-24 w-24 object-cover rounded-md border border-gray-200 dark:border-gray-600 shadow-sm"
                     />
                 )}
+
                 <label className="cursor-pointer">
-                    <span className="px-4 py-2 bg-gray-100 border border-gray-300 text-sm rounded-md hover:bg-gray-200 transition">
+                    <span className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition">
                         Change Profile Picture
                     </span>
                     <input
@@ -285,13 +304,15 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                 <StyledInput label="Website" name="website" value={form.website} onChange={handleChange} />
 
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1">Address</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        Address
+                    </label>
                     <textarea
                         name="address"
                         value={form.address || ""}
                         onChange={handleChange}
                         rows="3"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                     />
                 </div>
 
@@ -328,16 +349,13 @@ const EditLinksModal = ({ admin, token, onClose }) => {
         try {
             const updatedData = { ...admin, ...form };
 
-            await axios.put(
-                "http://localhost:5000/api/admin/profile",
-                updatedData,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.put("/api/admin/profile", updatedData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-            const res = await axios.get(
-                "http://localhost:5000/api/admin/profile",
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await api.get("/api/admin/profile", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             onClose(res.data);
 
@@ -348,7 +366,7 @@ const EditLinksModal = ({ admin, token, onClose }) => {
 
     return (
         <ModalWrapper onClose={onClose}>
-            <h2 className="text-lg font-semibold text-gray-800 mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
                 Edit Social Links
             </h2>
 
@@ -370,20 +388,5 @@ const EditLinksModal = ({ admin, token, onClose }) => {
         </ModalWrapper>
     );
 };
-
-/* ---------------- Styled Input ---------------- */
-
-const StyledInput = ({ label, name, value, onChange, type = "text" }) => (
-    <div>
-        <label className="block text-xs text-gray-500 mb-1">{label}</label>
-        <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
-        />
-    </div>
-);
 
 export default AdminProfile;
