@@ -46,18 +46,19 @@ const AdminProfile = () => {
 
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
 
-                    {admin.logo && (
-                        <img
-                            src={
-                                admin.logo
-                                    ? `${api.defaults.baseURL}${admin.logo}`
-                                    : `${api.defaults.baseURL}/uploads/admin/default.png`
-                            }
-                            alt="Logo"
-                            className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
-                        />
-                    )}
-
+                    <img
+                        src={
+                            admin?.logo
+                                ? `${api.defaults.baseURL}${admin.logo}?v=${imageVersion}`
+                                : `${api.defaults.baseURL}/uploads/admin/default.png`
+                        }
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `${api.defaults.baseURL}/uploads/admin/default.png`;
+                        }}
+                        alt="Logo"
+                        className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
+                    />
                     <div>
                         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
                             {admin.collagename}

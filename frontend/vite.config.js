@@ -105,6 +105,6 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     //https: true,
-    allowedHosts: ["de1f-2409-40e2-101c-5-3086-80af-e1c3-3f49.ngrok-free.app"],
+    allowedHosts: ["all"],
   },
 });

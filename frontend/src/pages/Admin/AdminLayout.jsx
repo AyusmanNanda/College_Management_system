@@ -4,7 +4,7 @@ import api from "../../utils/api";
 import { Sun, Moon } from "lucide-react";
 
 const AdminLayout = () => {
-    const BASE_URL = `http://${window.location.hostname}:5000`;
+    const BASE_URL = api.defaults.baseURL;
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
@@ -102,14 +102,22 @@ const AdminLayout = () => {
                 <div className="px-6 py-6 border-b border-gray-200 dark:border-gray-700">
 
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
-                            {admin && (
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
                                 <img
-                                    src={`${BASE_URL}${admin.logo}`}
+                                    src={
+                                        admin?.logo
+                                            ? `${BASE_URL}${admin.logo}?v=${imageVersion}`
+                                            : `${BASE_URL}/uploads/admin/default.png`
+                                    }
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `${BASE_URL}/uploads/admin/default.png`;
+                                    }}
                                     alt="College Logo"
                                     className="h-full w-full object-cover"
                                 />
-                            )}
+                            </div>
                         </div>
 
                         <div>
