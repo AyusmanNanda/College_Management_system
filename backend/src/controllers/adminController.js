@@ -6,6 +6,20 @@ const path = require("path");
 /*
   Get Admin Profile
 */
+const adminUploadDir = path.resolve(__dirname, "../../uploads/admin");
+
+const getAdminLogo = () => {
+    if (!fs.existsSync(adminUploadDir)) return "default.png";
+
+    const files = fs.readdirSync(adminUploadDir);
+
+    const match = files.find(file => {
+        const name = path.basename(file, path.extname(file));
+        return name === "admin";
+    });
+
+    return match || "default.png";
+};
 
 exports.getAdminProfile = async (req, res) => {
     try {
@@ -17,26 +31,8 @@ exports.getAdminProfile = async (req, res) => {
 
         const admin = rows[0];
 
-        const uploadDir = path.join(__dirname, "../../uploads/admin");
-        const allowedExt = [".png", ".jpg", ".jpeg"];
-
-        let logoPath = null;
-
-        // Check for admin image with allowed extensions
-        for (const ext of allowedExt) {
-            const filePath = path.join(uploadDir, `admin${ext}`);
-            if (fs.existsSync(filePath)) {
-                logoPath = `/uploads/admin/admin${ext}`;
-                break;
-            }
-        }
-
-        // If no admin image found, use default
-        if (!logoPath) {
-            logoPath = "/uploads/admin/default.png";
-        }
-
-        admin.logo = logoPath;
+        const logoFile = getAdminLogo();
+        admin.logo = `/uploads/admin/${logoFile}?v=${Date.now()}`;
 
         res.json(admin);
 
@@ -72,42 +68,32 @@ exports.updateAdminProfile = async (req, res) => {
             hashedPassword = await bcrypt.hash(password, 10);
         }
 
-        let logoPath = null;
-
         if (req.file) {
-
-            const uploadDir = path.join(__dirname, "../../uploads/admin");
-
-            // Ensure directory exists
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
+            if (!fs.existsSync(adminUploadDir)) {
+                fs.mkdirSync(adminUploadDir, { recursive: true });
             }
 
             const ext = path.extname(req.file.originalname).toLowerCase();
             const allowedExt = [".png", ".jpg", ".jpeg"];
 
             if (!allowedExt.includes(ext)) {
-                if (fs.existsSync(req.file.path)) {
-                    fs.unlinkSync(req.file.path);
-                }
+                fs.unlinkSync(req.file.path);
                 return res.status(400).json({ message: "Only PNG, JPG, JPEG allowed" });
             }
 
-            // Delete existing admin image if present
-            allowedExt.forEach((extension) => {
-                const existingFile = path.join(uploadDir, `admin${extension}`);
-                if (fs.existsSync(existingFile)) {
-                    fs.unlinkSync(existingFile);
+            // Remove existing admin image
+            const files = fs.readdirSync(adminUploadDir);
+            files.forEach(file => {
+                const name = path.basename(file, path.extname(file));
+                if (name === "admin") {
+                    fs.unlinkSync(path.join(adminUploadDir, file));
                 }
             });
 
             const newFileName = `admin${ext}`;
-            const newFilePath = path.join(uploadDir, newFileName);
+            const newFilePath = path.join(adminUploadDir, newFileName);
 
-            // Rename uploaded file
             fs.renameSync(req.file.path, newFilePath);
-
-            logoPath = `/uploads/admin/${newFileName}`;
         }
 
         await db.query(
@@ -122,8 +108,7 @@ exports.updateAdminProfile = async (req, res) => {
                     instagram = ?,
                     twitter = ?,
                     linkedin = ?,
-                    password = COALESCE(?, password),
-                    logo = COALESCE(?, logo)
+                    password = COALESCE(?, password)
             `,
             [
                 collagename,
@@ -135,8 +120,7 @@ exports.updateAdminProfile = async (req, res) => {
                 instagram,
                 twitter,
                 linkedin,
-                hashedPassword,
-                logoPath
+                hashedPassword
             ]
         );
 
