@@ -1,30 +1,47 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-/*
-  Admin Layout
-  ------------
-  - Green/Red status dot
-  - Neutral status text
-  - Full timestamp
-  - Minimal clean sidebar
-*/
+import api from "../../utils/api";
+import { Sun, Moon } from "lucide-react";
 
 const AdminLayout = () => {
+    const BASE_URL = api.defaults.baseURL;
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
 
     const [admin, setAdmin] = useState(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const [theme, setTheme] = useState(() => {
+        const savedTheme = localStorage.getItem("theme");
+
+        if (savedTheme) return savedTheme;
+
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+    });
+
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+
+        localStorage.setItem("theme", theme);
+    }, [theme]);
+
+
+    /* ===================== Fetch Admin ===================== */
 
     useEffect(() => {
         if (!token) return;
 
         const fetchAdmin = async () => {
             try {
-                const res = await axios.get(
-                    "http://localhost:5000/api/admin/profile",
+                const res = await api.get(
+                    "/api/admin/profile",
                     {
                         headers: { Authorization: `Bearer ${token}` }
                     }
@@ -38,14 +55,22 @@ const AdminLayout = () => {
         fetchAdmin();
     }, [token]);
 
+    /* ===================== Logout ===================== */
+
     const handleLogout = () => {
-        // Clear entire session
         localStorage.removeItem("token");
         localStorage.removeItem("role");
         localStorage.removeItem("lastPage");
-
         navigate("/", { replace: true });
     };
+
+    /* ===================== Theme Toggle ===================== */
+
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    };
+
+    /* ===================== Menu ===================== */
 
     const menuItems = [
         { name: "Dashboard", path: "/admin/dashboard" },
@@ -57,28 +82,46 @@ const AdminLayout = () => {
     ];
 
     return (
-        <div className="h-screen flex bg-gray-100 overflow-hidden">
+        <div className="h-screen flex bg-gray-100 dark:bg-gray-950 overflow-hidden transition-colors">
+
+            {/* Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
 
             {/* Sidebar */}
-            <aside className="w-64 fixed left-0 top-0 h-screen bg-white border-r border-gray-200 flex flex-col">
+            <aside
+                className={`fixed top-0 left-0 h-screen w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col z-40 transform transition-transform duration-300
+                ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+                lg:translate-x-0`}
+            >
+                {/* Identity */}
+                <div className="px-6 py-6 border-b border-gray-200 dark:border-gray-700">
 
-                {/* Identity Section */}
-                <div className="px-6 py-6 border-b border-gray-200">
-
-                    {/* Logo + Title */}
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
-                            {admin && (
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
                                 <img
-                                    src={`http://localhost:5000${admin.logo}`}
+                                    src={
+                                        admin?.logo
+                                            ? `${BASE_URL}${admin.logo}?v=${imageVersion}`
+                                            : `${BASE_URL}/uploads/admin/default.png`
+                                    }
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `${BASE_URL}/uploads/admin/default.png`;
+                                    }}
                                     alt="College Logo"
                                     className="h-full w-full object-cover"
                                 />
-                            )}
+                            </div>
                         </div>
 
                         <div>
-                            <p className="text-sm font-semibold text-gray-800">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                                 College Admin
                             </p>
                             <p className="text-xs text-gray-400">
@@ -87,15 +130,11 @@ const AdminLayout = () => {
                         </div>
                     </div>
 
-                    {/* Status + Last Login */}
                     {admin && (
                         <div className="mt-3 text-xs space-y-1 leading-relaxed">
 
-                            {/* Status Line */}
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-400">
-                                    Status:
-                                </span>
+                                <span className="text-gray-400">Status:</span>
 
                                 <span className="flex items-center gap-2">
                                     <span
@@ -105,18 +144,17 @@ const AdminLayout = () => {
                                                 : "bg-red-500"
                                         }`}
                                     />
-                                    <span className="text-gray-600">
+                                    <span className="text-gray-600 dark:text-gray-300">
                                         {admin.activestatus ? "Active" : "Inactive"}
                                     </span>
                                 </span>
                             </div>
 
-                            {/* Last Login */}
                             <div>
                                 <span className="text-gray-400">
                                     Last login:
                                 </span>{" "}
-                                <span className="text-gray-600 break-words">
+                                <span className="text-gray-600 dark:text-gray-300 break-words">
                                     {admin.lastlogin
                                         ? new Date(admin.lastlogin).toLocaleString()
                                         : "Not available"}
@@ -125,7 +163,6 @@ const AdminLayout = () => {
 
                         </div>
                     )}
-
                 </div>
 
                 {/* Navigation */}
@@ -137,10 +174,15 @@ const AdminLayout = () => {
                             <Link
                                 key={item.path}
                                 to={item.path}
+                                onClick={() => {
+                                    if (window.innerWidth < 1024) {
+                                        setIsSidebarOpen(false);
+                                    }
+                                }}
                                 className={`block px-4 py-2 rounded-md text-sm font-medium transition ${
                                     isActive
-                                        ? "bg-gray-900 text-white"
-                                        : "text-gray-600 hover:bg-gray-100"
+                                        ? "bg-gray-900 text-white dark:bg-gray-700"
+                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                 }`}
                             >
                                 {item.name}
@@ -148,27 +190,64 @@ const AdminLayout = () => {
                         );
                     })}
                 </nav>
-
             </aside>
 
             {/* Main Area */}
-            <div className="flex-1 flex flex-col ml-64">
+            <div className="flex-1 min-w-0 flex flex-col lg:ml-64 transition-all duration-300">
 
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
-                    <h1 className="text-lg font-semibold text-gray-800">
-                        Admin Panel
-                    </h1>
+                {/* Header */}
+                <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 lg:px-8 transition-colors">
 
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline transition"
-                    >
-                        Logout
-                    </button>
+                    <div className="flex items-center gap-4">
+
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="lg:hidden text-gray-700 dark:text-gray-300 text-xl"
+                        >
+                            ☰
+                        </button>
+
+                        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                            Admin Panel
+                        </h1>
+
+                    </div>
+
+                    <div className="flex items-center gap-6">
+
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-all duration-300 group"
+                            title="Toggle theme"
+                        >
+                            {theme === "dark" ? (
+                                <Sun
+                                    size={20}
+                                    className="text-gray-300 transition-transform duration-300 group-hover:rotate-12"
+                                />
+                            ) : (
+                                <Moon
+                                    size={20}
+                                    className="text-gray-700 transition-transform duration-300 group-hover:-rotate-12"
+                                />
+                            )}
+                        </button>
+
+                        <button
+                            onClick={handleLogout}
+                            className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline transition"
+                        >
+                            Logout
+                        </button>
+
+                    </div>
+
                 </header>
 
-                <main className="flex-1 p-8 overflow-y-auto">
-                    <div className="bg-white rounded-lg shadow-sm p-8 min-h-[80vh]">
+                {/* Content */}
+                <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 lg:p-8 min-h-[80vh] transition-colors">
                         <Outlet />
                     </div>
                 </main>
