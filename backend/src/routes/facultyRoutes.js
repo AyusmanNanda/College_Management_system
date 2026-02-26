@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
+const roleAuth = require("../middleware/roleAuthMiddleware");
 const facultyController = require("../controllers/facultyController");
 
 /*
@@ -10,7 +11,6 @@ const facultyController = require("../controllers/facultyController");
   Admin CRUD Operations
 */
 
-// Create faculty with image upload
 router.post(
     "/",
     authMiddleware,
@@ -18,14 +18,12 @@ router.post(
     facultyController.createFaculty
 );
 
-// Get all faculties
 router.get(
     "/",
     authMiddleware,
     facultyController.getFaculties
 );
 
-// Update faculty with optional image update
 router.put(
     "/:id",
     authMiddleware,
@@ -33,7 +31,6 @@ router.put(
     facultyController.updateFaculty
 );
 
-// Delete faculty
 router.delete(
     "/:id",
     authMiddleware,
@@ -51,6 +48,18 @@ router.post(
     authMiddleware,
     facultyController.uploadExcel.single("file"),
     facultyController.importFacultiesFromExcel
+);
+
+router.get(
+    "/profile",
+    roleAuth(["faculty"]),
+    facultyController.getFacultySelfProfile
+);
+
+router.get(
+    "/dashboard",
+    roleAuth(["faculty"]),
+    facultyController.getFacultyDashboardStats
 );
 
 module.exports = router;
