@@ -1,3 +1,5 @@
+const db = require("../config/db");
+
 //Get Student Profile
 
 exports.getStudentProfile = async (req, res) => {
