@@ -32,19 +32,4 @@ app.use("/api/subjects", subjectsRoutes);
 app.use("/api/assign", assignRoutes);
 app.use("/api/faculty", facultyRoutes);
 
-
-// ===============================
-// Serve Frontend (Production Build)
-// ===============================
-
-const frontendPath = path.join(__dirname, "../../frontend/dist");
-
-// Serve static files
-app.use(express.static(frontendPath));
-
-// React Router fallback
-app.get(/^(?!\/api).*/, (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
-});
-
 module.exports = app;
