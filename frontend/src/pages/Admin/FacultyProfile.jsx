@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 
 const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
+    const BASE_URL = api.defaults.baseURL;
     const token = localStorage.getItem("token");
     const isNew = !faculty?.sr_no;
 
@@ -38,8 +39,8 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                const res = await axios.get(
-                    "http://localhost:5000/api/courses",
+                const res = await api.get(
+                    "/api/courses",
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setCourses(res.data || []);
@@ -84,8 +85,8 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
         if (form.courcecode !== "NOT ASSIGNED" && form.semoryear) {
             const fetchSubjects = async () => {
                 try {
-                    const res = await axios.get(
-                        `http://localhost:5000/api/subjects?course_code=${form.courcecode}&sem=${form.semoryear}`,
+                    const res = await api.get(
+                        `/api/subjects?course_code=${form.courcecode}&sem=${form.semoryear}`,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
                     setSubjects(res.data || []);
@@ -146,14 +147,14 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
 
         try {
             if (isNew) {
-                await axios.post(
-                    "http://localhost:5000/api/faculty",
+                await api.post(
+                    "/api/faculty",
                     formData,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
             } else {
-                await axios.put(
-                    `http://localhost:5000/api/faculty/${faculty.sr_no}`,
+                await api.put(
+                    `/api/faculty/${faculty.sr_no}`,
                     formData,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -215,13 +216,13 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                                 />
                             ) : faculty?.profilepic ? (
                                 <img
-                                    src={`http://localhost:5000/uploads/faculties/${faculty.profilepic}`}
+                                    src={`${BASE_URL}/uploads/faculties/${faculty.profilepic}`}
                                     alt="profile"
                                     className="h-full w-full object-cover"
                                 />
                             ) : (
                                 <img
-                                    src={`http://localhost:5000/uploads/faculties/default.png`}
+                                    src={`${BASE_URL}/uploads/faculties/default.png`}
                                     alt="default"
                                     className="h-full w-full object-cover"
                                 />
