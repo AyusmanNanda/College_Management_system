@@ -181,8 +181,8 @@ const Faculties = () => {
 
             {/* TABLE */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                <div className="w-full">
+                    <table className="w-full table-auto text-sm">
                         <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
                         <tr>
                             <th className="px-4 py-3 text-left">Profile</th>
@@ -217,7 +217,7 @@ const Faculties = () => {
                                     className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                                 >
                                     {/* Profile */}
-                                    <td className="px-4 py-3">
+                                    <td className="px-5 py-4">
                                         <img
                                             src={
                                                 faculty.profilepic
@@ -230,7 +230,7 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Faculty Info */}
-                                    <td className="px-4 py-3 dark:text-gray-200">
+                                    <td className="px-2 py-3 dark:text-gray-200">
                                         <div className="font-semibold">
                                             {faculty.facultyname}
                                         </div>
@@ -245,8 +245,13 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Course */}
-                                    <td className="hidden md:table-cell px-4 py-3 dark:text-gray-200">
-                                        {faculty.courcecode}
+                                    <td className="hidden md:table-cell px-3 py-3 dark:text-gray-200">
+                                        <div className="font-medium leading-tight">
+                                            {faculty.courcecode}
+                                        </div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
+                                            {faculty.course_name || ""}
+                                        </div>
                                     </td>
 
                                     {/* Semester */}
@@ -255,7 +260,7 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Desktop Subject Styled Properly */}
-                                    <td className="hidden lg:table-cell px-4 py-3 dark:text-gray-200">
+                                    <td className="hidden lg:table-cell px-3 py-3 dark:text-gray-200 truncate">
                                         <div className="font-medium">
                                             {faculty.subject}
                                         </div>
@@ -283,7 +288,7 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Actions */}
-                                    <td className="px-4 py-3">
+                                    <td className="px-2 py-3">
                                         <div className="flex gap-2 justify-center">
                                             <button
                                                 onClick={() => {
