@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 
 const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
     const [file, setFile] = useState(null);
@@ -9,8 +9,8 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
 
     const handleDownloadTemplate = async () => {
         try {
-            const response = await axios.get(
-                "http://localhost:5000/api/faculty/template",
+            const response = await api.get(
+                "/api/faculty/template",
                 {
                     headers: {Authorization: `Bearer ${token}`},
                     responseType: "blob"
@@ -40,8 +40,8 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
             setError("");
             setResult(null);
 
-            const response = await axios.post(
-                "http://localhost:5000/api/faculty/import",
+            const response = await api.post(
+                "/api/faculty/import",
                 formData,
                 {
                     headers: {
