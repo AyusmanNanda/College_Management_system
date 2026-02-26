@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const Subjects = () => {
@@ -24,12 +24,12 @@ const Subjects = () => {
         practicalmarks: ""
     });
 
-    /* ================= Fetch Courses ================= */
+    /* ================= FETCH ================= */
 
     const fetchCourses = async () => {
         try {
-            const res = await axios.get(
-                "http://localhost:5000/api/courses",
+            const res = await api.get(
+                "/api/courses",
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setCourses(res.data);
@@ -41,8 +41,8 @@ const Subjects = () => {
     const fetchSubjects = async (courseCode, sem) => {
         try {
             setLoading(true);
-            const res = await axios.get(
-                `http://localhost:5000/api/subjects?course_code=${courseCode}&sem=${sem}`,
+            const res = await api.get(
+                `/api/subjects?course_code=${courseCode}&sem=${sem}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setSubjects(res.data);
@@ -69,7 +69,7 @@ const Subjects = () => {
         (c) => c.course_code === selectedCourse
     );
 
-    /* ================= Form Handling ================= */
+    /* ================= FORM ================= */
 
     const handleFormChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -98,8 +98,8 @@ const Subjects = () => {
             setLoading(true);
 
             if (editingCode) {
-                await axios.put(
-                    `http://localhost:5000/api/subjects/${editingCode}`,
+                await api.put(
+                    `/api/subjects/${editingCode}`,
                     {
                         subjectname: form.subjectname,
                         subjecttype: form.subjecttype,
@@ -109,8 +109,8 @@ const Subjects = () => {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
             } else {
-                await axios.post(
-                    "http://localhost:5000/api/subjects",
+                await api.post(
+                    "/api/subjects",
                     {
                         ...form,
                         courcecode: selectedCourse,
@@ -147,8 +147,8 @@ const Subjects = () => {
 
         try {
             setLoading(true);
-            await axios.delete(
-                `http://localhost:5000/api/subjects/${subjectToDelete}`,
+            await api.delete(
+                `/api/subjects/${subjectToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             fetchSubjects(selectedCourse, selectedSem);
@@ -164,7 +164,7 @@ const Subjects = () => {
     return (
         <div className="space-y-10">
 
-            {/* Header */}
+            {/* HEADER */}
             <div>
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
                     Subject Management
@@ -180,7 +180,7 @@ const Subjects = () => {
                 </div>
             )}
 
-            {/* Course & Semester Selection */}
+            {/* COURSE + SEM */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <select
@@ -190,7 +190,7 @@ const Subjects = () => {
                         setSelectedSem("");
                         resetForm();
                     }}
-                    className="w-full px-2 py-2 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
                     {courses.map((course) => (
@@ -204,96 +204,168 @@ const Subjects = () => {
                     value={selectedSem}
                     onChange={(e) => setSelectedSem(e.target.value)}
                     disabled={!selectedCourse}
-                    className="w-full px-2 py-2 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Semester</option>
                     {selectedCourseData &&
-                        Array.from(
-                            { length: selectedCourseData.total_semesters },
-                            (_, i) => i + 1
-                        ).map((sem) => (
-                            <option key={sem} value={sem}>
-                                {selectedCourseData.sem_or_year === "year"
-                                    ? `Year ${sem}`
-                                    : `Semester ${sem}`}
-                            </option>
-                        ))}
+                        Array.from({ length: selectedCourseData.total_semesters }, (_, i) => i + 1)
+                            .map((sem) => (
+                                <option key={sem} value={sem}>
+                                    {selectedCourseData.sem_or_year === "year"
+                                        ? `Year ${sem}`
+                                        : `Semester ${sem}`}
+                                </option>
+                            ))}
                 </select>
             </div>
 
-            {/* Subjects Table */}
+            {/* FORM */}
+            {selectedCourse && selectedSem && (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide mb-6">
+                        {editingCode ? "Edit Subject" : "Add New Subject"}
+                    </h3>
+
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
+                        {!editingCode && (
+                            <input
+                                name="subjectcode"
+                                placeholder="Subject Code"
+                                value={form.subjectcode}
+                                onChange={handleFormChange}
+                                required
+                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                            />
+                        )}
+
+                        <input
+                            name="subjectname"
+                            placeholder="Subject Name"
+                            value={form.subjectname}
+                            onChange={handleFormChange}
+                            required
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                        />
+
+                        <select
+                            name="subjecttype"
+                            value={form.subjecttype}
+                            onChange={handleFormChange}
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                        >
+                            <option value="core">Core</option>
+                            <option value="optional">Optional</option>
+                        </select>
+
+                        <input
+                            type="number"
+                            name="theorymarks"
+                            placeholder="Theory"
+                            value={form.theorymarks}
+                            onChange={handleFormChange}
+                            required
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                        />
+
+                        <input
+                            type="number"
+                            name="practicalmarks"
+                            placeholder="Practical"
+                            value={form.practicalmarks}
+                            onChange={handleFormChange}
+                            required
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                        />
+
+                        <div className="sm:col-span-2 md:col-span-5 flex gap-3">
+                            <button
+                                type="submit"
+                                className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                            >
+                                {editingCode ? "Update Subject" : "Add Subject"}
+                            </button>
+
+                            {editingCode && (
+                                <button
+                                    type="button"
+                                    onClick={resetForm}
+                                    className="px-5 py-2 bg-gray-200 dark:bg-gray-600 dark:text-white rounded-md"
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* SUBJECT LIST TABLE */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
                 <div className="w-full overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
                         <tr>
-                            <th className="px-3 py-2 sm:p-4">Code</th>
-                            <th className="px-3 py-2 sm:p-4">Name</th>
-                            <th className="px-3 py-2 sm:p-4">Type</th>
+                            <th className="p-4">Code</th>
+                            <th className="p-4">Name</th>
 
-                            {/* Hidden on Mobile */}
-                            <th className="hidden sm:table-cell px-3 py-2 sm:p-4">
-                                Theory
-                            </th>
-                            <th className="hidden sm:table-cell px-3 py-2 sm:p-4">
-                                Practical
-                            </th>
+                            {/* Hidden on mobile */}
+                            <th className="hidden sm:table-cell p-4">Type</th>
+                            <th className="hidden sm:table-cell p-4">Theory</th>
+                            <th className="hidden sm:table-cell p-4">Practical</th>
 
-                            <th className="px-3 py-2 sm:p-4">Actions</th>
+                            <th className="p-4">Actions</th>
                         </tr>
                         </thead>
 
                         <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan="6" className="p-6 text-center dark:text-gray-300">
-                                    Loading...
+                        {subjects.map((sub) => (
+                            <tr
+                                key={sub.subjectcode}
+                                className="border-t dark:border-gray-700"
+                            >
+                                <td className="p-4 dark:text-gray-200">
+                                    {sub.subjectcode}
+                                </td>
+
+                                <td className="p-4 dark:text-gray-200">
+                                    {sub.subjectname}
+                                </td>
+
+                                {/* Hidden on mobile */}
+                                <td className="hidden sm:table-cell p-4 capitalize dark:text-gray-200">
+                                    {sub.subjecttype}
+                                </td>
+
+                                <td className="hidden sm:table-cell p-4 dark:text-gray-200">
+                                    {sub.theorymarks}
+                                </td>
+
+                                <td className="hidden sm:table-cell p-4 dark:text-gray-200">
+                                    {sub.practicalmarks}
+                                </td>
+
+                                <td className="p-4 dark:text-gray-200">
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <button
+                                            onClick={() => handleEdit(sub)}
+                                            className="px-3 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setSubjectToDelete(sub.subjectcode);
+                                                setShowDeleteModal(true);
+                                            }}
+                                            className="px-3 py-1 bg-red-600 text-white rounded"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
-                        ) : subjects.length > 0 ? (
-                            subjects.map((sub) => (
-                                <tr key={sub.subjectcode} className="border-t dark:border-gray-700">
-                                    <td className="px-3 py-2 sm:p-4 dark:text-gray-200">{sub.subjectcode}</td>
-                                    <td className="px-3 py-2 sm:p-4 dark:text-gray-200">{sub.subjectname}</td>
-                                    <td className="px-3 py-2 sm:p-4 capitalize dark:text-gray-200">{sub.subjecttype}</td>
-
-                                    {/* Hidden on Mobile */}
-                                    <td className="hidden sm:table-cell px-3 py-2 sm:p-4 dark:text-gray-200">
-                                        {sub.theorymarks}
-                                    </td>
-                                    <td className="hidden sm:table-cell px-3 py-2 sm:p-4 dark:text-gray-200">
-                                        {sub.practicalmarks}
-                                    </td>
-
-                                    <td className="px-3 py-2 sm:p-4">
-                                        <div className="flex flex-col sm:flex-row gap-2">
-                                            <button
-                                                onClick={() => handleEdit(sub)}
-                                                className="px-2 py-1 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                                            >
-                                                Edit
-                                            </button>
-
-                                            <button
-                                                onClick={() => {
-                                                    setSubjectToDelete(sub.subjectcode);
-                                                    setShowDeleteModal(true);
-                                                }}
-                                                className="px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="6" className="p-6 text-center text-gray-500 dark:text-gray-400">
-                                    Select course and semester.
-                                </td>
-                            </tr>
-                        )}
+                        ))}
                         </tbody>
                     </table>
                 </div>

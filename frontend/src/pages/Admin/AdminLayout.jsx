@@ -1,9 +1,10 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 import { Sun, Moon } from "lucide-react";
 
 const AdminLayout = () => {
+    const BASE_URL = `http://${window.location.hostname}:5000`;
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
@@ -24,8 +25,8 @@ const AdminLayout = () => {
 
         const fetchAdmin = async () => {
             try {
-                const res = await axios.get(
-                    "http://localhost:5000/api/admin/profile",
+                const res = await api.get(
+                    "/api/admin/profile",
                     {
                         headers: { Authorization: `Bearer ${token}` }
                     }
@@ -98,7 +99,7 @@ const AdminLayout = () => {
                         <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
                             {admin && (
                                 <img
-                                    src={`http://localhost:5000${admin.logo}`}
+                                    src={`${BASE_URL}${admin.logo}`}
                                     alt="College Logo"
                                     className="h-full w-full object-cover"
                                 />
@@ -178,7 +179,7 @@ const AdminLayout = () => {
             </aside>
 
             {/* Main Area */}
-            <div className="flex-1 flex flex-col lg:ml-64 transition-all duration-300">
+            <div className="flex-1 min-w-0 flex flex-col lg:ml-64 transition-all duration-300">
 
                 {/* Header */}
                 <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 lg:px-8 transition-colors">

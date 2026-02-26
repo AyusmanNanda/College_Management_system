@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const Courses = () => {
@@ -25,9 +25,11 @@ const Courses = () => {
 
         try {
             setLoading(true);
-            const res = await axios.get(
-                "http://localhost:5000/api/courses",
-                { headers: { Authorization: `Bearer ${token}` } }
+            const res = await api.get(
+                "/api/courses",
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
             );
             setCourses(res.data);
             setError("");
@@ -59,14 +61,14 @@ const Courses = () => {
             setLoading(true);
 
             if (editingId) {
-                await axios.put(
-                    `http://localhost:5000/api/courses/${editingId}`,
+                await api.put(
+                    `/api/courses/${editingId}`,
                     form,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
             } else {
-                await axios.post(
-                    "http://localhost:5000/api/courses",
+                await api.post(
+                    "/api/courses",
                     form,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -108,8 +110,8 @@ const Courses = () => {
         try {
             setLoading(true);
 
-            await axios.delete(
-                `http://localhost:5000/api/courses/${courseToDelete}`,
+            await api.delete(
+                `/api/courses/${courseToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
