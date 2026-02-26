@@ -12,11 +12,26 @@ const AdminLayout = () => {
     const [admin, setAdmin] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    const [theme, setTheme] = useState(
-        document.documentElement.classList.contains("dark")
+    const [theme, setTheme] = useState(() => {
+        const savedTheme = localStorage.getItem("theme");
+
+        if (savedTheme) return savedTheme;
+
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
             ? "dark"
-            : "light"
-    );
+            : "light";
+    });
+
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+
+        localStorage.setItem("theme", theme);
+    }, [theme]);
+
 
     /* ===================== Fetch Admin ===================== */
 
@@ -52,16 +67,7 @@ const AdminLayout = () => {
     /* ===================== Theme Toggle ===================== */
 
     const toggleTheme = () => {
-        const newTheme = theme === "dark" ? "light" : "dark";
-
-        setTheme(newTheme);
-        localStorage.setItem("theme", newTheme);
-
-        if (newTheme === "dark") {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-        }
+        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
     };
 
     /* ===================== Menu ===================== */
@@ -204,7 +210,7 @@ const AdminLayout = () => {
                         {/* Theme Toggle */}
                         <button
                             onClick={toggleTheme}
-                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+                            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-all duration-300 group"
                             title="Toggle theme"
                         >
                             {theme === "dark" ? (

@@ -1,12 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Sun, Moon } from "lucide-react";
 import api from "../utils/api";
-
-/*
-  Admin Login Page
-  ----------------
-  Single admin system
-*/
 
 const Login = () => {
     const navigate = useNavigate();
@@ -18,6 +13,33 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+
+    const [theme, setTheme] = useState(() => {
+        const savedTheme = localStorage.getItem("theme");
+
+        if (savedTheme) return savedTheme;
+
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        return prefersDark ? "dark" : "light";
+    });
+
+    /* ================= Theme Toggle ================= */
+
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+
+        localStorage.setItem("theme", theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    };
+
+    /* ================= Login ================= */
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -53,7 +75,7 @@ const Login = () => {
                 navigate("/student/dashboard", { replace: true });
             }
 
-        } catch (err) {
+        } catch {
             setError("Invalid email or password");
         } finally {
             setLoading(false);
@@ -61,9 +83,28 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors duration-300 px-4 sm:px-6">
+        <div className="relative min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors duration-300 px-4 sm:px-6">
 
-            <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-sm">
+            {/* Theme Toggle Button */}
+            <button
+                onClick={toggleTheme}
+                className="absolute top-5 right-5 p-2 rounded-full bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                title="Toggle theme"
+            >
+                {theme === "dark" ? (
+                    <Sun
+                        size={20}
+                        className="text-gray-300 transition-transform duration-300 group-hover:rotate-12"
+                    />
+                ) : (
+                    <Moon
+                        size={20}
+                        className="text-gray-700 transition-transform duration-300 group-hover:-rotate-12"
+                    />
+                )}
+            </button>
+
+            <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-sm transition-colors duration-300">
 
                 <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
                     College Login
