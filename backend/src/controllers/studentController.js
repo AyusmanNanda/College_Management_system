@@ -4,11 +4,11 @@ const db = require("../config/db");
 
 exports.getStudentProfile = async (req, res) => {
   try {
-    const userid = req.user.userid;
+    const email = req.user.email;
 
     const [rows] = await db.query(
-      "SELECT * FROM students WHERE userid = ?",
-      [userid]
+      "SELECT * FROM students WHERE emailid = ?",
+      [email]
       );
     if (rows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -25,11 +25,11 @@ exports.getStudentProfile = async (req, res) => {
 
 exports.getStudentSubjects = async (req, res) => {
   try {
-    const userid = req.user.userid;
+    const userid = req.user.email;
 
     const [student] = await db.query(
-      "SELECT Courcecode, semoryear FROM students WHERE userid = ?",
-      [userid]
+      "SELECT Courcecode, semoryear FROM students WHERE emailid = ?",
+      [email]
       );
 
     if (student.length === 0) {
@@ -55,13 +55,13 @@ exports.getStudentSubjects = async (req, res) => {
 
 exports.updateStudentProfile = async (req, res) => {
   try {
-    const userid = req.user.userid;
+    const userid = req.user.email;
     const { emailid, contactnumber, state, city } = req.body;
 
     await db.query(
       `UPDATE students
       SET emailid = ?, contactnumber = ?, state = ?, city = ?
-      WHERE userid = ?`,
+      WHERE emailid = ?`,
       [emailid, contactnumber, state, city, userid]
       );
     
