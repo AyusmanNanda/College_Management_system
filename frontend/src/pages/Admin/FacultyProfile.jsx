@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 
 const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
+    const BASE_URL = api.defaults.baseURL;
     const token = localStorage.getItem("token");
     const isNew = !faculty?.sr_no;
 
@@ -32,14 +33,11 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
         password: ""
     });
 
-    // =========================
-    // Fetch Courses
-    // =========================
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                const res = await axios.get(
-                    "http://localhost:5000/api/courses",
+                const res = await api.get(
+                    "/api/courses",
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setCourses(res.data || []);
@@ -50,9 +48,6 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
         fetchCourses();
     }, []);
 
-    // =========================
-    // Generate Semester Options
-    // =========================
     useEffect(() => {
         const selectedCourse = courses.find(
             (c) => c.course_code === form.courcecode
@@ -77,15 +72,12 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
         setSubjects([]);
     }, [form.courcecode, courses]);
 
-    // =========================
-    // Fetch Subjects
-    // =========================
     useEffect(() => {
         if (form.courcecode !== "NOT ASSIGNED" && form.semoryear) {
             const fetchSubjects = async () => {
                 try {
-                    const res = await axios.get(
-                        `http://localhost:5000/api/subjects?course_code=${form.courcecode}&sem=${form.semoryear}`,
+                    const res = await api.get(
+                        `/api/subjects?course_code=${form.courcecode}&sem=${form.semoryear}`,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
                     setSubjects(res.data || []);
@@ -102,9 +94,6 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
         setForm({ ...form, [name]: value });
     };
 
-    // =========================
-    // Save Handler
-    // =========================
     const handleSave = async () => {
         setError("");
 
@@ -132,7 +121,6 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
             }
         });
 
-        // Default password = DOB (only for new faculty)
         if (isNew) {
             const finalPassword = form.password || form.birthdate;
             formData.append("password", finalPassword);
@@ -146,14 +134,14 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
 
         try {
             if (isNew) {
-                await axios.post(
-                    "http://localhost:5000/api/faculty",
+                await api.post(
+                    "/api/faculty",
                     formData,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
             } else {
-                await axios.put(
-                    `http://localhost:5000/api/faculty/${faculty.sr_no}`,
+                await api.put(
+                    `/api/faculty/${faculty.sr_no}`,
                     formData,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -180,33 +168,38 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
     const genderOptions = ["", "Male", "Female", "Other"];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+
             <div
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                 onClick={onClose}
             />
 
-            <div className="relative bg-white w-full max-w-5xl rounded-2xl shadow-2xl z-10 overflow-hidden">
+            <div className="relative bg-white dark:bg-gray-800 w-full max-w-5xl rounded-2xl shadow-2xl z-10 overflow-hidden transition-colors">
 
-                <div className="px-8 py-6 border-b bg-gray-50 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">
+                <div className="px-6 sm:px-8 py-6 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600 flex justify-between items-center transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                         {isNew ? "Add Faculty" : "Edit Faculty"}
                     </h3>
-                    <button onClick={onClose} className="text-gray-500 text-sm">✕</button>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white text-sm transition"
+                    >
+                        ✕
+                    </button>
                 </div>
 
-                <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
+                <div className="p-6 sm:p-8 space-y-8 max-h-[75vh] overflow-y-auto">
 
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded text-sm">
+                        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded text-sm">
                             {error}
                         </div>
                     )}
 
-                    {/* Profile */}
-                    <div className="flex flex-col items-center gap-4 border-b pb-6">
+                    <div className="flex flex-col items-center gap-4 border-b dark:border-gray-600 pb-6">
 
-                        <div className="h-32 w-32 rounded-full border overflow-hidden bg-gray-100 shadow-md">
+                        <div className="h-32 w-32 rounded-full border dark:border-gray-600 overflow-hidden bg-gray-100 dark:bg-gray-700 shadow-md">
                             {selectedFile ? (
                                 <img
                                     src={URL.createObjectURL(selectedFile)}
@@ -215,20 +208,20 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                                 />
                             ) : faculty?.profilepic ? (
                                 <img
-                                    src={`http://localhost:5000/uploads/faculties/${faculty.profilepic}`}
+                                    src={`${BASE_URL}/uploads/faculties/${faculty.profilepic}`}
                                     alt="profile"
                                     className="h-full w-full object-cover"
                                 />
                             ) : (
                                 <img
-                                    src={`http://localhost:5000/uploads/faculties/default.png`}
+                                    src={`${BASE_URL}/uploads/faculties/default.png`}
                                     alt="default"
                                     className="h-full w-full object-cover"
                                 />
                             )}
                         </div>
 
-                        <label className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition cursor-pointer">
+                        <label className="w-full sm:w-auto text-center px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition cursor-pointer">
                             Choose Profile Picture
                             <input
                                 type="file"
@@ -237,11 +230,9 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                                 className="hidden"
                             />
                         </label>
-
                     </div>
 
-                    {/* Form Grid */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
                         <Input required label="Faculty ID" name="facultyid" value={form.facultyid} onChange={handleChange} />
                         <Input required label="Full Name" name="facultyname" value={form.facultyname} onChange={handleChange} />
@@ -254,14 +245,16 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                         <Input required type="date" label="Birth Date" name="birthdate" value={form.birthdate} onChange={handleChange} />
 
                         <Select required label="Gender" name="gender" value={form.gender} onChange={handleChange} options={genderOptions} />
-
+                        {/* Course */}
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs text-gray-500">Course</label>
+                            <label className="text-xs text-gray-500 dark:text-gray-400">
+                                Course
+                            </label>
                             <select
                                 name="courcecode"
                                 value={form.courcecode}
                                 onChange={handleChange}
-                                className="border border-gray-300 px-3 py-2 rounded-md text-sm"
+                                className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm transition"
                             >
                                 <option value="NOT ASSIGNED">NOT ASSIGNED</option>
                                 {courses.map((c) => (
@@ -272,16 +265,26 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                             </select>
                         </div>
 
-                        <Select label="Semester / Year" name="semoryear" value={form.semoryear} onChange={handleChange} options={["", ...semOptions]} />
+                        {/* Semester / Year */}
+                        <Select
+                            label="Semester / Year"
+                            name="semoryear"
+                            value={form.semoryear}
+                            onChange={handleChange}
+                            options={["", ...semOptions]}
+                        />
 
+                        {/* Subject */}
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs text-gray-500">Subject</label>
+                            <label className="text-xs text-gray-500 dark:text-gray-400">
+                                Subject
+                            </label>
                             <select
                                 name="subject"
                                 value={form.subject}
                                 onChange={handleChange}
                                 disabled={!form.semoryear}
-                                className="border border-gray-300 px-3 py-2 rounded-md text-sm disabled:bg-gray-100"
+                                className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm disabled:bg-gray-100 dark:disabled:bg-gray-600 transition"
                             >
                                 <option value="NOT ASSIGNED">NOT ASSIGNED</option>
                                 {subjects.map((s) => (
@@ -298,12 +301,18 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
                     </div>
                 </div>
 
-                <div className="px-8 py-6 border-t bg-gray-50 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md text-sm">
+                <div className="px-6 sm:px-8 py-6 border-t bg-gray-50 dark:bg-gray-700 dark:border-gray-600 flex flex-col sm:flex-row justify-end gap-3 transition-colors">
+                    <button
+                        onClick={onClose}
+                        className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded-md text-sm"
+                    >
                         Cancel
                     </button>
 
-                    <button onClick={handleSave} className="px-6 py-2 bg-gray-900 text-white rounded-md text-sm">
+                    <button
+                        onClick={handleSave}
+                        className="w-full sm:w-auto px-6 py-2 bg-gray-900 text-white rounded-md text-sm hover:bg-black transition"
+                    >
                         {isNew ? "Create Faculty" : "Save Changes"}
                     </button>
                 </div>
@@ -314,24 +323,24 @@ const FacultyProfile = ({ faculty, onClose, onUpdated }) => {
 
 const Input = ({ label, required, ...props }) => (
     <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">
+        <label className="text-xs text-gray-500 dark:text-gray-400">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         <input
             {...props}
-            className="border border-gray-300 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
         />
     </div>
 );
 
 const Select = ({ label, options, required, ...props }) => (
     <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">
+        <label className="text-xs text-gray-500 dark:text-gray-400">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         <select
             {...props}
-            className="border border-gray-300 px-3 py-2 rounded-md text-sm"
+            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm transition"
         >
             {options.map((opt) => (
                 <option key={opt || "empty"} value={opt}>

@@ -13,7 +13,23 @@ const studentRoutes = require("./routes/studentRoutes");
 
 const app = express();
 
-app.use(cors());
+app.use(
+    cors({
+        origin: function (origin, callback) {
+            if (!origin) return callback(null, true); // allow server-to-server or curl
+
+            if (
+                origin.includes("vercel.app") ||
+                origin.includes("localhost")
+            ) {
+                return callback(null, true);
+            }
+
+            return callback(new Error("Not allowed by CORS"));
+        },
+        credentials: true,
+    })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
