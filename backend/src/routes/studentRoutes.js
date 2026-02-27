@@ -16,7 +16,7 @@ if (!fs.existsSync(studentUploadPath)) {
   fs.mkdirSync(studentUploadPath, { recursive: true });
 }
 
-const studentStorage = multer diskStorage({
+const studentStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, studentUploadPath);
   },
@@ -46,5 +46,5 @@ router.put(
 
 // View Subjects
 router.get("/subjects", authMiddleware, studentController.getStudentSubjects);
-module.exports = routers;
+module.exports = router;
 
