@@ -107,7 +107,7 @@ const AdminLayout = () => {
                                 <img
                                     src={
                                         admin?.logo
-                                            ? `${BASE_URL}${admin.logo}?v=${imageVersion}`
+                                            ? `${BASE_URL}${admin.logo}`
                                             : `${BASE_URL}/uploads/admin/default.png`
                                     }
                                     onError={(e) => {
