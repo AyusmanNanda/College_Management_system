@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 function StatCard({ title, value }) {
   return (
@@ -6,16 +6,63 @@ function StatCard({ title, value }) {
       <div className="text-[12px] tracking-wider text-gray-500 uppercase">
         {title}
       </div>
-      <div className="mt-3 text-[28px] font-semibold text-gray-900">{value}</div>
+      <div className="mt-3 text-[28px] font-semibold text-gray-900">
+        {value}
+      </div>
     </div>
   );
 }
 
 export default function FacultyDashboard() {
-  // Static for now (we will connect API later)
-  const totalStudents = 0;
-  const totalFaculty = 0;
-  const assignedSubjects = 0;
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalFaculty: 0,
+    assignedSubjects: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        // If token missing, avoid crash
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch("http://localhost:5000/api/dashboard/faculty", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error("Faculty stats API error:", data);
+          setLoading(false);
+          return;
+        }
+
+        setStats({
+          totalStudents: data.total_students ?? 0,
+          totalFaculty: data.total_faculty ?? 0,
+          assignedSubjects: data.assigned_subjects ?? 0,
+        });
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load faculty dashboard stats:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -29,9 +76,18 @@ export default function FacultyDashboard() {
 
         {/* Cards row */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard title="Total Students" value={totalStudents} />
-          <StatCard title="Total Faculty" value={totalFaculty} />
-          <StatCard title="Assigned Subjects" value={assignedSubjects} />
+          <StatCard
+            title="Total Students"
+            value={loading ? "..." : stats.totalStudents}
+          />
+          <StatCard
+            title="Total Faculties"
+            value={loading ? "..." : stats.totalFaculty}
+          />
+          <StatCard
+            title="Assigned Subjects"
+            value={loading ? "..." : stats.assignedSubjects}
+          />
         </div>
 
         {/* System overview (NO extra fields) */}

@@ -56,6 +56,8 @@ const Login = () => {
 
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            
 
             if (from) {
                 navigate(from.pathname + (from.search || ""), { replace: true });

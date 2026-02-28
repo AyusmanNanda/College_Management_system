@@ -12,11 +12,22 @@ export default function FacultyLayout() {
     }
   }, []);
 
-  const lastLogin =
-    user?.lastlogin ||
-    user?.lastLogin ||
-    localStorage.getItem("lastlogin") ||
-    "-";
+  const lastLoginRaw =
+  user?.lastlogin ||
+  user?.lastLogin ||
+  localStorage.getItem("lastlogin");
+
+const lastLogin = lastLoginRaw
+  ? new Date(lastLoginRaw).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata"
+    })
+  : "-";
 
   const logout = () => {
     localStorage.removeItem("token");
