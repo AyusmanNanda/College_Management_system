@@ -49,7 +49,7 @@ const AdminProfile = () => {
                     <img
                         src={
                             admin?.logo
-                                ? `${api.defaults.baseURL}${admin.logo}?v=${imageVersion}`
+                                ? `${api.defaults.baseURL}${admin.logo}`
                                 : `${api.defaults.baseURL}/uploads/admin/default.png`
                         }
                         onError={(e) => {
