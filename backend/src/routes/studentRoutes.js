@@ -46,5 +46,32 @@ router.put(
 
 // View Subjects
 router.get("/subjects", authMiddleware, studentController.getStudentSubjects);
+
+
+// Admin Routes
+
+router.get("/", authMiddleware, studentController.getAllStudents);
+
+router.post(
+    "/",
+    authMiddleware,
+    studentUpload.single("profilepic"),
+    studentController.createStudent
+);
+
+router.put(
+    "/:id",
+    authMiddleware,
+    studentUpload.single("profilepic"),
+    studentController.updateStudent
+);
+
+router.delete(
+    "/:id",
+    authMiddleware,
+    studentController.deleteStudent
+);
+
+
 module.exports = router;
 
