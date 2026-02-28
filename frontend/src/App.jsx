@@ -101,13 +101,13 @@ function App() {
                 </Route>
 
                 {/* ===================== Faculty Section ===================== */}
-              <Route
-  path="/faculty"
-  element={
-    <ProtectedRoute allowedRole="faculty">
-      <FacultyLayout />
-    </ProtectedRoute>
-  }
+                 <Route
+                    path="/faculty"
+                    element={
+                    <ProtectedRoute allowedRole="faculty">
+                    <FacultyLayout />
+                    </ProtectedRoute>
+                }
 >
   <Route index element={<Navigate to="dashboard" replace />} />
   <Route path="dashboard" element={<FacultyDashboard />} />
