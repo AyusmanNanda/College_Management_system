@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import StudentProfile from "./StudentProfile";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import ImportStudentModal from "./ImportStudentModal";
 
 const Students = () => {
     const BASE_URL = api.defaults.baseURL;
@@ -19,6 +20,7 @@ const Students = () => {
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState(null);
+    const [showImportModal, setShowImportModal] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -116,15 +118,24 @@ const Students = () => {
                     </p>
                 </div>
 
-                <button
-                    onClick={() => {
-                        setIsNew(true);
-                        setSelectedStudent({});
-                    }}
-                    className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                >
-                    Add Student
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowImportModal(true)}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                    >
+                        Import Students
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setIsNew(true);
+                            setSelectedStudent({});
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                    >
+                        Add Student
+                    </button>
+                </div>
             </div>
 
             {/* FILTERS */}
@@ -295,6 +306,13 @@ const Students = () => {
                 }}
                 onConfirm={handleDelete}
             />
+            {showImportModal && (
+                <ImportStudentModal
+                    token={token}
+                    onClose={() => setShowImportModal(false)}
+                    onImportSuccess={fetchStudents}
+                />
+            )}
 
             {selectedStudent !== null && (
                 <StudentProfile

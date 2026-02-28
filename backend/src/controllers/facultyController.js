@@ -22,7 +22,7 @@ const getFacultyImage = (facultyid) => {
 
     const match = files.find(file => {
         const name = path.basename(file, path.extname(file));
-        return name === String(facultyid);
+        return name.trim().toLowerCase() === String(facultyid).trim().toLowerCase();
     });
 
     return match || "default.png";
