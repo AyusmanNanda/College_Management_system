@@ -14,11 +14,11 @@ function StatCard({ title, value }) {
 }
 
 export default function FacultyDashboard() {
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    totalFaculty: 0,
-    assignedSubjects: 0,
-  });
+ const [stats, setStats] = useState({
+  totalStudents: 0,
+  totalFaculty: 0,
+  totalSubjects: 0,
+});
 
   const [loading, setLoading] = useState(true);
 
@@ -48,10 +48,10 @@ export default function FacultyDashboard() {
         }
 
         setStats({
-          totalStudents: data.total_students ?? 0,
-          totalFaculty: data.total_faculty ?? 0,
-          assignedSubjects: data.assigned_subjects ?? 0,
-        });
+  totalStudents: data.total_students ?? 0,
+  totalFaculty: data.total_faculty ?? 0,
+  totalSubjects: data.total_subjects ?? 0,
+});
 
         setLoading(false);
       } catch (err) {
@@ -86,8 +86,8 @@ export default function FacultyDashboard() {
           value={loading ? "--" : stats.totalFaculty}
         />
         <StatCard
-          title="Assigned Subjects"
-          value={loading ? "--" : stats.assignedSubjects}
+          title="Total Subjects"
+          value={loading ? "--" : stats.totalSubjects}
         />
 
         {/* System Information */}
@@ -97,7 +97,7 @@ export default function FacultyDashboard() {
           </h3>
 
           <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <p>Manage students, faculty tasks, and assigned subjects.</p>
+            <p>Manage students, faculty tasks, and subjects.</p>
             <p>Use the sidebar to navigate between sections.</p>
           </div>
         </div>

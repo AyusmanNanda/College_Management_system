@@ -38,21 +38,15 @@ exports.getFacultyDashboardStats = async (req, res) => {
       "SELECT COUNT(*) AS total_faculty FROM faculties"
     );
 
-    const [[assigned]] = await db.query(
-      `SELECT COUNT(*) AS assigned_subjects
-       FROM faculties
-       WHERE emailid = ?
-         AND subject IS NOT NULL
-         AND subject <> ''
-         AND subject <> 'NOT ASSIGNED'`,
-      [email]
-    );
+   const [[subjectCount]] = await db.query(
+  "SELECT COUNT(*) AS total_subjects FROM subject"
+);
 
-    res.json({
-      total_students: studentCount.total_students,
-      total_faculty: facultyCount.total_faculty,
-      assigned_subjects: assigned.assigned_subjects,
-    });
+   res.json({
+  total_students: studentCount.total_students,
+  total_faculty: facultyCount.total_faculty,
+  total_subjects: subjectCount.total_subjects,
+});
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error fetching faculty dashboard data" });
