@@ -9,7 +9,7 @@ const studentController = require("../controllers/studentController");
 
 /* Update Configuration */
 
-const studentUploadPath = path.join("uploads", "students");
+const studentUploadPath = path.resolve(__dirname, "../../uploads/students");
 
 //Create folder if it does not exist
 if (!fs.existsSync(studentUploadPath)) {
@@ -21,14 +21,36 @@ const studentStorage = multer.diskStorage({
     cb(null, studentUploadPath);
   },
   filename: function (req, file, cb) {
-    const uniqueName = "student_" + Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
+    const rollnumber = req.body.rollnumber;
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    if (!rollnumber) {
+      return cb(new Error("Roll number required for image naming"));
+    }
+
+    const files = fs.readdirSync(studentUploadPath);
+
+    files.forEach(existingFile => {
+      const name = path.basename(existingFile, path.extname(existingFile));
+      if (name === String(rollnumber)) {
+        fs.unlinkSync(path.join(studentUploadPath, existingFile));
+      }
+    });
+
+    cb(null, `${rollnumber}${ext}`);
   }
 });
 
 const studentUpload = multer({
   storage: studentStorage,
-  limits: { fileSize: 2 * 1024 * 1024 } //2MB limit
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error("Only JPG and PNG images are allowed"));
+    }
+    cb(null, true);
+  }
 });
 
 /* Student Routes */

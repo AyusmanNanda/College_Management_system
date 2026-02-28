@@ -16,7 +16,7 @@ import Courses from "./pages/Admin/Courses";
 import Subjects from "./pages/Admin/Subjects";
 import AssignSubjects from "./pages/Admin/AssignSubjects";
 import Faculties from "./pages/Admin/Faculties.jsx";
-import Students from "../pages/admin/Students";
+import Students from "./pages/Admin/Students.jsx";
 
 import FacultyDashboard from "./pages/Faculty/FacultyDashboard";
 import StudentDashboard from "./pages/Student/StudentDashboard";

@@ -297,7 +297,26 @@ exports.deleteStudent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await db.query(`DELETE FROM students WHERE sr_no = ?`, [id]);
+    const [rows] = await db.query(
+        "SELECT profilepic FROM students WHERE sr_no = ?",
+        [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const profilepic = rows[0].profilepic;
+    const studentUploadDir = path.resolve(__dirname, "../../uploads/students");
+
+    await db.query("DELETE FROM students WHERE sr_no = ?", [id]);
+
+    if (profilepic && profilepic !== "default.png") {
+      const filePath = path.join(studentUploadDir, profilepic);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
 
     res.json({ message: "Student deleted successfully" });
 
