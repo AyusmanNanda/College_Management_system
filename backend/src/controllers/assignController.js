@@ -46,21 +46,34 @@ exports.assignSubject = async (req, res) => {
 
     if (
         subjectcode === undefined ||
-        courcecode === undefined ||
         semoryear === undefined
     ) {
         return res.status(400).json({
-            message: "All fields are required"
+            message: "Subject and semester are required"
         });
     }
 
     try {
-        const [result] = await db.query(
-            `UPDATE faculties
-             SET subject = ?, courcecode = ?, semoryear = ?
-             WHERE sr_no = ?`,
-            [subjectcode, courcecode, semoryear, facultyId]
-        );
+        let query;
+        let values;
+
+        if (subjectcode === "NOT ASSIGNED") {
+            query = `
+                UPDATE faculties
+                SET subject = ?, semoryear = ?
+                WHERE sr_no = ?
+            `;
+            values = [subjectcode, semoryear, facultyId];
+        } else {
+            query = `
+                UPDATE faculties
+                SET subject = ?, courcecode = ?, semoryear = ?
+                WHERE sr_no = ?
+            `;
+            values = [subjectcode, courcecode, semoryear, facultyId];
+        }
+
+        const [result] = await db.query(query, values);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({
@@ -68,10 +81,10 @@ exports.assignSubject = async (req, res) => {
             });
         }
 
-        res.json({ message: "Subject assigned successfully" });
+        res.json({ message: "Subject updated successfully" });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Error assigning subject" });
+        res.status(500).json({ message: "Error updating subject" });
     }
 };
