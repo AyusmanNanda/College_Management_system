@@ -181,32 +181,38 @@ const Faculties = () => {
 
             {/* TABLE */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                <div className="w-full">
-                    <table className="w-full table-auto text-sm">
+                <div className="w-full overflow-x-auto">
+                    <table className="w-full text-xs sm:text-sm text-left">
                         <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
                         <tr>
-                            <th className="px-4 py-3 text-left">Profile</th>
-                            <th className="px-4 py-3 text-left">Faculty</th>
-                            <th className="hidden sm:table-cell px-4 py-3 text-left">Position</th>
-                            <th className="hidden md:table-cell px-4 py-3 text-left">Course</th>
-                            <th className="hidden md:table-cell px-4 py-3 text-left">Semester</th>
-                            <th className="hidden lg:table-cell px-4 py-3 text-left">Subject</th>
-                            <th className="hidden lg:table-cell px-4 py-3 text-left">Experience</th>
-                            <th className="hidden sm:table-cell px-4 py-3 text-left">Status</th>
-                            <th className="px-4 py-3 text-center">Actions</th>
+                            <th className="px-3 py-2 sm:px-4 sm:py-4">Profile</th>
+                            <th className="px-3 py-2 sm:px-4 sm:py-4">Faculty</th>
+                            <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">Position</th>
+                            <th className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4">Course</th>
+                            <th className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4">Semester</th>
+                            <th className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4">Subject</th>
+                            <th className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4">Experience</th>
+                            <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">Status</th>
+                            <th className="px-3 py-2 sm:px-4 sm:py-4 text-center">Actions</th>
                         </tr>
                         </thead>
 
                         <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="9" className="py-8 text-center text-gray-500 dark:text-gray-400">
+                                <td
+                                    colSpan="9"
+                                    className="px-3 py-8 text-center text-gray-500 dark:text-gray-400"
+                                >
                                     Loading...
                                 </td>
                             </tr>
                         ) : filteredFaculties.length === 0 ? (
                             <tr>
-                                <td colSpan="9" className="py-8 text-center text-gray-500 dark:text-gray-400">
+                                <td
+                                    colSpan="9"
+                                    className="px-3 py-8 text-center text-gray-500 dark:text-gray-400"
+                                >
                                     No faculties found.
                                 </td>
                             </tr>
@@ -217,7 +223,7 @@ const Faculties = () => {
                                     className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                                 >
                                     {/* Profile */}
-                                    <td className="px-5 py-4">
+                                    <td className="px-3 py-2 sm:px-4 sm:py-4">
                                         <img
                                             src={
                                                 faculty.profilepic
@@ -230,7 +236,7 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Faculty Info */}
-                                    <td className="px-2 py-3 dark:text-gray-200">
+                                    <td className="px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                         <div className="font-semibold">
                                             {faculty.facultyname}
                                         </div>
@@ -240,12 +246,12 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Position */}
-                                    <td className="hidden sm:table-cell px-4 py-3 dark:text-gray-200">
+                                    <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                         {faculty.position}
                                     </td>
 
                                     {/* Course */}
-                                    <td className="hidden md:table-cell px-3 py-3 dark:text-gray-200">
+                                    <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                         <div className="font-medium leading-tight">
                                             {faculty.courcecode}
                                         </div>
@@ -255,12 +261,12 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Semester */}
-                                    <td className="hidden md:table-cell px-4 py-3 dark:text-gray-200">
+                                    <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                         {faculty.semoryear || "-"}
                                     </td>
 
-                                    {/* Desktop Subject Styled Properly */}
-                                    <td className="hidden lg:table-cell px-3 py-3 dark:text-gray-200 truncate">
+                                    {/* Subject */}
+                                    <td className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200 truncate">
                                         <div className="font-medium">
                                             {faculty.subject}
                                         </div>
@@ -270,32 +276,32 @@ const Faculties = () => {
                                     </td>
 
                                     {/* Experience */}
-                                    <td className="hidden lg:table-cell px-4 py-3 dark:text-gray-200">
+                                    <td className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                         {faculty.experience}
                                     </td>
 
                                     {/* Status */}
-                                    <td className="hidden sm:table-cell px-4 py-3">
+                                    <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">
                                         {faculty.activestatus ? (
                                             <span className="px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
-                                        Active
-                                    </span>
+                                    Active
+                                </span>
                                         ) : (
                                             <span className="px-2.5 py-1 text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-full">
-                                        Inactive
-                                    </span>
+                                    Inactive
+                                </span>
                                         )}
                                     </td>
 
                                     {/* Actions */}
-                                    <td className="px-2 py-3">
-                                        <div className="flex gap-2 justify-center">
+                                    <td className="px-3 py-2 sm:px-4 sm:py-4">
+                                        <div className="flex flex-col sm:flex-row gap-2 justify-center">
                                             <button
                                                 onClick={() => {
                                                     setIsNew(false);
                                                     setSelectedFaculty(faculty);
                                                 }}
-                                                className="px-3 py-1.5 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                                                className="w-full sm:w-auto px-3 py-1.5 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                                             >
                                                 Edit
                                             </button>
@@ -305,7 +311,7 @@ const Faculties = () => {
                                                     setFacultyToDelete(faculty.sr_no);
                                                     setShowDeleteModal(true);
                                                 }}
-                                                className="px-3 py-1.5 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
+                                                className="w-full sm:w-auto px-3 py-1.5 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
                                             >
                                                 Delete
                                             </button>
