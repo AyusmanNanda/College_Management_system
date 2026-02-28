@@ -34,9 +34,10 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
         semoryear: student?.semoryear || "",
         optionalsubject: student?.optionalsubject || "",
         admissiondate: student?.admissiondate || today,
-        activestatus: student?.activestatus ?? 1,
         password: ""
     });
+
+    /* ================= FETCH COURSES ================= */
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -51,6 +52,8 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
         };
         fetchCourses();
     }, []);
+
+    /* ================= SEM OPTIONS ================= */
 
     useEffect(() => {
         const selectedCourse = courses.find(
@@ -72,6 +75,8 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
         const { name, value } = e.target;
         setForm({ ...form, [name]: value });
     };
+
+    /* ================= SAVE ================= */
 
     const handleSave = async () => {
         setError("");
@@ -145,26 +150,31 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
                 onClick={onClose}
             />
 
-            <div className="relative bg-white dark:bg-gray-800 w-full max-w-5xl rounded-2xl shadow-2xl z-10 overflow-hidden">
+            <div className="relative bg-white dark:bg-gray-800 w-full max-w-5xl rounded-2xl shadow-2xl z-10 overflow-hidden transition-colors">
 
-                <div className="px-6 sm:px-8 py-6 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">
+                <div className="px-6 sm:px-8 py-6 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600 flex justify-between items-center transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                         {isNew ? "Add Student" : "Edit Student"}
                     </h3>
-                    <button onClick={onClose} className="text-sm">✕</button>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white text-sm transition"
+                    >
+                        ✕
+                    </button>
                 </div>
 
                 <div className="p-6 sm:p-8 space-y-8 max-h-[75vh] overflow-y-auto">
 
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded text-sm">
+                        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded text-sm">
                             {error}
                         </div>
                     )}
 
-                    <div className="flex flex-col items-center gap-4 border-b pb-6">
+                    <div className="flex flex-col items-center gap-4 border-b dark:border-gray-600 pb-6">
 
-                        <div className="h-32 w-32 rounded-full border overflow-hidden bg-gray-100 shadow-md">
+                        <div className="h-32 w-32 rounded-full border dark:border-gray-600 overflow-hidden bg-gray-100 dark:bg-gray-700 shadow-md">
                             {selectedFile ? (
                                 <img
                                     src={URL.createObjectURL(selectedFile)}
@@ -173,12 +183,7 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
                                 />
                             ) : student?.profilepic ? (
                                 <img
-                                    key={student.profilepic}
                                     src={`${BASE_URL}/uploads/students/${student.profilepic}`}
-                                    onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = `${BASE_URL}/uploads/students/default.png`;
-                                    }}
                                     alt="profile"
                                     className="h-full w-full object-cover"
                                 />
@@ -191,7 +196,7 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
                             )}
                         </div>
 
-                        <label className="px-4 py-2 bg-black text-white text-sm rounded cursor-pointer">
+                        <label className="w-full sm:w-auto text-center px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition cursor-pointer">
                             Choose Profile Picture
                             <input
                                 type="file"
@@ -212,6 +217,7 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
                         <Input required type="date" label="Date of Birth" name="dateofbirth" value={form.dateofbirth} onChange={handleChange} />
 
                         <Select required label="Gender" name="gender" value={form.gender} onChange={handleChange} options={genderOptions} />
+
                         <Input label="State" name="state" value={form.state} onChange={handleChange} />
                         <Input label="City" name="city" value={form.city} onChange={handleChange} />
                         <Input label="Father Name" name="fathername" value={form.fathername} onChange={handleChange} />
@@ -230,7 +236,7 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
 
                         <Select
                             required
-                            label="Semester"
+                            label="Semester/Year"
                             name="semoryear"
                             value={form.semoryear}
                             onChange={handleChange}
@@ -239,25 +245,22 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
 
                         <Input label="Optional Subject" name="optionalsubject" value={form.optionalsubject} onChange={handleChange} />
                         <Input type="date" label="Admission Date" name="admissiondate" value={form.admissiondate} onChange={handleChange} />
-
-                        <Select
-                            label="Status"
-                            name="activestatus"
-                            value={form.activestatus}
-                            onChange={handleChange}
-                            options={[1, 0]}
-                        />
-
                         <Input type="password" label="Password (Leave blank = DOB)" name="password" value={form.password} onChange={handleChange} />
                     </div>
                 </div>
 
-                <div className="px-6 sm:px-8 py-6 border-t bg-gray-50 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">
+                <div className="px-6 sm:px-8 py-6 border-t bg-gray-50 dark:bg-gray-700 dark:border-gray-600 flex flex-col sm:flex-row justify-end gap-3 transition-colors">
+                    <button
+                        onClick={onClose}
+                        className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded-md text-sm"
+                    >
                         Cancel
                     </button>
 
-                    <button onClick={handleSave} className="px-6 py-2 bg-black text-white rounded">
+                    <button
+                        onClick={handleSave}
+                        className="w-full sm:w-auto px-6 py-2 bg-gray-900 text-white rounded-md text-sm hover:bg-black transition"
+                    >
                         {isNew ? "Create Student" : "Save Changes"}
                     </button>
                 </div>
@@ -266,29 +269,31 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
     );
 };
 
+/* Shared Input Components */
+
 const Input = ({ label, required, ...props }) => (
     <div className="flex flex-col gap-1">
-        <label className="text-xs">
+        <label className="text-xs text-gray-500 dark:text-gray-400">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         <input
             {...props}
-            className="border px-3 py-2 rounded text-sm"
+            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
         />
     </div>
 );
 
 const Select = ({ label, options, required, ...props }) => (
     <div className="flex flex-col gap-1">
-        <label className="text-xs">
+        <label className="text-xs text-gray-500 dark:text-gray-400">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         <select
             {...props}
-            className="border px-3 py-2 rounded text-sm"
+            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm transition"
         >
             {options.map((opt) => (
-                <option key={opt} value={opt}>
+                <option key={opt || "empty"} value={opt}>
                     {opt === "" ? "Select" : opt}
                 </option>
             ))}
