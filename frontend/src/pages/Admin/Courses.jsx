@@ -227,10 +227,23 @@ const Courses = () => {
                         <tr>
                             <th className="px-2 py-1.5 sm:px-4 sm:py-4">Code</th>
                             <th className="px-2 py-1.5 sm:px-4 sm:py-4">Name</th>
-                            <th className="px-2 py-1.5 sm:px-4 sm:py-4">Type</th>
-                            <th className="px-2 py-1.5 sm:px-4 sm:py-4">Total</th>
-                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">Subjects</th>
-                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">Students</th>
+
+                            {/* Hidden on mobile */}
+                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">
+                                Type
+                            </th>
+
+                            {/* Hidden on mobile */}
+                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">
+                                Total
+                            </th>
+
+                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">
+                                Subjects
+                            </th>
+                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">
+                                Students
+                            </th>
                             <th className="px-2 py-1.5 sm:px-4 sm:py-4">Actions</th>
                         </tr>
                         </thead>
@@ -238,12 +251,32 @@ const Courses = () => {
                         <tbody>
                         {courses.map((course) => (
                             <tr key={course.id} className="border-t dark:border-gray-700">
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.course_code}</td>
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.course_name}</td>
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 capitalize dark:text-gray-200">{course.sem_or_year}</td>
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.total_semesters}</td>
-                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.subject_count}</td>
-                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.student_count}</td>
+                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.course_code}
+                                </td>
+
+                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.course_name}
+                                </td>
+
+                                {/* Hidden on mobile */}
+                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 capitalize dark:text-gray-200">
+                                    {course.sem_or_year}
+                                </td>
+
+                                {/* Hidden on mobile */}
+                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.total_semesters}
+                                </td>
+
+                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.subject_count}
+                                </td>
+
+                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.student_count}
+                                </td>
+
                                 <td className="px-2 py-1.5 sm:px-4 sm:py-4 flex flex-col sm:flex-row gap-2">
                                     <button
                                         onClick={() => handleEdit(course)}
@@ -251,6 +284,7 @@ const Courses = () => {
                                     >
                                         Edit
                                     </button>
+
                                     <button
                                         onClick={() => {
                                             setCourseToDelete(course.id);
