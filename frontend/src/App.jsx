@@ -17,6 +17,8 @@ import Subjects from "./pages/Admin/Subjects";
 import AssignSubjects from "./pages/Admin/AssignSubjects";
 import Faculties from "./pages/Admin/Faculties.jsx";
 import Students from "./pages/Admin/Students.jsx";
+import MarkAttendance from "./pages/Admin/MarkAttendance";
+import AttendanceReport from "./pages/Admin/AttendanceReport";
 
 import FacultyDashboard from "./pages/Faculty/FacultyDashboard";
 import StudentDashboard from "./pages/Student/StudentDashboard";
@@ -99,6 +101,8 @@ function App() {
                     <Route path="assign-subjects" element={<AssignSubjects />} />
                     <Route path="faculties" element={<Faculties />} />
                     <Route path="students" element={<Students />} />
+                    <Route path="mark-attendance" element={<MarkAttendance />} />
+                    <Route path="attendance-report" element={<AttendanceReport />} />
                 </Route>
 
                 {/* ===================== Faculty ===================== */}

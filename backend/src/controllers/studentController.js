@@ -87,7 +87,7 @@ const getStudentImage = (rollnumber) => {
 
   const match = files.find(file => {
     const name = path.basename(file, path.extname(file));
-    return name === String(rollnumber);
+    return name.trim().toLowerCase() === String(rollnumber).trim().toLowerCase();
   });
 
   return match || "default.png";
@@ -99,7 +99,14 @@ exports.getAllStudents = async (req, res) => {
         `SELECT * FROM students ORDER BY sr_no DESC`
     );
 
-    res.json(rows);
+    const updatedStudents = rows.map(student => {
+      return {
+        ...student,
+        profilepic: getStudentImage(student.rollnumber)
+      };
+    });
+
+    res.json(updatedStudents);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching students" });
@@ -313,7 +320,7 @@ exports.deleteStudent = async (req, res) => {
     const { id } = req.params;
 
     const [rows] = await db.query(
-        "SELECT profilepic FROM students WHERE sr_no = ?",
+        "SELECT rollnumber FROM students WHERE sr_no = ?",
         [id]
     );
 
@@ -321,13 +328,14 @@ exports.deleteStudent = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    const profilepic = rows[0].profilepic;
-    const studentUploadDir = path.resolve(__dirname, "../../uploads/students");
+    const rollnumber = rows[0].rollnumber;
 
     await db.query("DELETE FROM students WHERE sr_no = ?", [id]);
 
-    if (profilepic && profilepic !== "default.png") {
-      const filePath = path.join(studentUploadDir, profilepic);
+    const dynamicImage = getStudentImage(rollnumber);
+
+    if (dynamicImage !== "default.png") {
+      const filePath = path.join(studentUploadDir, dynamicImage);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
