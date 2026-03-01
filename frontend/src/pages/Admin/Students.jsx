@@ -1,47 +1,44 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import FacultyProfile from "./FacultyProfile";
-import ImportFacultyModal from "./ImportFacultyModal";
+import StudentProfile from "./StudentProfile";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
-const Faculties = () => {
+const Students = () => {
     const BASE_URL = api.defaults.baseURL;
     const token = localStorage.getItem("token");
 
-    const [faculties, setFaculties] = useState([]);
+    const [students, setStudents] = useState([]);
     const [courses, setCourses] = useState([]);
 
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const [courseFilter, setCourseFilter] = useState("");
 
-    const [selectedFaculty, setSelectedFaculty] = useState(null);
+    const [selectedStudent, setSelectedStudent] = useState(null);
     const [isNew, setIsNew] = useState(false);
 
-    const [showImportModal, setShowImportModal] = useState(false);
-
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [facultyToDelete, setFacultyToDelete] = useState(null);
+    const [studentToDelete, setStudentToDelete] = useState(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    /* ================= FETCH FACULTIES ================= */
+    /* ================= FETCH STUDENTS ================= */
 
-    const fetchFaculties = async () => {
+    const fetchStudents = async () => {
         if (!token) return;
 
         try {
             setLoading(true);
-            const res = await api.get(
-                "/api/faculty",
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setFaculties(Array.isArray(res.data) ? res.data : []);
+            const res = await api.get("/api/student", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setStudents(Array.isArray(res.data) ? res.data : []);
             setError("");
         } catch (err) {
             console.error(err);
-            setError("Failed to load faculties.");
+            setError("Failed to load students.");
         } finally {
             setLoading(false);
         }
@@ -51,10 +48,9 @@ const Faculties = () => {
 
     const fetchCourses = async () => {
         try {
-            const res = await api.get(
-                "/api/courses",
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await api.get("/api/courses", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setCourses(res.data || []);
         } catch {
             setCourses([]);
@@ -62,44 +58,46 @@ const Faculties = () => {
     };
 
     useEffect(() => {
-        fetchFaculties();
+        fetchStudents();
         fetchCourses();
     }, []);
 
     /* ================= DELETE ================= */
 
     const handleDelete = async () => {
-        if (!facultyToDelete) return;
+        if (!studentToDelete) return;
 
         try {
-            await api.delete(
-                `/api/faculty/${facultyToDelete}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            fetchFaculties();
+            await api.delete(`/api/student/${studentToDelete}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            fetchStudents();
         } catch (err) {
             console.error(err);
-            setError("Failed to delete faculty.");
+            setError("Failed to delete student.");
         } finally {
             setShowDeleteModal(false);
-            setFacultyToDelete(null);
+            setStudentToDelete(null);
         }
     };
 
     /* ================= FILTER ================= */
 
-    const filteredFaculties = faculties.filter((faculty) => {
+    const filteredStudents = students.filter((student) => {
+        const fullName = `${student.firstname} ${student.lastname || ""}`;
+
         const matchesSearch =
-            faculty?.facultyname?.toLowerCase().includes(search.toLowerCase()) ||
-            faculty?.emailid?.toLowerCase().includes(search.toLowerCase());
+            fullName.toLowerCase().includes(search.toLowerCase()) ||
+            student?.emailid?.toLowerCase().includes(search.toLowerCase());
 
         const matchesStatus =
             !statusFilter ||
-            String(faculty?.activestatus) === statusFilter;
+            String(student?.activestatus) === statusFilter;
 
         const matchesCourse =
             !courseFilter ||
-            faculty?.courcecode === courseFilter;
+            student?.Courcecode === courseFilter;
 
         return matchesSearch && matchesStatus && matchesCourse;
     });
@@ -111,31 +109,22 @@ const Faculties = () => {
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-                        Faculty Management
+                        Student Management
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        Manage academic faculty assignments.
+                        Manage enrolled students.
                     </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <button
-                        onClick={() => setShowImportModal(true)}
-                        className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                    >
-                        Import from File
-                    </button>
-
-                    <button
-                        onClick={() => {
-                            setIsNew(true);
-                            setSelectedFaculty({});
-                        }}
-                        className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                    >
-                        Add Faculty
-                    </button>
-                </div>
+                <button
+                    onClick={() => {
+                        setIsNew(true);
+                        setSelectedStudent({});
+                    }}
+                    className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                >
+                    Add Student
+                </button>
             </div>
 
             {/* FILTERS */}
@@ -171,6 +160,7 @@ const Faculties = () => {
                         </option>
                     ))}
                 </select>
+
             </div>
 
             {error && (
@@ -186,12 +176,10 @@ const Faculties = () => {
                         <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
                         <tr>
                             <th className="px-3 py-2 sm:px-4 sm:py-4">Profile</th>
-                            <th className="px-3 py-2 sm:px-4 sm:py-4">Faculty</th>
-                            <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">Position</th>
+                            <th className="px-3 py-2 sm:px-4 sm:py-4">Student</th>
+                            <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">Roll No</th>
                             <th className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4">Course</th>
                             <th className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4">Semester</th>
-                            <th className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4">Subject</th>
-                            <th className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4">Experience</th>
                             <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">Status</th>
                             <th className="px-3 py-2 sm:px-4 sm:py-4 text-center">Actions</th>
                         </tr>
@@ -200,96 +188,67 @@ const Faculties = () => {
                         <tbody>
                         {loading ? (
                             <tr>
-                                <td
-                                    colSpan="9"
-                                    className="px-3 py-8 text-center text-gray-500 dark:text-gray-400"
-                                >
+                                <td colSpan="7" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                                     Loading...
                                 </td>
                             </tr>
-                        ) : filteredFaculties.length === 0 ? (
+                        ) : filteredStudents.length === 0 ? (
                             <tr>
-                                <td
-                                    colSpan="9"
-                                    className="px-3 py-8 text-center text-gray-500 dark:text-gray-400"
-                                >
-                                    No faculties found.
+                                <td colSpan="7" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    No students found.
                                 </td>
                             </tr>
                         ) : (
-                            filteredFaculties.map((faculty) => (
+                            filteredStudents.map((student) => (
                                 <tr
-                                    key={faculty.sr_no}
+                                    key={student.sr_no}
                                     className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                                 >
                                     {/* Profile */}
                                     <td className="px-3 py-2 sm:px-4 sm:py-4">
                                         <img
                                             src={
-                                                faculty.profilepic
-                                                    ? `${BASE_URL}/uploads/faculties/${faculty.profilepic}`
-                                                    : `${BASE_URL}/uploads/faculties/default.png`
+                                                student.profilepic
+                                                    ? `${BASE_URL}/uploads/students/${student.profilepic}`
+                                                    : `${BASE_URL}/uploads/students/default.png`
                                             }
                                             alt="profile"
                                             className="h-9 w-9 rounded-full object-cover border dark:border-gray-600"
                                         />
                                     </td>
 
-                                    {/* Faculty Info */}
+                                    {/* Student Info */}
                                     <td className="px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                         <div className="font-semibold">
-                                            {faculty.facultyname}
+                                            {student.firstname} {student.lastname}
                                         </div>
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {faculty.facultyid}
+                                            {student.userid}
                                         </div>
                                     </td>
 
-                                    {/* Position */}
                                     <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {faculty.position}
+                                        {student.rollnumber}
                                     </td>
 
-                                    {/* Course */}
                                     <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        <div className="font-medium leading-tight">
-                                            {faculty.courcecode}
-                                        </div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                                            {faculty.course_name || ""}
-                                        </div>
+                                        {student.Courcecode}
                                     </td>
 
-                                    {/* Semester */}
                                     <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {faculty.semoryear || "-"}
-                                    </td>
-
-                                    {/* Subject */}
-                                    <td className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200 truncate">
-                                        <div className="font-medium">
-                                            {faculty.subject}
-                                        </div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {faculty.subject_name || ""}
-                                        </div>
-                                    </td>
-
-                                    {/* Experience */}
-                                    <td className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {faculty.experience}
+                                        {student.semoryear}
                                     </td>
 
                                     {/* Status */}
                                     <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">
-                                        {faculty.activestatus ? (
+                                        {student.activestatus ? (
                                             <span className="px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
-                                    Active
-                                </span>
+                                                Active
+                                            </span>
                                         ) : (
                                             <span className="px-2.5 py-1 text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-full">
-                                    Inactive
-                                </span>
+                                                Inactive
+                                            </span>
                                         )}
                                     </td>
 
@@ -299,7 +258,7 @@ const Faculties = () => {
                                             <button
                                                 onClick={() => {
                                                     setIsNew(false);
-                                                    setSelectedFaculty(faculty);
+                                                    setSelectedStudent(student);
                                                 }}
                                                 className="w-full sm:w-auto px-3 py-1.5 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                                             >
@@ -308,7 +267,7 @@ const Faculties = () => {
 
                                             <button
                                                 onClick={() => {
-                                                    setFacultyToDelete(faculty.sr_no);
+                                                    setStudentToDelete(student.sr_no);
                                                     setShowDeleteModal(true);
                                                 }}
                                                 className="w-full sm:w-auto px-3 py-1.5 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
@@ -328,33 +287,25 @@ const Faculties = () => {
             <ConfirmDeleteModal
                 show={showDeleteModal}
                 title="Confirm Deletion"
-                message="Are you sure you want to delete this faculty? This action cannot be undone."
+                message="Are you sure you want to delete this student? This action cannot be undone."
                 loading={loading}
                 onCancel={() => {
                     setShowDeleteModal(false);
-                    setFacultyToDelete(null);
+                    setStudentToDelete(null);
                 }}
                 onConfirm={handleDelete}
             />
 
-            {selectedFaculty !== null && (
-                <FacultyProfile
-                    faculty={selectedFaculty}
+            {selectedStudent !== null && (
+                <StudentProfile
+                    student={selectedStudent}
                     isNew={isNew}
-                    onClose={() => setSelectedFaculty(null)}
-                    onUpdated={fetchFaculties}
-                />
-            )}
-
-            {showImportModal && (
-                <ImportFacultyModal
-                    token={token}
-                    onClose={() => setShowImportModal(false)}
-                    onImportSuccess={fetchFaculties}
+                    onClose={() => setSelectedStudent(null)}
+                    onUpdated={fetchStudents}
                 />
             )}
         </div>
     );
 };
 
-export default Faculties;
+export default Students;
