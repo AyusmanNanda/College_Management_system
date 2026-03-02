@@ -222,32 +222,42 @@ const Courses = () => {
             {/* Table Card */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors">
                 <div className="w-full overflow-x-auto">
-                    <table className="w-full text-left text-[11px] sm:text-sm">
+                    <table className="w-full text-xs sm:text-sm text-left">
                         <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
                         <tr>
-                            <th className="px-2 py-1.5 sm:px-4 sm:py-4">Code</th>
-                            <th className="px-2 py-1.5 sm:px-4 sm:py-4">Name</th>
-                            <th className="px-2 py-1.5 sm:px-4 sm:py-4">Type</th>
-                            <th className="px-2 py-1.5 sm:px-4 sm:py-4">Total</th>
-                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">Subjects</th>
-                            <th className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4">Students</th>
-                            <th className="px-2 py-1.5 sm:px-4 sm:py-4">Actions</th>
+                            <th className="px-3 py-2 sm:px-4 sm:py-4">Code</th>
+                            <th className="px-3 py-2 sm:px-4 sm:py-4">Name</th>
+                            <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">
+                                Type
+                            </th>
+                            <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">
+                                Total
+                            </th>
+                            <th className="px-3 py-2 sm:px-4 sm:py-4">Actions</th>
                         </tr>
                         </thead>
-
                         <tbody>
                         {courses.map((course) => (
-                            <tr key={course.id} className="border-t dark:border-gray-700">
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.course_code}</td>
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.course_name}</td>
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 capitalize dark:text-gray-200">{course.sem_or_year}</td>
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.total_semesters}</td>
-                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.subject_count}</td>
-                                <td className="hidden sm:table-cell px-2 py-1.5 sm:px-4 sm:py-4 dark:text-gray-200">{course.student_count}</td>
-                                <td className="px-2 py-1.5 sm:px-4 sm:py-4 flex flex-col sm:flex-row gap-2">
+                            <tr
+                                key={course.id}
+                                className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                            >
+                                <td className="px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.course_code}
+                                </td>
+                                <td className="px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.course_name}
+                                </td>
+                                <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 capitalize dark:text-gray-200">
+                                    {course.sem_or_year}
+                                </td>
+                                <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
+                                    {course.total_semesters}
+                                </td>
+                                <td className="px-3 py-2 sm:px-4 sm:py-4 flex flex-col sm:flex-row gap-2">
                                     <button
                                         onClick={() => handleEdit(course)}
-                                        className="px-2 py-1 text-[11px] sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                                        className="px-2 py-1 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                                     >
                                         Edit
                                     </button>
@@ -256,7 +266,7 @@ const Courses = () => {
                                             setCourseToDelete(course.id);
                                             setShowDeleteModal(true);
                                         }}
-                                        className="px-2 py-1 text-[11px] sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
+                                        className="px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
                                     >
                                         Delete
                                     </button>
