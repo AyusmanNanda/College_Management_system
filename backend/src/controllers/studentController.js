@@ -204,7 +204,7 @@ exports.createStudent = async (req, res) => {
           motheroccupation || null,
           profilepic,
           hashedPassword,
-          1,
+          0,
           admissiondate || null
         ]
     );

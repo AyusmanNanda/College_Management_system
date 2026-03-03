@@ -29,15 +29,12 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
         fatheroccupation: student?.fatheroccupation || "",
         mothername: student?.mothername || "",
         motheroccupation: student?.motheroccupation || "",
-        userid: student?.userid || "",
         Courcecode: student?.Courcecode || "",
         semoryear: student?.semoryear || "",
         optionalsubject: student?.optionalsubject || "",
         admissiondate: student?.admissiondate || today,
         password: ""
     });
-
-    /* ================= FETCH COURSES ================= */
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -52,8 +49,6 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
         };
         fetchCourses();
     }, []);
-
-    /* ================= SEM OPTIONS ================= */
 
     useEffect(() => {
         const selectedCourse = courses.find(
@@ -76,8 +71,6 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
         setForm({ ...form, [name]: value });
     };
 
-    /* ================= SAVE ================= */
-
     const handleSave = async () => {
         setError("");
 
@@ -88,7 +81,6 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
             !form.contactnumber ||
             !form.dateofbirth ||
             !form.gender ||
-            !form.userid ||
             !form.Courcecode ||
             !form.semoryear
         ) {
@@ -211,7 +203,6 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
 
                         <Input required label="Full Name" name="fullname" value={form.fullname} onChange={handleChange} />
                         <Input required label="Roll Number" name="rollnumber" value={form.rollnumber} onChange={handleChange} />
-                        <Input required label="User ID" name="userid" value={form.userid} onChange={handleChange} />
                         <Input required label="Email" name="emailid" value={form.emailid} onChange={handleChange} />
                         <Input required label="Contact Number" name="contactnumber" value={form.contactnumber} onChange={handleChange} />
                         <Input required type="date" label="Date of Birth" name="dateofbirth" value={form.dateofbirth} onChange={handleChange} />
@@ -231,7 +222,13 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
                             name="Courcecode"
                             value={form.Courcecode}
                             onChange={handleChange}
-                            options={["", ...courses.map(c => c.course_code)]}
+                            options={[
+                                "",
+                                ...courses.map(c => ({
+                                    value: c.course_code,
+                                    label: `${c.course_code} - ${c.course_name}`
+                                }))
+                            ]}
                         />
 
                         <Select
@@ -292,11 +289,21 @@ const Select = ({ label, options, required, ...props }) => (
             {...props}
             className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm transition"
         >
-            {options.map((opt) => (
-                <option key={opt || "empty"} value={opt}>
-                    {opt === "" ? "Select" : opt}
-                </option>
-            ))}
+            {options.map((opt, index) => {
+                if (typeof opt === "object") {
+                    return (
+                        <option key={index} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    );
+                }
+
+                return (
+                    <option key={opt || "empty"} value={opt}>
+                        {opt === "" ? "Select" : opt}
+                    </option>
+                );
+            })}
         </select>
     </div>
 );
