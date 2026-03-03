@@ -1,12 +1,10 @@
 const db = require("../config/db");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const ExcelJS = require("exceljs");
 const XLSX = require("xlsx");
 const fs = require("fs");
-
 const facultyUploadDir = path.resolve(__dirname, "../../uploads/faculties");
 /*
   Faculty Controller
@@ -100,8 +98,6 @@ exports.createFaculty = async (req, res) => {
         semoryear,
         subject,
         position,
-        department,
-        specialization,
         joineddate,
         password
     } = req.body;
@@ -161,9 +157,9 @@ exports.createFaculty = async (req, res) => {
             `INSERT INTO faculties
              (facultyid, facultyname, state, city, emailid, contactnumber,
               qualification, experience, birthdate, gender, profilepic,
-              courcecode, semoryear, subject, position, department, specialization,
+              courcecode, semoryear, subject, position,
               joineddate, password, activestatus)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 facultyid,
                 facultyname.trim(),
@@ -180,8 +176,6 @@ exports.createFaculty = async (req, res) => {
                 finalSem,
                 finalSubject,
                 finalPosition,
-                department || null,
-                specialization || null,
                 finalJoinedDate,
                 hashedPassword,
                 activestatus
@@ -529,7 +523,7 @@ exports.downloadFacultyTemplate = async (req, res) => {
         });
 
         // ===============================
-        // Add Example Row 
+        // Add Example Row (Optional but helpful)
         // ===============================
         sheet.addRow([
             23011050,
@@ -783,419 +777,4 @@ exports.importFacultiesFromExcel = async (req, res) => {
             message: "Import failed"
         });
     }
-};
-
-
-// ==============================
-// GET FACULTY SELF PROFILE
-// ==============================
-exports.getFacultySelfProfile = async (req, res) => {
-  try {
-    const user = req.user || {};
-    const email = user.emailid || user.email;
-
-    if (!email) {
-      return res.status(401).json({ message: "Token does not contain emailid" });
-    }
-
-    const [rows] = await db.query(
-      `SELECT
-          sr_no,
-          facultyid,
-          facultyname,
-          state,
-          city,
-          emailid,
-          contactnumber,
-          qualification,
-          experience,
-          DATE_FORMAT(birthdate, '%Y-%m-%d') AS birthdate,
-          gender,
-          profilepic,
-          courcecode,
-          semoryear,
-          subject,
-          position,
-          department,
-          specialization,
-          DATE_FORMAT(joineddate, '%Y-%m-%d') AS joineddate,
-          activestatus,
-          lastlogin,
-          website,
-          facebook,
-          instagram,
-          twitter,
-          linkedin
-       FROM faculties
-       WHERE emailid = ? OR facultyid = ?
-       LIMIT 1`,
-      [email, email]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: "Faculty not found" });
-    }
-
-    return res.json(rows[0]);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error fetching faculty profile" });
-  }
-};
-
-// ==============================
-// FACULTY DASHBOARD STATS
-// ==============================
-exports.getFacultyDashboardStats = async (req, res) => {
-  try {
-    const user = req.user || {};
-    const email = user.emailid || user.email;
-
-    if (!email) {
-      return res.status(401).json({ message: "Token does not contain emailid" });
-    }
-
-    const [rows] = await db.query(
-      `SELECT courcecode, semoryear, subject
-       FROM faculties
-       WHERE emailid = ? OR facultyid = ?
-       LIMIT 1`,
-      [email, email]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: "Faculty not found" });
-    }
-
-    const faculty = rows[0];
-
-    const total_subjects =
-      faculty.subject && faculty.subject !== "NOT ASSIGNED" ? 1 : 0;
-
-    const [[studentRow]] = await db.query(
-      `SELECT COUNT(*) AS total_students
-       FROM students
-       WHERE Courcecode = ? AND semoryear = ?`,
-      [faculty.courcecode, faculty.semoryear]
-    );
-
-    return res.json({
-      total_subjects,
-      total_students: Number(studentRow.total_students || 0),
-      total_classes: 0,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error fetching faculty dashboard" });
-  }
-};
-
-// ✅ Alias (keep only once)
-exports.getFacultyProfile = exports.getFacultySelfProfile;
-
-// ==============================
-// UPDATE FACULTY PROFILE (BASIC + PROFESSIONAL + LINKS + PIC)
-// ==============================
-exports.updateFacultyProfile = async (req, res) => {
-  try {
-    const user = req.user || {};
-    const email = user.emailid || user.email;
-
-    if (!email) {
-      return res.status(401).json({ message: "Token does not contain emailid" });
-    }
-
-    // Find current faculty row (by email OR facultyid)
-    const [rows] = await db.query(
-      `SELECT sr_no, facultyid
-       FROM faculties
-       WHERE emailid = ? OR facultyid = ?
-       LIMIT 1`,
-      [email, email]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: "Faculty not found" });
-    }
-
-    const current = rows[0];
-
-    // Allowed fields
-    const allowed = [
-      "facultyname",
-      "emailid",
-      "contactnumber",
-      "gender",
-      "birthdate",
-      "state",
-      "city",
-      "qualification",
-      "experience",
-      "position",
-      "department",
-      "specialization",
-      "website",
-      "facebook",
-      "instagram",
-      "twitter",
-      "linkedin",
-    ];
-
-    const sets = [];
-    const values = [];
-
-    // ✅ update ALL keys that are present (even empty string),
-    // so links can be saved/cleared properly.
-    for (const key of allowed) {
-      if (req.body[key] !== undefined) {
-        sets.push(`${key} = ?`);
-        values.push(req.body[key]);
-      }
-    }
-
-    // Profile picture
-   // Profile picture ✅ rename to facultyid.ext + delete old
-if (req.file) {
-  const facultyid = current.facultyid; // from DB row
-  const ext = path.extname(req.file.filename).toLowerCase() || path.extname(req.file.originalname).toLowerCase();
-
-  // delete old file: facultyid.(any ext)
-  deleteOldFacultyPhoto(facultyid);
-
-  // move temp file to final: uploads/faculties/{facultyid}{ext}
-  const finalFileName = `${facultyid}${ext}`;
-  const finalPath = path.join(facultyUploadDir, finalFileName);
-
-  // req.file.path points to tmp folder
-  fs.renameSync(req.file.path, finalPath);
-
-  sets.push("profilepic = ?");
-  values.push(finalFileName);
-}
-
-    // Password optional
-    if (req.body.password && String(req.body.password).trim() !== "") {
-      const hashedPassword = await bcrypt.hash(req.body.password, 10);
-      sets.push("password = ?");
-      values.push(hashedPassword);
-    }
-
-    if (!sets.length) {
-      return res.status(400).json({ message: "Nothing to update" });
-    }
-
-    values.push(current.sr_no);
-
-    await db.query(
-      `UPDATE faculties SET ${sets.join(", ")} WHERE sr_no = ?`,
-      values
-    );
-
-    // Return updated profile (full fields)
-    const [updatedRows] = await db.query(
-      `SELECT
-          sr_no,
-          facultyid,
-          facultyname,
-          state,
-          city,
-          emailid,
-          contactnumber,
-          qualification,
-          experience,
-          DATE_FORMAT(birthdate, '%Y-%m-%d') AS birthdate,
-          gender,
-          profilepic,
-          courcecode,
-          semoryear,
-          subject,
-          position,
-          department,
-          specialization,
-          DATE_FORMAT(joineddate, '%Y-%m-%d') AS joineddate,
-          activestatus,
-          lastlogin,
-          website,
-          facebook,
-          instagram,
-          twitter,
-          linkedin
-       FROM faculties
-       WHERE sr_no = ?
-       LIMIT 1`,
-      [current.sr_no]
-    );
-
-    return res.json(updatedRows[0]);
-  } catch (error) {
-    console.error("updateFacultyProfile error:", error);
-    return res.status(500).json({ message: "Error updating faculty profile" });
-  }
-};
-
-// ==============================
-// CHANGE PASSWORD
-// body: { currentPassword, newPassword }
-// ==============================
-exports.changeFacultyPassword = async (req, res) => {
-  try {
-    const user = req.user || {};
-    const email = user.emailid || user.email;
-
-    const { currentPassword, newPassword } = req.body;
-
-    if (!email) {
-      return res.status(401).json({ message: "Token does not contain emailid" });
-    }
-
-    if (!currentPassword || !newPassword) {
-      return res
-        .status(400)
-        .json({ message: "currentPassword and newPassword are required" });
-    }
-
-    if (String(newPassword).length < 4) {
-      return res
-        .status(400)
-        .json({ message: "New password must be at least 6 characters" });
-    }
-
-    const [rows] = await db.query(
-      "SELECT sr_no, password FROM faculties WHERE emailid = ? OR facultyid = ? LIMIT 1",
-      [email, email]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: "Faculty not found" });
-    }
-
-    const faculty = rows[0];
-
-    const isMatch = await bcrypt.compare(currentPassword, faculty.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Current password is incorrect" });
-    }
-
-    const hashed = await bcrypt.hash(newPassword, 10);
-
-    await db.query("UPDATE faculties SET password = ? WHERE sr_no = ?", [
-      hashed,
-      faculty.sr_no,
-    ]);
-
-    return res.json({ message: "Password updated successfully" });
-  } catch (error) {
-    console.error("changeFacultyPassword error:", error);
-    return res.status(500).json({ message: "Error changing password" });
-  }
-};
-
-
-
-
-// ==============================
-// CHANGE EMAIL (requires current email, not password)
-// body: { currentEmail, newEmail }
-// ==============================
-exports.changeFacultyEmail = async (req, res) => {
-  try {
-    const user = req.user || {};
-    const tokenEmail = user.emailid || user.email;
-
-    const { currentEmail, newEmail } = req.body;
-
-    if (!tokenEmail) {
-      return res.status(401).json({ message: "Token does not contain emailid" });
-    }
-
-    if (!currentEmail || !newEmail) {
-      return res
-        .status(400)
-        .json({ message: "currentEmail and newEmail are required" });
-    }
-
-    // Check current email matches token email
-    if (currentEmail.trim() !== tokenEmail.trim()) {
-      return res
-        .status(401)
-        .json({ message: "Current email does not match your account" });
-    }
-
-    const [rows] = await db.query(
-      "SELECT sr_no FROM faculties WHERE emailid = ? OR facultyid = ? LIMIT 1",
-      [tokenEmail, tokenEmail]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: "Faculty not found" });
-    }
-
-    // Check duplicate email
-    const [exists] = await db.query(
-      "SELECT sr_no FROM faculties WHERE emailid = ? LIMIT 1",
-      [newEmail]
-    );
-
-    if (exists.length) {
-      return res.status(409).json({ message: "Email already in use" });
-    }
-
-    await db.query("UPDATE faculties SET emailid = ? WHERE sr_no = ?", [
-      newEmail,
-      rows[0].sr_no,
-    ]);
-
-    // Create NEW token with updated email
-    const token = jwt.sign(
-      { email: newEmail, role: "faculty" },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    return res.json({
-      message: "Email updated successfully",
-      token,
-      emailid: newEmail,
-    });
-  } catch (error) {
-    console.error("changeFacultyEmail error:", error);
-    return res.status(500).json({ message: "Error changing email" });
-  }
-};
-
-
-// ============================
-// ✅ Faculty SELF Profile Upload (TEMP -> rename to facultyid.ext)
-// ============================
-const facultyTmpDir = path.resolve(__dirname, "../../uploads/faculties/tmp");
-
-// make sure tmp folder exists
-if (!fs.existsSync(facultyTmpDir)) {
-  fs.mkdirSync(facultyTmpDir, { recursive: true });
-}
-
-const profileStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, facultyTmpDir),
-
-  filename: (req, file, cb) => {
-    // temp name only (facultyid will be decided after DB lookup)
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `tmp_${Date.now()}${ext}`);
-  },
-});
-
-exports.uploadProfile = multer({ storage: profileStorage });
-
-// ✅ helper: delete old photo(s) with same facultyid (any ext)
-const deleteOldFacultyPhoto = (facultyid) => {
-  if (!fs.existsSync(facultyUploadDir)) return;
-
-  const files = fs.readdirSync(facultyUploadDir);
-
-  files.forEach((file) => {
-    const name = path.basename(file, path.extname(file));
-    if (name === String(facultyid)) {
-      fs.unlinkSync(path.join(facultyUploadDir, file));
-    }
-  });
 };
