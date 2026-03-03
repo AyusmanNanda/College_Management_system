@@ -77,7 +77,11 @@ const AdminLayout = () => {
         { name: "Courses", path: "/admin/courses" },
         { name: "Subjects", path: "/admin/subjects" },
         { name: "Faculties", path: "/admin/faculties" },
+        { name: "Students", path: "/admin/students" },
         { name: "Assign Subjects", path: "/admin/assign-subjects" },
+        { name: "Take Attendance", path: "/admin/take-attendance" },
+        { name: "Edit Attendance", path: "/admin/edit-attendance" },
+        { name: "Attendance Report", path: "/admin/attendance-report" },
         { name: "Profile", path: "/admin/profile" }
     ];
 
