@@ -66,10 +66,7 @@ exports.getAttendanceByDate = async (req, res) => {
         return res.status(400).json({ message: "Missing required filters" });
     }
 
-    // Normalize ISO date if needed
-    if (typeof date === "string" && date.includes("T")) {
-        date = date.split("T")[0];
-    }
+    date = String(date).slice(0, 10);   // FIXED
 
     try {
         const [rows] = await db.query(
@@ -110,10 +107,7 @@ exports.saveAttendance = async (req, res) => {
         return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Normalize date safely
-    if (typeof date === "string" && date.includes("T")) {
-        date = date.split("T")[0];
-    }
+    date = String(date).slice(0, 10);   // FIXED
 
     try {
         const values = records.map(r => [
@@ -200,7 +194,7 @@ exports.getAttendanceDates = async (req, res) => {
     try {
         const [rows] = await db.query(
             `
-                SELECT DISTINCT attendance_date AS date
+                SELECT DISTINCT DATE_FORMAT(attendance_date, '%Y-%m-%d') AS date
                 FROM attendance
                 WHERE subjectcode = ?
                   AND courcecode = ?
@@ -229,9 +223,7 @@ exports.deleteAttendance = async (req, res) => {
         return res.status(400).json({ message: "Missing required filters" });
     }
 
-    if (typeof date === "string" && date.includes("T")) {
-        date = date.split("T")[0];
-    }
+    date = String(date).slice(0, 10);   // FIXED
 
     try {
         await db.query(

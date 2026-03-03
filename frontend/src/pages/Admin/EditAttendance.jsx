@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "./ConfirmSaveModal";
 
 const EditAttendance = () => {
-    const BASE_URL = api.defaults.baseURL;
     const token = localStorage.getItem("token");
 
     const [courses, setCourses] = useState([]);
@@ -17,13 +15,10 @@ const EditAttendance = () => {
     const [selectedDate, setSelectedDate] = useState("");
 
     const [checkedStudents, setCheckedStudents] = useState({});
-
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
-    const [showModal, setShowModal] = useState(false);
 
-    /* ================= LOAD COURSES ================= */
+    /* ================= FETCH COURSES ================= */
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -37,9 +32,23 @@ const EditAttendance = () => {
             }
         };
         fetchCourses();
-    }, []);
+    }, [token]);
 
-    /* ================= LOAD SUBJECTS + STUDENTS ================= */
+    /* ================= DERIVED SEM OPTIONS ================= */
+
+    const selectedCourseObj = useMemo(() => {
+        return courses.find(c => c.course_code === selectedCourse);
+    }, [courses, selectedCourse]);
+
+    const semLabel = selectedCourseObj?.sem_or_year || "Semester";
+
+    const semesterOptions = useMemo(() => {
+        if (!selectedCourseObj) return [];
+        const total = Number(selectedCourseObj.total_semesters);
+        return Array.from({ length: total }, (_, i) => i + 1);
+    }, [selectedCourseObj]);
+
+    /* ================= FETCH SUBJECTS + STUDENTS ================= */
 
     useEffect(() => {
         if (!selectedCourse || !selectedSem) return;
@@ -59,17 +68,23 @@ const EditAttendance = () => {
 
                 setSubjects(subRes.data || []);
                 setStudents(stuRes.data || []);
-                setCheckedStudents({});
+
+                setSelectedSubject("");
                 setSelectedDate("");
+                setAttendanceDates([]);
+                setCheckedStudents({});
+                setError("");
+                setSuccess("");
+
             } catch {
-                setError("Failed to load data.");
+                setError("Failed to load subjects or students.");
             }
         };
 
         loadData();
-    }, [selectedCourse, selectedSem]);
+    }, [selectedCourse, selectedSem, token]);
 
-    /* ================= LOAD EXISTING DATES ================= */
+    /* ================= FETCH EXISTING DATES ================= */
 
     useEffect(() => {
         if (!selectedSubject) return;
@@ -80,19 +95,31 @@ const EditAttendance = () => {
                     `/api/attendance/dates?subjectcode=${selectedSubject}&courcecode=${selectedCourse}&semoryear=${selectedSem}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
-                setAttendanceDates(res.data || []);
+
+                // 🔥 CRITICAL FIX: Convert ISO → raw YYYY-MM-DD
+                const formattedDates = (res.data || []).map(d => ({
+                    date: String(d.date).slice(0, 10)
+                }));
+
+                setAttendanceDates(formattedDates);
+                setSelectedDate("");
+                setCheckedStudents({});
+                setError("");
+                setSuccess("");
+
             } catch {
                 setAttendanceDates([]);
             }
         };
 
         fetchDates();
-    }, [selectedSubject]);
+    }, [selectedSubject, selectedCourse, selectedSem, token]);
 
-    /* ================= LOAD ATTENDANCE AFTER STUDENTS READY ================= */
+    /* ================= LOAD ATTENDANCE ================= */
 
     useEffect(() => {
-        if (!selectedDate || students.length === 0) return;
+        if (!selectedCourse || !selectedSem || !selectedSubject || !selectedDate) return;
+        if (students.length === 0) return;
 
         const loadAttendance = async () => {
             try {
@@ -104,24 +131,28 @@ const EditAttendance = () => {
                 const map = {};
 
                 // Initialize all as absent
-                students.forEach(s => {
-                    map[s.student_id] = false;
+                students.forEach(student => {
+                    map[Number(student.student_id)] = false;
                 });
 
-                // Override present ones
-                res.data.forEach(r => {
-                    map[r.student_id] = r.present === 1;
+                // Apply DB values
+                res.data.forEach(record => {
+                    const id = Number(record.student_id);
+                    const present = Number(record.present);
+                    map[id] = present === 1;
                 });
 
                 setCheckedStudents(map);
                 setError("");
+
             } catch {
                 setError("Failed to load attendance.");
             }
         };
 
         loadAttendance();
-    }, [selectedDate, students]);
+
+    }, [selectedCourse, selectedSem, selectedSubject, selectedDate, students, token]);
 
     /* ================= TOGGLE ================= */
 
@@ -135,19 +166,22 @@ const EditAttendance = () => {
     /* ================= UPDATE ================= */
 
     const updateAttendance = async () => {
-        try {
-            setLoading(true);
+        if (!selectedDate) {
+            setError("Select a date first.");
+            return;
+        }
 
-            const records = students.map(s => ({
-                student_id: s.student_id,
-                present: checkedStudents[s.student_id] ? 1 : 0
+        try {
+            const records = students.map(student => ({
+                student_id: student.student_id,
+                present: checkedStudents[student.student_id] ? 1 : 0
             }));
 
             await api.post(
                 "/api/attendance",
                 {
                     subjectcode: selectedSubject,
-                    date: selectedDate,
+                    date: selectedDate, // RAW YYYY-MM-DD
                     courcecode: selectedCourse,
                     semoryear: Number(selectedSem),
                     records
@@ -156,70 +190,116 @@ const EditAttendance = () => {
             );
 
             setSuccess("Attendance updated successfully.");
+            setError("");
+
         } catch {
             setError("Failed to update attendance.");
-        } finally {
-            setLoading(false);
+        }
+    };
+
+    /* ================= DELETE ================= */
+
+    const deleteAttendance = async () => {
+        if (!selectedDate) {
+            setError("Select a date first.");
+            return;
+        }
+
+        try {
+            await api.delete("/api/attendance", {
+                headers: { Authorization: `Bearer ${token}` },
+                data: {
+                    subjectcode: selectedSubject,
+                    date: selectedDate, // RAW YYYY-MM-DD
+                    courcecode: selectedCourse,
+                    semoryear: Number(selectedSem)
+                }
+            });
+
+            // Refetch dates after delete
+            const res = await api.get(
+                `/api/attendance/dates?subjectcode=${selectedSubject}&courcecode=${selectedCourse}&semoryear=${selectedSem}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const formattedDates = (res.data || []).map(d => ({
+                date: String(d.date).slice(0, 10)
+            }));
+
+            setAttendanceDates(formattedDates);
+            setSelectedDate("");
+            setCheckedStudents({});
+            setSuccess("Attendance deleted successfully.");
+            setError("");
+
+        } catch {
+            setError("Failed to delete attendance.");
         }
     };
 
     return (
-        <div className="space-y-8">
+        <div style={{ padding: 20 }}>
+            <h2>Edit Attendance</h2>
 
-            <h3 className="text-xl font-semibold dark:text-gray-100">
-                Edit Recorded Attendance
-            </h3>
+            {error && <p style={{ color: "red" }}>{error}</p>}
+            {success && <p style={{ color: "green" }}>{success}</p>}
 
-            {/* Filters */}
-            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div style={{ marginBottom: 20 }}>
 
-                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)} className="input-style">
+                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}>
                     <option value="">Select Course</option>
-                    {courses.map(c => (
-                        <option key={c.id} value={c.course_code}>{c.course_name}</option>
+                    {courses.map(course => (
+                        <option key={course.id} value={course.course_code}>
+                            {course.course_name}
+                        </option>
                     ))}
                 </select>
 
-                <select value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)} className="input-style">
-                    <option value="">Select Semester</option>
-                    {[1,2,3,4,5,6,7,8].map(s => (
-                        <option key={s} value={s}>Semester {s}</option>
+                <select value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}>
+                    <option value="">Select {semLabel}</option>
+                    {semesterOptions.map(num => (
+                        <option key={num} value={num}>
+                            {semLabel} {num}
+                        </option>
                     ))}
                 </select>
 
-                <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} className="input-style">
+                <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
                     <option value="">Select Subject</option>
-                    {subjects.map(s => (
-                        <option key={s.subjectcode} value={s.subjectcode}>{s.subjectname}</option>
+                    {subjects.map(sub => (
+                        <option key={sub.subjectcode} value={sub.subjectcode}>
+                            {sub.subjectname}
+                        </option>
                     ))}
                 </select>
 
-                <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="input-style">
-                    <option value="">Select Class Date</option>
+                <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+                    <option value="">Select Date</option>
                     {attendanceDates.map(d => (
-                        <option key={d.date} value={d.date}>{d.date}</option>
+                        <option key={d.date} value={d.date}>
+                            {d.date}
+                        </option>
                     ))}
                 </select>
 
             </div>
 
-            {/* Students Table */}
             {selectedDate && (
-                <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-100 dark:bg-gray-700">
+                <>
+                    <table border="1" cellPadding="5">
+                        <thead>
                         <tr>
-                            <th className="px-4 py-3">Student</th>
-                            <th className="px-4 py-3 text-center">Present</th>
+                            <th>Roll No</th>
+                            <th>Name</th>
+                            <th>Present</th>
                         </tr>
                         </thead>
                         <tbody>
                         {students.map(student => (
-                            <tr key={student.student_id} className="border-t dark:border-gray-700">
-                                <td className="px-4 py-3 dark:text-gray-200">
-                                    {student.rollnumber} — {student.firstname} {student.lastname}
-                                </td>
-                                <td className="px-4 py-3 text-center">
+                            <tr key={student.student_id}>
+                                <td>{student.rollnumber}</td>
+                                <td>{student.firstname} {student.lastname}</td>
+                                <td>
                                     <input
                                         type="checkbox"
                                         checked={!!checkedStudents[student.student_id]}
@@ -231,29 +311,14 @@ const EditAttendance = () => {
                         </tbody>
                     </table>
 
-                    <div className="border-t dark:border-gray-700 p-4 flex justify-end">
-                        <button
-                            onClick={() => setShowModal(true)}
-                            className="px-6 py-2 bg-gray-900 text-white rounded-md"
-                        >
-                            Update Attendance
-                        </button>
-                    </div>
-                </div>
+                    <br />
+
+                    <button onClick={updateAttendance}>Update</button>
+                    <button onClick={deleteAttendance} style={{ marginLeft: 10 }}>
+                        Delete
+                    </button>
+                </>
             )}
-
-            <ConfirmSaveModal
-                show={showModal}
-                title="Confirm Update"
-                message="Are you sure you want to update this attendance?"
-                loading={loading}
-                onCancel={() => setShowModal(false)}
-                onConfirm={async () => {
-                    await updateAttendance();
-                    setShowModal(false);
-                }}
-            />
-
         </div>
     );
 };
