@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Sun, Moon } from "lucide-react";
+import api from "../../utils/api";
 
 export default function FacultyLayout() {
   const navigate = useNavigate();
@@ -25,15 +26,47 @@ export default function FacultyLayout() {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
-  const user = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  }, []);
+  const [user, setUser] = useState(() => {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "{}");
+  } catch {
+    return {};
+  }
+});
 
-  const lastLoginRaw =
+
+
+  
+
+ const [imgBust, setImgBust] = useState(
+  localStorage.getItem("imgBust") || "0"
+);
+
+
+useEffect(() => {
+  const syncAll = () => {
+    try {
+      setUser(JSON.parse(localStorage.getItem("user") || "{}"));
+    } catch {
+      setUser({});
+    }
+
+    setImgBust(localStorage.getItem("imgBust") || "0");
+  };
+
+  syncAll();
+
+  window.addEventListener("facultyUserUpdated", syncAll);
+window.addEventListener("storage", syncAll);
+
+  return () => {
+    window.removeEventListener("facultyUserUpdated", syncAll);
+window.removeEventListener("storage", syncAll);
+  };
+}, []);
+
+
+const lastLoginRaw =
     user?.lastlogin || user?.lastLogin || localStorage.getItem("lastlogin");
 
   const lastLogin = lastLoginRaw
@@ -55,6 +88,22 @@ export default function FacultyLayout() {
     })()
   : "-";
 
+
+
+const profileImg = useMemo(() => {
+  let url = "/uploads/faculties/default.png";
+
+  if (user?.profilepic) {
+    if (String(user.profilepic).startsWith("/uploads/")) {
+      url = user.profilepic;
+    } else {
+      url = `/uploads/faculties/${user.profilepic}`;
+    }
+  }
+
+  // ✅ IMPORTANT: add backend baseURL
+  return `${api.defaults.baseURL}${url}?v=${imgBust}`;
+}, [user, imgBust]);
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -70,10 +119,16 @@ export default function FacultyLayout() {
           <div className="px-6 py-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                  CM
-                </span>
-              </div>
+  <img
+    src={profileImg}
+    alt="Profile"
+    className="h-full w-full object-cover"
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = `${api.defaults.baseURL}/uploads/faculties/default.png?v=${imgBust}`;
+    }}
+  />
+</div>
 
               <div>
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
@@ -103,20 +158,34 @@ export default function FacultyLayout() {
 
           {/* Menu */}
           <nav className="flex-1 px-4 py-6 space-y-2">
-            <NavLink
-              to="/faculty/dashboard"
-              className={({ isActive }) =>
-                [
-                  "block w-full px-4 py-3 rounded-lg font-medium transition text-sm",
-                  isActive
-                    ? "bg-slate-900 text-white shadow-sm dark:bg-gray-700"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
-                ].join(" ")
-              }
-            >
-              Dashboard
-            </NavLink>
-          </nav>
+  <NavLink
+    to="/faculty/dashboard"
+    className={({ isActive }) =>
+      [
+        "block w-full px-4 py-3 rounded-lg font-medium transition text-sm",
+        isActive
+          ? "bg-slate-900 text-white shadow-sm dark:bg-gray-700"
+          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
+      ].join(" ")
+    }
+  >
+    Dashboard
+  </NavLink>
+
+  <NavLink
+    to="/faculty/profile"
+    className={({ isActive }) =>
+      [
+        "block w-full px-4 py-3 rounded-lg font-medium transition text-sm",
+        isActive
+          ? "bg-slate-900 text-white shadow-sm dark:bg-gray-700"
+          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
+      ].join(" ")
+    }
+  >
+    Profile
+  </NavLink>
+</nav>
         </aside>
 
         {/* Main */}

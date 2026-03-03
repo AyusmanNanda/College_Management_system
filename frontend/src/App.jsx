@@ -20,6 +20,8 @@ import Students from "./pages/Admin/Students.jsx";
 
 import FacultyDashboard from "./pages/Faculty/FacultyDashboard";
 import FacultyLayout from "./pages/Faculty/FacultyLayout";
+import FacultyProfile from "./pages/Faculty/FacultyProfile";
+
 import StudentDashboard from "./pages/Student/StudentDashboard";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -113,6 +115,7 @@ function App() {
 >
   <Route index element={<Navigate to="dashboard" replace />} />
   <Route path="dashboard" element={<FacultyDashboard />} />
+  <Route path="profile" element={<FacultyProfile />} />
 </Route>
                 {/* ===================== Student ===================== */}
                 <Route
