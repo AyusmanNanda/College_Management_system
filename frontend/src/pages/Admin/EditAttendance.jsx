@@ -40,7 +40,10 @@ const EditAttendance = () => {
         return courses.find(c => c.course_code === selectedCourse);
     }, [courses, selectedCourse]);
 
-    const semLabel = selectedCourseObj?.sem_or_year || "Semester";
+    const semLabel =
+        selectedCourseObj?.sem_or_year?.toLowerCase() === "year"
+            ? "Year"
+            : "Semester";
 
     const semesterOptions = useMemo(() => {
         if (!selectedCourseObj) return [];
@@ -238,15 +241,39 @@ const EditAttendance = () => {
     };
 
     return (
-        <div style={{ padding: 20 }}>
-            <h2>Edit Attendance</h2>
+        <div className="space-y-10">
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            {success && <p style={{ color: "green" }}>{success}</p>}
+            {/* HEADER */}
+            <div>
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                    Edit Attendance
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Modify or delete previously recorded attendance.
+                </p>
+            </div>
 
-            <div style={{ marginBottom: 20 }}>
+            {/* ERROR / SUCCESS */}
+            {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
+                    {error}
+                </div>
+            )}
 
-                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}>
+            {success && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm rounded-md">
+                    {success}
+                </div>
+            )}
+
+            {/* FILTER SECTION */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                <select
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="">Select Course</option>
                     {courses.map(course => (
                         <option key={course.id} value={course.course_code}>
@@ -255,7 +282,12 @@ const EditAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}>
+                <select
+                    value={selectedSem}
+                    onChange={(e) => setSelectedSem(e.target.value)}
+                    disabled={!selectedCourse}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="">Select {semLabel}</option>
                     {semesterOptions.map(num => (
                         <option key={num} value={num}>
@@ -264,7 +296,12 @@ const EditAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
+                <select
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    disabled={!selectedSem}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="">Select Subject</option>
                     {subjects.map(sub => (
                         <option key={sub.subjectcode} value={sub.subjectcode}>
@@ -273,7 +310,12 @@ const EditAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+                <select
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    disabled={!selectedSubject}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="">Select Date</option>
                     {attendanceDates.map(d => (
                         <option key={d.date} value={d.date}>
@@ -284,39 +326,69 @@ const EditAttendance = () => {
 
             </div>
 
+            {/* TABLE SECTION */}
             {selectedDate && (
                 <>
-                    <table border="1" cellPadding="5">
-                        <thead>
-                        <tr>
-                            <th>Roll No</th>
-                            <th>Name</th>
-                            <th>Present</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {students.map(student => (
-                            <tr key={student.student_id}>
-                                <td>{student.rollnumber}</td>
-                                <td>{student.firstname} {student.lastname}</td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={!!checkedStudents[student.student_id]}
-                                        onChange={() => toggleStudent(student.student_id)}
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                        <div className="w-full overflow-x-auto">
+                            <table className="w-full text-xs sm:text-sm text-left">
 
-                    <br />
+                                <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
+                                <tr>
+                                    <th className="px-4 py-3">Roll No</th>
+                                    <th className="px-4 py-3">Name</th>
+                                    <th className="px-4 py-3 text-center">Present</th>
+                                </tr>
+                                </thead>
 
-                    <button onClick={updateAttendance}>Update</button>
-                    <button onClick={deleteAttendance} style={{ marginLeft: 10 }}>
-                        Delete
-                    </button>
+                                <tbody>
+                                {students.map(student => (
+                                    <tr
+                                        key={student.student_id}
+                                        className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                                    >
+                                        <td className="px-4 py-3 dark:text-gray-200">
+                                            {student.rollnumber}
+                                        </td>
+
+                                        <td className="px-4 py-3 dark:text-gray-200 font-medium">
+                                            {student.firstname} {student.lastname}
+                                        </td>
+
+                                        <td className="px-4 py-3 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!checkedStudents[student.student_id]}
+                                                onChange={() => toggleStudent(student.student_id)}
+                                                className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500"
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* ACTION BUTTONS */}
+                    <div className="flex justify-end gap-3">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3">
+                            <button
+                                onClick={updateAttendance}
+                                className="w-full sm:w-auto px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                            >
+                                Update Attendance
+                            </button>
+
+                            <button
+                                onClick={deleteAttendance}
+                                className="w-full sm:w-auto px-5 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
+                            >
+                                Delete Attendance
+                            </button>
+                        </div>
+                    </div>
                 </>
             )}
         </div>

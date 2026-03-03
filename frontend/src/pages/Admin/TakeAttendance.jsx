@@ -42,7 +42,10 @@ const TakeAttendance = () => {
         return courses.find(c => c.course_code === selectedCourse);
     }, [courses, selectedCourse]);
 
-    const semLabel = selectedCourseObj?.sem_or_year || "Semester";
+    const semLabel =
+        selectedCourseObj?.sem_or_year?.toLowerCase() === "year"
+            ? "Year"
+            : "Semester";
 
     const semesterOptions = useMemo(() => {
         if (!selectedCourseObj) return [];
@@ -163,15 +166,41 @@ const TakeAttendance = () => {
     };
 
     return (
-        <div style={{ padding: 20 }}>
-            <h2>Take Attendance</h2>
+        <div className="space-y-10">
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            {success && <p style={{ color: "green" }}>{success}</p>}
+            {/* HEADER */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                        Take Attendance
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        Mark student attendance by subject and date.
+                    </p>
+                </div>
+            </div>
 
-            <div style={{ marginBottom: 20 }}>
+            {/* ERROR / SUCCESS */}
+            {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
+                    {error}
+                </div>
+            )}
 
-                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}>
+            {success && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm rounded-md">
+                    {success}
+                </div>
+            )}
+
+            {/* FILTER SECTION */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-5 gap-4">
+
+                <select
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="">Select Course</option>
                     {courses.map(course => (
                         <option key={course.id} value={course.course_code}>
@@ -180,7 +209,11 @@ const TakeAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}>
+                <select
+                    value={selectedSem}
+                    onChange={(e) => setSelectedSem(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="">Select {semLabel}</option>
                     {semesterOptions.map(num => (
                         <option key={num} value={num}>
@@ -189,7 +222,11 @@ const TakeAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
+                <select
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="">Select Subject</option>
                     {subjects.map(sub => (
                         <option key={sub.subjectcode} value={sub.subjectcode}>
@@ -202,50 +239,86 @@ const TakeAttendance = () => {
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 />
 
-                <select value={markMode} onChange={(e) => setMarkMode(e.target.value)}>
+                <select
+                    value={markMode}
+                    onChange={(e) => setMarkMode(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
                     <option value="present">Mark Present</option>
                     <option value="absent">Mark Absent</option>
                 </select>
+
             </div>
 
-            <table border="1" cellPadding="5">
-                <thead>
-                <tr>
-                    <th>Roll No</th>
-                    <th>Name</th>
-                    <th>{markMode === "present" ? "Present" : "Absent"}</th>
-                </tr>
-                </thead>
-                <tbody>
-                {students.length === 0 ? (
-                    <tr>
-                        <td colSpan="3">No students loaded</td>
-                    </tr>
-                ) : (
-                    students.map(student => (
-                        <tr key={student.student_id}>
-                            <td>{student.rollnumber}</td>
-                            <td>{student.firstname} {student.lastname}</td>
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    checked={!!checkedStudents[student.student_id]}
-                                    onChange={() => toggleStudent(student.student_id)}
-                                />
-                            </td>
+            {/* TABLE */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                <div className="w-full overflow-x-auto">
+                    <table className="w-full text-xs sm:text-sm text-left">
+
+                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
+                        <tr>
+                            <th className="px-4 py-3">Roll No</th>
+                            <th className="px-4 py-3">Name</th>
+                            <th className="px-4 py-3 text-center">
+                                {markMode === "present" ? "Present" : "Absent"}
+                            </th>
                         </tr>
-                    ))
-                )}
-                </tbody>
-            </table>
+                        </thead>
 
-            <br />
+                        <tbody>
+                        {students.length === 0 ? (
+                            <tr>
+                                <td
+                                    colSpan="3"
+                                    className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                                >
+                                    No students loaded.
+                                </td>
+                            </tr>
+                        ) : (
+                            students.map(student => (
+                                <tr
+                                    key={student.student_id}
+                                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                                >
+                                    <td className="px-4 py-3 dark:text-gray-200">
+                                        {student.rollnumber}
+                                    </td>
 
-            <button onClick={saveAttendance}>
-                Save Attendance
-            </button>
+                                    <td className="px-4 py-3 dark:text-gray-200 font-medium">
+                                        {student.firstname} {student.lastname}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={!!checkedStudents[student.student_id]}
+                                            onChange={() => toggleStudent(student.student_id)}
+                                            className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500"
+                                        />
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+
+            {/* SAVE BUTTON */}
+            <div className="flex justify-end">
+                <button
+                    onClick={saveAttendance}
+                    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                >
+                    Save Attendance
+                </button>
+            </div>
+
         </div>
     );
 };
