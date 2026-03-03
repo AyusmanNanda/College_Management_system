@@ -63,13 +63,22 @@ exports.getAttendanceByDate = async (req, res) => {
 
     try {
         const [rows] = await db.query(
-            `SELECT student_id, present
-             FROM attendance
-             WHERE subjectcode = ?
-               AND date = ?
-               AND courcecode = ?
-               AND semoryear = ?`,
-            [subjectcode, date, courcecode, semoryear]
+            `
+                SELECT
+                    s.sr_no AS student_id,
+                    IFNULL(a.present, 1) AS present
+                FROM students s
+                         LEFT JOIN attendance a
+                                   ON s.sr_no = a.student_id
+                                       AND a.subjectcode = ?
+                                       AND a.date = ?
+                                       AND a.courcecode = ?
+                                       AND a.semoryear = ?
+                WHERE s.Courcecode = ?
+                  AND s.semoryear = ?
+                ORDER BY s.rollnumber
+            `,
+            [subjectcode, date, courcecode, semoryear, courcecode, semoryear]
         );
 
         res.json(rows);

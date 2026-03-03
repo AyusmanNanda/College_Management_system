@@ -68,8 +68,6 @@ const MarkAttendance = () => {
             setStudents(res.data || []);
             setCheckedStudents({});
             setAttendanceLocked(false);
-            setSuccess("");
-            setError("");
         } catch {
             setError("Failed to load students.");
         }
@@ -113,8 +111,11 @@ const MarkAttendance = () => {
             });
 
             setCheckedStudents(map);
-            setAttendanceLocked(true);
-            setSuccess("Existing attendance loaded.");
+            setSelectedDate(date);
+            setAttendanceLocked(false);
+            setSuccess(`Editing attendance for ${date}`);
+            setError("");
+
         } catch {
             setError("Failed to load attendance.");
         }
@@ -123,6 +124,13 @@ const MarkAttendance = () => {
     useEffect(() => { fetchCourses(); }, []);
     useEffect(() => { fetchSubjects(); fetchStudents(); }, [selectedCourse, selectedSem]);
     useEffect(() => { fetchAttendanceDates(); }, [selectedSubject]);
+
+    /* Reload attendance if mode changes while editing */
+    useEffect(() => {
+        if (selectedDate) {
+            loadAttendance(selectedDate);
+        }
+    }, [markMode]);
 
     /* ================= TOGGLE ================= */
 
@@ -150,13 +158,13 @@ const MarkAttendance = () => {
                 let present;
 
                 if (markMode === "absent") {
-                    present = checkedStudents[student.sr_no] ? 0 : 1;
+                    present = checkedStudents[student.student_id] ? 0 : 1;
                 } else {
-                    present = checkedStudents[student.sr_no] ? 1 : 0;
+                    present = checkedStudents[student.student_id] ? 1 : 0;
                 }
 
                 return {
-                    student_id: student.sr_no,
+                    student_id: student.student_id,
                     present
                 };
             });
@@ -173,9 +181,10 @@ const MarkAttendance = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setAttendanceLocked(true);
             setSuccess("Attendance saved successfully.");
             setError("");
+            fetchAttendanceDates();
+
         } catch {
             setError("Failed to save attendance.");
         } finally {
@@ -198,8 +207,10 @@ const MarkAttendance = () => {
             });
 
             setCheckedStudents({});
+            setSelectedDate("");
             setAttendanceLocked(false);
             setSuccess("Attendance deleted successfully.");
+            fetchAttendanceDates();
         } catch {
             setError("Failed to delete attendance.");
         }
@@ -208,7 +219,6 @@ const MarkAttendance = () => {
     return (
         <div className="space-y-10">
 
-            {/* HEADER */}
             <div>
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
                     Mark Attendance
@@ -218,7 +228,6 @@ const MarkAttendance = () => {
                 </p>
             </div>
 
-            {/* ALERTS */}
             {error && (
                 <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
                     {error}
@@ -232,7 +241,7 @@ const MarkAttendance = () => {
             )}
 
             {/* FILTERS */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-5 gap-4">
 
                 <select
                     value={selectedCourse}
@@ -242,7 +251,7 @@ const MarkAttendance = () => {
                         setSelectedSubject("");
                         setSelectedDate("");
                     }}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                    className="px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
                     {courses.map(course => (
@@ -255,7 +264,7 @@ const MarkAttendance = () => {
                 <select
                     value={selectedSem}
                     onChange={(e) => setSelectedSem(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                    className="px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Semester</option>
                     {[1,2,3,4,5,6,7,8].map(sem => (
@@ -266,7 +275,7 @@ const MarkAttendance = () => {
                 <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                    className="px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Subject</option>
                     {subjects.map(sub => (
@@ -280,36 +289,45 @@ const MarkAttendance = () => {
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                    className="px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 />
 
                 <select
                     value={markMode}
                     onChange={(e) => setMarkMode(e.target.value)}
                     disabled={attendanceLocked}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                    className="px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="absent">Mark Absent</option>
                     <option value="present">Mark Present</option>
                 </select>
-
-                <select
-                    onChange={(e) => {
-                        setSelectedDate(e.target.value);
-                        loadAttendance(e.target.value);
-                    }}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-                >
-                    <option value="">Edit Existing</option>
-                    {attendanceDates.map(d => (
-                        <option key={d.date} value={d.date}>{d.date}</option>
-                    ))}
-                </select>
-
             </div>
 
+            {/* EXISTING CLASSES */}
+            {selectedSubject && (
+                <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 shadow-sm space-y-2">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                        Existing Classes
+                    </h3>
+
+                    {attendanceDates.map(d => (
+                        <button
+                            key={d.date}
+                            onClick={() => loadAttendance(d.date)}
+                            className={`w-full text-left px-3 py-2 rounded-md border text-sm transition
+                                ${selectedDate === d.date
+                                ? "bg-gray-200 dark:bg-gray-600 border-gray-400"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700"
+                            }`}
+                        >
+                            📅 {d.date}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* TABLE */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
 
                 <div className="overflow-y-auto max-h-[500px]">
                     <table className="w-full text-xs sm:text-sm text-left">
@@ -325,7 +343,7 @@ const MarkAttendance = () => {
 
                         <tbody>
                         {students.map(student => (
-                            <tr key={student.sr_no} className="border-t border-gray-200 dark:border-gray-700">
+                            <tr key={student.student_id} className="border-t dark:border-gray-700">
                                 <td className="px-4 py-3">
                                     <img
                                         src={
@@ -351,8 +369,8 @@ const MarkAttendance = () => {
                                     <input
                                         type="checkbox"
                                         disabled={attendanceLocked}
-                                        checked={!!checkedStudents[student.sr_no]}
-                                        onChange={() => toggleStudent(student.sr_no)}
+                                        checked={!!checkedStudents[student.student_id]}
+                                        onChange={() => toggleStudent(student.student_id)}
                                         className="h-4 w-4"
                                     />
                                 </td>
@@ -362,41 +380,24 @@ const MarkAttendance = () => {
                     </table>
                 </div>
 
-                {/* BOTTOM BAR (UNCHANGED STYLE) */}
-                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="border-t dark:border-gray-700 px-4 py-4 flex justify-end gap-3">
 
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {students.length} students loaded
-                    </div>
+                    {selectedDate && (
+                        <button
+                            onClick={deleteAttendance}
+                            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
+                        >
+                            Delete
+                        </button>
+                    )}
 
-                    <div className="flex gap-3">
-                        {attendanceLocked && (
-                            <button
-                                onClick={deleteAttendance}
-                                className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
-                            >
-                                Delete
-                            </button>
-                        )}
-
-                        {attendanceLocked ? (
-                            <button
-                                onClick={() => setAttendanceLocked(false)}
-                                className="px-6 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                            >
-                                Edit Attendance
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => setShowSaveModal(true)}
-                                disabled={loading}
-                                className="px-6 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-50"
-                            >
-                                Save Attendance
-                            </button>
-                        )}
-                    </div>
-
+                    <button
+                        onClick={() => setShowSaveModal(true)}
+                        disabled={loading}
+                        className="px-6 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-50"
+                    >
+                        Save Attendance
+                    </button>
                 </div>
 
             </div>
