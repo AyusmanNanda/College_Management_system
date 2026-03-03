@@ -19,7 +19,9 @@ const getStudentImage = (rollnumber) => {
     return match || "default.png";
 };
 
-/* ================= GET STUDENTS FOR ATTENDANCE ================= */
+/* ============================================================
+   GET STUDENTS FOR ATTENDANCE
+============================================================ */
 
 exports.getStudents = async (req, res) => {
     const { course, sem } = req.query;
@@ -32,11 +34,12 @@ exports.getStudents = async (req, res) => {
         const [rows] = await db.query(
             `SELECT sr_no, rollnumber, firstname, lastname
              FROM students
-             WHERE Courcecode = ? AND semoryear = ?`,
+             WHERE Courcecode = ? AND semoryear = ?
+             ORDER BY rollnumber`,
             [course, sem]
         );
 
-        const updated = rows.map(student => ({
+        const formatted = rows.map(student => ({
             student_id: student.sr_no,
             rollnumber: student.rollnumber,
             firstname: student.firstname,
@@ -44,21 +47,28 @@ exports.getStudents = async (req, res) => {
             profilepic: getStudentImage(student.rollnumber)
         }));
 
-        res.json(updated);
+        res.json(formatted);
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Failed to fetch students" });
     }
 };
 
-/* ================= GET ATTENDANCE BY DATE ================= */
+/* ============================================================
+   GET ATTENDANCE BY DATE
+============================================================ */
 
 exports.getAttendanceByDate = async (req, res) => {
-    const { subjectcode, date, courcecode, semoryear } = req.query;
+    let { subjectcode, date, courcecode, semoryear } = req.query;
 
     if (!subjectcode || !date || !courcecode || !semoryear) {
         return res.status(400).json({ message: "Missing required filters" });
+    }
+
+    // Normalize ISO date if needed
+    if (typeof date === "string" && date.includes("T")) {
+        date = date.split("T")[0];
     }
 
     try {
@@ -66,12 +76,12 @@ exports.getAttendanceByDate = async (req, res) => {
             `
                 SELECT
                     s.sr_no AS student_id,
-                    IFNULL(a.present, 1) AS present
+                    IFNULL(a.present, 0) AS present
                 FROM students s
                          LEFT JOIN attendance a
                                    ON s.sr_no = a.student_id
                                        AND a.subjectcode = ?
-                                       AND a.date = ?
+                                       AND a.attendance_date = ?
                                        AND a.courcecode = ?
                                        AND a.semoryear = ?
                 WHERE s.Courcecode = ?
@@ -89,13 +99,20 @@ exports.getAttendanceByDate = async (req, res) => {
     }
 };
 
-/* ================= SAVE / UPDATE ATTENDANCE ================= */
+/* ============================================================
+   SAVE / UPDATE ATTENDANCE
+============================================================ */
 
 exports.saveAttendance = async (req, res) => {
-    const { subjectcode, date, courcecode, semoryear, records } = req.body;
+    let { subjectcode, date, courcecode, semoryear, records } = req.body;
 
-    if (!subjectcode || !date || !courcecode || !semoryear || !records) {
+    if (!subjectcode || !date || !courcecode || !semoryear || !Array.isArray(records)) {
         return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Normalize date safely
+    if (typeof date === "string" && date.includes("T")) {
+        date = date.split("T")[0];
     }
 
     try {
@@ -105,14 +122,16 @@ exports.saveAttendance = async (req, res) => {
             date,
             r.present,
             courcecode,
-            semoryear
+            Number(semoryear)
         ]);
 
         await db.query(
-            `INSERT INTO attendance
-                 (student_id, subjectcode, date, present, courcecode, semoryear)
-             VALUES ?
-                 ON DUPLICATE KEY UPDATE present = VALUES(present)`,
+            `
+                INSERT INTO attendance
+                (student_id, subjectcode, attendance_date, present, courcecode, semoryear)
+                VALUES ?
+                    ON DUPLICATE KEY UPDATE present = VALUES(present)
+            `,
             [values]
         );
 
@@ -124,7 +143,9 @@ exports.saveAttendance = async (req, res) => {
     }
 };
 
-/* ================= ATTENDANCE REPORT ================= */
+/* ============================================================
+   GET ATTENDANCE REPORT
+============================================================ */
 
 exports.getReport = async (req, res) => {
     const { course, sem, subject } = req.query;
@@ -139,10 +160,10 @@ exports.getReport = async (req, res) => {
                 SELECT
                     s.rollnumber,
                     CONCAT(s.firstname, ' ', s.lastname) AS name,
-                    COUNT(a.date) AS total_classes,
+                    COUNT(a.attendance_date) AS total_classes,
                     SUM(a.present) AS present_count,
                     ROUND(
-                            IFNULL((SUM(a.present) / NULLIF(COUNT(a.date), 0)) * 100, 0),
+                            IFNULL((SUM(a.present) / NULLIF(COUNT(a.attendance_date), 0)) * 100, 0),
                             2
                     ) AS percentage
                 FROM students s
@@ -165,7 +186,9 @@ exports.getReport = async (req, res) => {
     }
 };
 
-/* ================= GET EXISTING DATES ================= */
+/* ============================================================
+   GET EXISTING ATTENDANCE DATES
+============================================================ */
 
 exports.getAttendanceDates = async (req, res) => {
     const { subjectcode, courcecode, semoryear } = req.query;
@@ -176,12 +199,14 @@ exports.getAttendanceDates = async (req, res) => {
 
     try {
         const [rows] = await db.query(
-            `SELECT DISTINCT date
-             FROM attendance
-             WHERE subjectcode = ?
-               AND courcecode = ?
-               AND semoryear = ?
-             ORDER BY date DESC`,
+            `
+                SELECT DISTINCT attendance_date AS date
+                FROM attendance
+                WHERE subjectcode = ?
+                  AND courcecode = ?
+                  AND semoryear = ?
+                ORDER BY attendance_date DESC
+            `,
             [subjectcode, courcecode, semoryear]
         );
 
@@ -193,22 +218,30 @@ exports.getAttendanceDates = async (req, res) => {
     }
 };
 
-/* ================= DELETE ATTENDANCE ================= */
+/* ============================================================
+   DELETE ATTENDANCE
+============================================================ */
 
 exports.deleteAttendance = async (req, res) => {
-    const { subjectcode, date, courcecode, semoryear } = req.body;
+    let { subjectcode, date, courcecode, semoryear } = req.body;
 
     if (!subjectcode || !date || !courcecode || !semoryear) {
         return res.status(400).json({ message: "Missing required filters" });
     }
 
+    if (typeof date === "string" && date.includes("T")) {
+        date = date.split("T")[0];
+    }
+
     try {
         await db.query(
-            `DELETE FROM attendance
-             WHERE subjectcode = ?
-               AND date = ?
-               AND courcecode = ?
-               AND semoryear = ?`,
+            `
+                DELETE FROM attendance
+                WHERE subjectcode = ?
+                  AND attendance_date = ?
+                  AND courcecode = ?
+                  AND semoryear = ?
+            `,
             [subjectcode, date, courcecode, semoryear]
         );
 
