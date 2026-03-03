@@ -87,7 +87,6 @@ const AttendanceReport = () => {
                 );
 
                 setReportData(res.data || []);
-
             } catch {
                 setError("Failed to load report.");
             } finally {
@@ -98,7 +97,7 @@ const AttendanceReport = () => {
         fetchReport();
     }, [selectedSubject, selectedCourse, selectedSem, token]);
 
-    /* ================= SUMMARY CALCULATIONS ================= */
+    /* ================= SUMMARY ================= */
 
     const summary = useMemo(() => {
         if (reportData.length === 0) return null;
@@ -211,7 +210,13 @@ const AttendanceReport = () => {
                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {item.label}
                             </p>
-                            <p className={`text-xl font-semibold ${item.danger ? "text-red-600 dark:text-red-400" : "dark:text-gray-100"}`}>
+                            <p
+                                className={`text-lg sm:text-xl font-semibold ${
+                                    item.danger
+                                        ? "text-red-600 dark:text-red-400"
+                                        : "dark:text-gray-100"
+                                }`}
+                            >
                                 {item.value}
                             </p>
                         </div>
@@ -220,66 +225,81 @@ const AttendanceReport = () => {
             )}
 
             {/* REPORT TABLE */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                <div className="w-full overflow-x-auto">
-                    <table className="w-full text-xs sm:text-sm text-left">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
-                        <tr>
-                            <th className="px-4 py-3">Roll No</th>
-                            <th className="px-4 py-3">Name</th>
-                            <th className="px-4 py-3">Total</th>
-                            <th className="px-4 py-3">Present</th>
-                            <th className="px-4 py-3">%</th>
-                        </tr>
-                        </thead>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
 
-                        <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan="5" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                    Loading...
-                                </td>
-                            </tr>
-                        ) : reportData.length === 0 ? (
-                            <tr>
-                                <td colSpan="5" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                    No report data available.
-                                </td>
-                            </tr>
-                        ) : (
-                            reportData.map(student => {
-                                const low = Number(student.percentage) < 75;
-                                return (
-                                    <tr
-                                        key={student.rollnumber}
-                                        className={`border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition ${
-                                            low ? "bg-red-50 dark:bg-red-900/20" : ""
+                <table className="w-full table-fixed text-xs sm:text-sm text-left">
+
+                    <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
+                    <tr>
+                        <th className="px-2 sm:px-4 py-3 w-2/5">Student</th>
+                        <th className="px-2 sm:px-4 py-3 w-1/5 text-center">Total</th>
+                        <th className="px-2 sm:px-4 py-3 w-1/5 text-center">Present</th>
+                        <th className="px-2 sm:px-4 py-3 w-1/5 text-center">%</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    {loading ? (
+                        <tr>
+                            <td
+                                colSpan="4"
+                                className="px-2 sm:px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                            >
+                                Loading...
+                            </td>
+                        </tr>
+                    ) : reportData.length === 0 ? (
+                        <tr>
+                            <td
+                                colSpan="4"
+                                className="px-2 sm:px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                            >
+                                No report data available.
+                            </td>
+                        </tr>
+                    ) : (
+                        reportData.map(student => {
+                            const low = Number(student.percentage) < 75;
+                            return (
+                                <tr
+                                    key={student.rollnumber}
+                                    className={`border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition ${
+                                        low ? "bg-red-50 dark:bg-red-900/20" : ""
+                                    }`}
+                                >
+                                    <td className="px-2 sm:px-4 py-3">
+                                        <div className="font-medium dark:text-gray-200 break-words">
+                                            {student.rollnumber}
+                                        </div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
+                                            {student.name}
+                                        </div>
+                                    </td>
+
+                                    <td className="px-2 sm:px-4 py-3 text-center dark:text-gray-200">
+                                        {student.total_classes}
+                                    </td>
+
+                                    <td className="px-2 sm:px-4 py-3 text-center dark:text-gray-200">
+                                        {student.present_count}
+                                    </td>
+
+                                    <td
+                                        className={`px-2 sm:px-4 py-3 text-center font-semibold ${
+                                            low
+                                                ? "text-red-600 dark:text-red-400"
+                                                : "dark:text-gray-100"
                                         }`}
                                     >
-                                        <td className="px-4 py-3 dark:text-gray-200">
-                                            {student.rollnumber}
-                                        </td>
-                                        <td className="px-4 py-3 dark:text-gray-200 font-medium">
-                                            {student.name}
-                                        </td>
-                                        <td className="px-4 py-3 dark:text-gray-200">
-                                            {student.total_classes}
-                                        </td>
-                                        <td className="px-4 py-3 dark:text-gray-200">
-                                            {student.present_count}
-                                        </td>
-                                        <td className={`px-4 py-3 font-semibold ${
-                                            low ? "text-red-600 dark:text-red-400" : "dark:text-gray-100"
-                                        }`}>
-                                            {student.percentage}%
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                        </tbody>
-                    </table>
-                </div>
+                                        {student.percentage}%
+                                    </td>
+                                </tr>
+                            );
+                        })
+                    )}
+                    </tbody>
+
+                </table>
             </div>
 
         </div>
