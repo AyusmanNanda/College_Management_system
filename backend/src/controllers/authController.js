@@ -81,6 +81,7 @@ exports.login = async (req, res) => {
             { expiresIn: "1d" }
         );
 
+        const now = new Date().toISOString();
         await db.query(
             `
                 UPDATE ${table}
@@ -88,13 +89,17 @@ exports.login = async (req, res) => {
                     lastlogin = ?
                 WHERE emailid = ?
             `,
-            [new Date().toISOString(), email]
+           [ now, email ]
         );
 
         res.json({
             message: "Login successful",
             token,
-            role
+            role,
+             user: {
+               emailid: user.emailid,
+               lastlogin: now
+          }
         });
 
     } catch (error) {

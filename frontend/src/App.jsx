@@ -22,6 +22,9 @@ import EditAttendance from "./pages/Admin/EditAttendance";
 import AttendanceReport from "./pages/Admin/AttendanceReport";
 
 import FacultyDashboard from "./pages/Faculty/FacultyDashboard";
+import FacultyLayout from "./pages/Faculty/FacultyLayout";
+import FacultyProfile from "./pages/Faculty/FacultyProfile";
+
 import StudentDashboard from "./pages/Student/StudentDashboard";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -107,16 +110,19 @@ function App() {
                     <Route path="attendance-report" element={<AttendanceReport />} />
                 </Route>
 
-                {/* ===================== Faculty ===================== */}
-                <Route
-                    path="/faculty/dashboard"
+                {/* ===================== Faculty Section ===================== */}
+                 <Route
+                    path="/faculty"
                     element={
-                        <ProtectedRoute allowedRole="faculty">
-                            <FacultyDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-
+                    <ProtectedRoute allowedRole="faculty">
+                    <FacultyLayout />
+                    </ProtectedRoute>
+                }
+>
+  <Route index element={<Navigate to="dashboard" replace />} />
+  <Route path="dashboard" element={<FacultyDashboard />} />
+  <Route path="profile" element={<FacultyProfile />} />
+</Route>
                 {/* ===================== Student ===================== */}
                 <Route
                     path="/student/dashboard"

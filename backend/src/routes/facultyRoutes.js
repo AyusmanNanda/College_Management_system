@@ -3,6 +3,7 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
 const facultyController = require("../controllers/facultyController");
+const roleAuth = require("../middleware/roleAuthMiddleware");
 
 /*
   Faculty Routes
@@ -23,6 +24,34 @@ router.get(
     "/",
     authMiddleware,
     facultyController.getFaculties
+);
+// Get logged-in faculty profile
+router.get(
+  "/profile",
+  authMiddleware,
+  facultyController.getFacultyProfile
+);
+
+// Update logged-in faculty profile
+router.put(
+  "/profile",
+  authMiddleware,
+  facultyController.uploadProfile.single("profilepic"),
+  facultyController.updateFacultyProfile
+);
+
+// Change password
+router.put(
+  "/change-password",
+  authMiddleware,
+  facultyController.changeFacultyPassword
+);
+
+// Change email
+router.put(
+  "/change-email",
+  authMiddleware,
+  facultyController.changeFacultyEmail
 );
 
 // Update faculty with optional image update
@@ -51,6 +80,14 @@ router.post(
     authMiddleware,
     facultyController.uploadExcel.single("file"),
     facultyController.importFacultiesFromExcel
+);
+
+
+
+router.get(
+    "/dashboard",
+    roleAuth(["faculty"]),
+    facultyController.getFacultyDashboardStats
 );
 
 module.exports = router;
