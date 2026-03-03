@@ -93,6 +93,50 @@ router.delete(
     authMiddleware,
     studentController.deleteStudent
 );
+/* ============================================
+   Excel Upload Configuration
+   ============================================ */
+
+const tempUploadPath = path.resolve(__dirname, "../../uploads/temp");
+
+if (!fs.existsSync(tempUploadPath)) {
+  fs.mkdirSync(tempUploadPath, { recursive: true });
+}
+
+const excelStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, tempUploadPath);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  }
+});
+
+const excelUpload = multer({
+  storage: excelStorage,
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext !== ".xlsx" && ext !== ".xls") {
+      return cb(new Error("Only Excel files allowed"));
+    }
+    cb(null, true);
+  }
+});
+
+// Download Student Template
+router.get(
+    "/template",
+    authMiddleware,
+    studentController.downloadStudentTemplate
+);
+
+// Import Students From Excel
+router.post(
+    "/import",
+    authMiddleware,
+    excelUpload.single("file"),
+    studentController.importStudentsFromExcel
+);
 
 
 module.exports = router;
