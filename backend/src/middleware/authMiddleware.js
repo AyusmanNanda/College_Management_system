@@ -17,6 +17,7 @@ module.exports = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         req.admin = decoded; // attach decoded email
+        req.user = decoded;
 
         next();
     } catch (error) {
