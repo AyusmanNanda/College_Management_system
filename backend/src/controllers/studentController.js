@@ -3,17 +3,21 @@ const bcrypt = require("bcrypt");
 const XLSX = require("xlsx");
 const path = require("path");
 const fs = require("fs");
+const ExcelJS = require("exceljs");
 
-//Get Student Profile
+// ============================
+// Get Student Profile
+// ============================
 
 exports.getStudentProfile = async (req, res) => {
   try {
     const email = req.user.email;
 
     const [rows] = await db.query(
-      "SELECT * FROM students WHERE emailid = ?",
-      [email]
-      );
+        "SELECT * FROM students WHERE emailid = ?",
+        [email]
+    );
+
     if (rows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
     }
@@ -25,16 +29,18 @@ exports.getStudentProfile = async (req, res) => {
   }
 };
 
-//Get Student Subjects
+// ============================
+// Get Student Subjects
+// ============================
 
 exports.getStudentSubjects = async (req, res) => {
   try {
-    const userid = req.user.email;
+    const email = req.user.email;
 
     const [student] = await db.query(
-      "SELECT Courcecode, semoryear FROM students WHERE emailid = ?",
-      [email]
-      );
+        "SELECT Courcecode, semoryear FROM students WHERE emailid = ?",
+        [email]
+    );
 
     if (student.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -43,40 +49,43 @@ exports.getStudentSubjects = async (req, res) => {
     const { Courcecode, semoryear } = student[0];
 
     const [subjects] = await db.query(
-      "SELECT * FROM subject WHERE courcecode = ? AND semoryear = ?",
-      [Courcecode, semoryear]
-      );
+        "SELECT * FROM subject WHERE courcecode = ? AND semoryear = ?",
+        [Courcecode, semoryear]
+    );
 
     res.json(subjects);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching subjects" });
   }
 };
 
+// ============================
 // Update Student Profile
+// ============================
 
 exports.updateStudentProfile = async (req, res) => {
   try {
-    const userid = req.user.email;
+    const email = req.user.email;
     const { emailid, contactnumber, state, city } = req.body;
 
     await db.query(
-      `UPDATE students
-      SET emailid = ?, contactnumber = ?, state = ?, city = ?
-      WHERE emailid = ?`,
-      [emailid, contactnumber, state, city, userid]
-      );
-    
-    res.json({ message: "Profile updated successfully" });
+        `UPDATE students
+       SET emailid = ?, contactnumber = ?, state = ?, city = ?
+       WHERE emailid = ?`,
+        [emailid, contactnumber, state, city, email]
+    );
 
+    res.json({ message: "Profile updated successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Update failed" });
   }
 };
 
+// ============================
 // Admin: Get All Students
+// ============================
 
 const studentUploadDir = path.resolve(__dirname, "../../uploads/students");
 
@@ -85,7 +94,7 @@ const getStudentImage = (rollnumber) => {
 
   const files = fs.readdirSync(studentUploadDir);
 
-  const match = files.find(file => {
+  const match = files.find((file) => {
     const name = path.basename(file, path.extname(file));
     return name.trim().toLowerCase() === String(rollnumber).trim().toLowerCase();
   });
@@ -99,12 +108,10 @@ exports.getAllStudents = async (req, res) => {
         `SELECT * FROM students ORDER BY sr_no DESC`
     );
 
-    const updatedStudents = rows.map(student => {
-      return {
-        ...student,
-        profilepic: getStudentImage(student.rollnumber)
-      };
-    });
+    const updatedStudents = rows.map((student) => ({
+      ...student,
+      profilepic: getStudentImage(student.rollnumber),
+    }));
 
     res.json(updatedStudents);
   } catch (error) {
@@ -113,7 +120,9 @@ exports.getAllStudents = async (req, res) => {
   }
 };
 
+// ============================
 // Admin: Create Student
+// ============================
 
 exports.createStudent = async (req, res) => {
   try {
@@ -130,7 +139,6 @@ exports.createStudent = async (req, res) => {
       fatheroccupation,
       mothername,
       motheroccupation,
-      userid,
       Courcecode,
       semoryear,
       optionalsubject,
@@ -145,26 +153,24 @@ exports.createStudent = async (req, res) => {
         !contactnumber ||
         !dateofbirth ||
         !gender ||
-        !userid ||
         !Courcecode ||
         !semoryear
     ) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
-    // Split full name
     const nameParts = fullname.trim().split(" ");
     const firstname = nameParts[0];
     const lastname = nameParts.slice(1).join(" ") || "";
 
-    // Check duplicate userid or email
+    // Check duplicate email
     const [existing] = await db.query(
-        `SELECT * FROM students WHERE userid = ? OR emailid = ?`,
-        [userid, emailid]
+        `SELECT * FROM students WHERE emailid = ?`,
+        [emailid]
     );
 
     if (existing.length > 0) {
-      return res.status(400).json({ message: "User ID or Email already exists" });
+      return res.status(400).json({ message: "Email already exists" });
     }
 
     const finalPassword = password || dateofbirth;
@@ -177,8 +183,8 @@ exports.createStudent = async (req, res) => {
       (Courcecode, semoryear, rollnumber, optionalsubject, firstname, lastname, emailid,
        contactnumber, dateofbirth, gender, state, city,
        fathername, fatheroccupation, mothername, motheroccupation,
-       profilepic, userid, password, activestatus, admissiondate)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       profilepic, password, activestatus, admissiondate)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           Courcecode,
           semoryear,
@@ -197,7 +203,6 @@ exports.createStudent = async (req, res) => {
           mothername || null,
           motheroccupation || null,
           profilepic,
-          userid,
           hashedPassword,
           1,
           admissiondate || null
@@ -212,7 +217,9 @@ exports.createStudent = async (req, res) => {
   }
 };
 
+// ============================
 // Admin: Update Student
+// ============================
 
 exports.updateStudent = async (req, res) => {
   try {
@@ -231,7 +238,6 @@ exports.updateStudent = async (req, res) => {
       fatheroccupation,
       mothername,
       motheroccupation,
-      userid,
       Courcecode,
       semoryear,
       optionalsubject,
@@ -262,7 +268,6 @@ exports.updateStudent = async (req, res) => {
       fatheroccupation = ?,
       mothername = ?,
       motheroccupation = ?,
-      userid = ?,
       admissiondate = ?,
       activestatus = ?
     `;
@@ -284,7 +289,6 @@ exports.updateStudent = async (req, res) => {
       fatheroccupation || null,
       mothername || null,
       motheroccupation || null,
-      userid,
       admissiondate || null,
       activestatus
     ];
@@ -313,7 +317,9 @@ exports.updateStudent = async (req, res) => {
   }
 };
 
+// ============================
 // Admin: Delete Student
+// ============================
 
 exports.deleteStudent = async (req, res) => {
   try {
@@ -353,8 +359,6 @@ exports.deleteStudent = async (req, res) => {
 // Download Student Template
 // ============================
 
-const ExcelJS = require("exceljs");
-
 exports.downloadStudentTemplate = async (req, res) => {
   try {
     const workbook = new ExcelJS.Workbook();
@@ -373,7 +377,6 @@ exports.downloadStudentTemplate = async (req, res) => {
       "fatheroccupation",
       "mothername",
       "motheroccupation",
-      "userid",
       "Courcecode",
       "semoryear",
       "optionalsubject",
@@ -401,7 +404,6 @@ exports.downloadStudentTemplate = async (req, res) => {
       "",
       "",
       "",
-      "rahul01",
       "BCA",
       1,
       "",
@@ -445,7 +447,6 @@ exports.importStudentsFromExcel = async (req, res) => {
   let invalidRows = 0;
 
   try {
-
     const workbook = XLSX.readFile(filePath);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(sheet);
@@ -453,7 +454,6 @@ exports.importStudentsFromExcel = async (req, res) => {
     totalRows = data.length;
 
     for (let i = 0; i < data.length; i++) {
-
       const row = data[i];
 
       const {
@@ -469,34 +469,31 @@ exports.importStudentsFromExcel = async (req, res) => {
         fatheroccupation,
         mothername,
         motheroccupation,
-        userid,
         Courcecode,
         semoryear,
         optionalsubject,
         admissiondate
       } = row;
 
-      if (!fullname || !rollnumber || !emailid || !userid || !Courcecode || !semoryear) {
+      if (!fullname || !rollnumber || !emailid || !Courcecode || !semoryear) {
         invalidRows++;
         continue;
       }
 
       try {
-
         const nameParts = fullname.trim().split(" ");
         const firstname = nameParts[0];
         const lastname = nameParts.slice(1).join(" ") || "";
 
         const hashedPassword = await bcrypt.hash(dateofbirth, 10);
-        const profilepic = getStudentImage(rollnumber);
 
         await db.query(
             `INSERT INTO students 
           (Courcecode, semoryear, rollnumber, optionalsubject, firstname, lastname, emailid,
            contactnumber, dateofbirth, gender, state, city,
            fathername, fatheroccupation, mothername, motheroccupation,
-           profilepic, userid, password, activestatus, admissiondate)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           password, activestatus, admissiondate)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               Courcecode,
               semoryear,
@@ -514,8 +511,6 @@ exports.importStudentsFromExcel = async (req, res) => {
               fatheroccupation || null,
               mothername || null,
               motheroccupation || null,
-              profilepic,
-              userid,
               hashedPassword,
               1,
               admissiondate || null
@@ -547,7 +542,3 @@ exports.importStudentsFromExcel = async (req, res) => {
     res.status(500).json({ message: "Import failed" });
   }
 };
-
-
-    
-    

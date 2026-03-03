@@ -9,6 +9,7 @@ const MarkAttendance = () => {
     const [courses, setCourses] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [students, setStudents] = useState([]);
+    const [attendanceDates, setAttendanceDates] = useState([]);
 
     const [selectedCourse, setSelectedCourse] = useState("");
     const [selectedSem, setSelectedSem] = useState("");
@@ -17,7 +18,6 @@ const MarkAttendance = () => {
 
     const [markMode, setMarkMode] = useState("absent");
     const [checkedStudents, setCheckedStudents] = useState({});
-
     const [attendanceLocked, setAttendanceLocked] = useState(false);
 
     const [loading, setLoading] = useState(false);
@@ -70,29 +70,68 @@ const MarkAttendance = () => {
             setAttendanceLocked(false);
             setSuccess("");
             setError("");
-        } catch (err) {
-            console.error(err);
+        } catch {
             setError("Failed to load students.");
         }
     };
 
-    useEffect(() => {
-        fetchCourses();
-    }, []);
+    /* ================= FETCH EXISTING DATES ================= */
 
-    useEffect(() => {
-        fetchSubjects();
-        fetchStudents();
-    }, [selectedCourse, selectedSem]);
+    const fetchAttendanceDates = async () => {
+        if (!selectedSubject) return;
+
+        try {
+            const res = await api.get(
+                `/api/attendance/dates?subjectcode=${selectedSubject}&courcecode=${selectedCourse}&semoryear=${selectedSem}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setAttendanceDates(res.data || []);
+        } catch {
+            setAttendanceDates([]);
+        }
+    };
+
+    /* ================= LOAD ATTENDANCE ================= */
+
+    const loadAttendance = async (date) => {
+        if (!date) return;
+
+        try {
+            const res = await api.get(
+                `/api/attendance?subjectcode=${selectedSubject}&date=${date}&courcecode=${selectedCourse}&semoryear=${selectedSem}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const map = {};
+
+            res.data.forEach(r => {
+                if (markMode === "absent") {
+                    map[r.student_id] = r.present === 0;
+                } else {
+                    map[r.student_id] = r.present === 1;
+                }
+            });
+
+            setCheckedStudents(map);
+            setAttendanceLocked(true);
+            setSuccess("Existing attendance loaded.");
+        } catch {
+            setError("Failed to load attendance.");
+        }
+    };
+
+    useEffect(() => { fetchCourses(); }, []);
+    useEffect(() => { fetchSubjects(); fetchStudents(); }, [selectedCourse, selectedSem]);
+    useEffect(() => { fetchAttendanceDates(); }, [selectedSubject]);
 
     /* ================= TOGGLE ================= */
 
-    const toggleStudent = (roll) => {
+    const toggleStudent = (id) => {
         if (attendanceLocked) return;
 
-        setCheckedStudents((prev) => ({
+        setCheckedStudents(prev => ({
             ...prev,
-            [roll]: !prev[roll]
+            [id]: !prev[id]
         }));
     };
 
@@ -107,17 +146,17 @@ const MarkAttendance = () => {
         try {
             setLoading(true);
 
-            const records = students.map((student) => {
+            const records = students.map(student => {
                 let present;
 
                 if (markMode === "absent") {
-                    present = checkedStudents[student.rollnumber] ? 0 : 1;
+                    present = checkedStudents[student.sr_no] ? 0 : 1;
                 } else {
-                    present = checkedStudents[student.rollnumber] ? 1 : 0;
+                    present = checkedStudents[student.sr_no] ? 1 : 0;
                 }
 
                 return {
-                    rollnumber: student.rollnumber,
+                    student_id: student.sr_no,
                     present
                 };
             });
@@ -134,15 +173,35 @@ const MarkAttendance = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setSuccess("Attendance saved successfully.");
             setAttendanceLocked(true);
+            setSuccess("Attendance saved successfully.");
             setError("");
-
-        } catch (err) {
-            console.error(err);
+        } catch {
             setError("Failed to save attendance.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    /* ================= DELETE ================= */
+
+    const deleteAttendance = async () => {
+        try {
+            await api.delete("/api/attendance", {
+                headers: { Authorization: `Bearer ${token}` },
+                data: {
+                    subjectcode: selectedSubject,
+                    date: selectedDate,
+                    courcecode: selectedCourse,
+                    semoryear: selectedSem
+                }
+            });
+
+            setCheckedStudents({});
+            setAttendanceLocked(false);
+            setSuccess("Attendance deleted successfully.");
+        } catch {
+            setError("Failed to delete attendance.");
         }
     };
 
@@ -173,7 +232,7 @@ const MarkAttendance = () => {
             )}
 
             {/* FILTERS */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-6 gap-4">
 
                 <select
                     value={selectedCourse}
@@ -181,11 +240,12 @@ const MarkAttendance = () => {
                         setSelectedCourse(e.target.value);
                         setSelectedSem("");
                         setSelectedSubject("");
+                        setSelectedDate("");
                     }}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
-                    {courses.map((course) => (
+                    {courses.map(course => (
                         <option key={course.id} value={course.course_code}>
                             {course.course_name}
                         </option>
@@ -195,25 +255,21 @@ const MarkAttendance = () => {
                 <select
                     value={selectedSem}
                     onChange={(e) => setSelectedSem(e.target.value)}
-                    disabled={!selectedCourse}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Semester</option>
-                    {Array.from({ length: 8 }, (_, i) => i + 1).map((sem) => (
-                        <option key={sem} value={sem}>
-                            Semester {sem}
-                        </option>
+                    {[1,2,3,4,5,6,7,8].map(sem => (
+                        <option key={sem} value={sem}>Semester {sem}</option>
                     ))}
                 </select>
 
                 <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    disabled={!selectedSem}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Subject</option>
-                    {subjects.map((sub) => (
+                    {subjects.map(sub => (
                         <option key={sub.subjectcode} value={sub.subjectcode}>
                             {sub.subjectname}
                         </option>
@@ -227,7 +283,6 @@ const MarkAttendance = () => {
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 />
 
-                {/* MODE SELECTOR */}
                 <select
                     value={markMode}
                     onChange={(e) => setMarkMode(e.target.value)}
@@ -236,6 +291,19 @@ const MarkAttendance = () => {
                 >
                     <option value="absent">Mark Absent</option>
                     <option value="present">Mark Present</option>
+                </select>
+
+                <select
+                    onChange={(e) => {
+                        setSelectedDate(e.target.value);
+                        loadAttendance(e.target.value);
+                    }}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+                >
+                    <option value="">Edit Existing</option>
+                    {attendanceDates.map(d => (
+                        <option key={d.date} value={d.date}>{d.date}</option>
+                    ))}
                 </select>
 
             </div>
@@ -256,11 +324,8 @@ const MarkAttendance = () => {
                         </thead>
 
                         <tbody>
-                        {students.map((student) => (
-                            <tr
-                                key={student.rollnumber}
-                                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
-                            >
+                        {students.map(student => (
+                            <tr key={student.sr_no} className="border-t border-gray-200 dark:border-gray-700">
                                 <td className="px-4 py-3">
                                     <img
                                         src={
@@ -268,8 +333,8 @@ const MarkAttendance = () => {
                                                 ? `${BASE_URL}/uploads/students/${student.profilepic}`
                                                 : `${BASE_URL}/uploads/students/default.png`
                                         }
-                                        alt="profile"
-                                        className="h-9 w-9 rounded-full object-cover border dark:border-gray-600"
+                                        className="h-9 w-9 rounded-full object-cover"
+                                        alt=""
                                     />
                                 </td>
 
@@ -286,8 +351,8 @@ const MarkAttendance = () => {
                                     <input
                                         type="checkbox"
                                         disabled={attendanceLocked}
-                                        checked={!!checkedStudents[student.rollnumber]}
-                                        onChange={() => toggleStudent(student.rollnumber)}
+                                        checked={!!checkedStudents[student.sr_no]}
+                                        onChange={() => toggleStudent(student.sr_no)}
                                         className="h-4 w-4"
                                     />
                                 </td>
@@ -297,32 +362,40 @@ const MarkAttendance = () => {
                     </table>
                 </div>
 
-                {/* BOTTOM BAR */}
+                {/* BOTTOM BAR (UNCHANGED STYLE) */}
                 <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                         {students.length} students loaded
                     </div>
 
-                    {attendanceLocked ? (
-                        <button
-                            onClick={() => {
-                                setAttendanceLocked(false);
-                                setSuccess("");
-                            }}
-                            className="px-6 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                        >
-                            Edit Attendance
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => setShowSaveModal(true)}
-                            disabled={loading}
-                            className="px-6 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-50"
-                        >
-                            Save Attendance
-                        </button>
-                    )}
+                    <div className="flex gap-3">
+                        {attendanceLocked && (
+                            <button
+                                onClick={deleteAttendance}
+                                className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
+                            >
+                                Delete
+                            </button>
+                        )}
+
+                        {attendanceLocked ? (
+                            <button
+                                onClick={() => setAttendanceLocked(false)}
+                                className="px-6 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                            >
+                                Edit Attendance
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => setShowSaveModal(true)}
+                                disabled={loading}
+                                className="px-6 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-50"
+                            >
+                                Save Attendance
+                            </button>
+                        )}
+                    </div>
 
                 </div>
 
