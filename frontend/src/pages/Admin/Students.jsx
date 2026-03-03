@@ -118,7 +118,7 @@ const Students = () => {
                     </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button
                         onClick={() => setShowImportModal(true)}
                         className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
@@ -171,7 +171,6 @@ const Students = () => {
                         </option>
                     ))}
                 </select>
-
             </div>
 
             {error && (
@@ -188,7 +187,6 @@ const Students = () => {
                         <tr>
                             <th className="px-3 py-2 sm:px-4 sm:py-4">Profile</th>
                             <th className="px-3 py-2 sm:px-4 sm:py-4">Student</th>
-                            <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">Roll No</th>
                             <th className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4">Course</th>
                             <th className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4">Semester</th>
                             <th className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">Status</th>
@@ -199,13 +197,13 @@ const Students = () => {
                         <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="7" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                                <td colSpan="6" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                                     Loading...
                                 </td>
                             </tr>
                         ) : filteredStudents.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                                <td colSpan="6" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                                     No students found.
                                 </td>
                             </tr>
@@ -215,7 +213,6 @@ const Students = () => {
                                     key={student.sr_no}
                                     className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                                 >
-                                    {/* Profile */}
                                     <td className="px-3 py-2 sm:px-4 sm:py-4">
                                         <img
                                             src={
@@ -228,29 +225,39 @@ const Students = () => {
                                         />
                                     </td>
 
-                                    {/* Student Info */}
-                                    <td className="px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        <div className="font-semibold">
-                                            {student.firstname} {student.lastname}
+                                    {/* Roll No + Name */}
+                                    <td className="px-3 py-2 sm:px-4 sm:py-4">
+                                        <div className="font-medium dark:text-gray-200">
+                                            {student.rollnumber}
                                         </div>
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {student.userid}
+                                            {student.firstname} {student.lastname}
                                         </div>
                                     </td>
 
-                                    <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {student.rollnumber}
-                                    </td>
-
-                                    <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {student.Courcecode}
+                                    {/* Course Code + Course Name */}
+                                    <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4">
+                                        {(() => {
+                                            const course = courses.find(
+                                                (c) => c.course_code === student.Courcecode
+                                            );
+                                            return (
+                                                <>
+                                                    <div className="font-medium dark:text-gray-200">
+                                                        {student.Courcecode}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        {course?.course_name || ""}
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
                                     </td>
 
                                     <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                         {student.semoryear}
                                     </td>
 
-                                    {/* Status */}
                                     <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">
                                         {student.activestatus ? (
                                             <span className="px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
@@ -263,7 +270,6 @@ const Students = () => {
                                         )}
                                     </td>
 
-                                    {/* Actions */}
                                     <td className="px-3 py-2 sm:px-4 sm:py-4">
                                         <div className="flex flex-col sm:flex-row gap-2 justify-center">
                                             <button
@@ -306,6 +312,7 @@ const Students = () => {
                 }}
                 onConfirm={handleDelete}
             />
+
             {showImportModal && (
                 <ImportStudentModal
                     token={token}
