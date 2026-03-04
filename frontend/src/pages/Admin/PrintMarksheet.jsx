@@ -17,8 +17,11 @@ const PrintMarksheet = () => {
 
     const [data, setData] = useState([]);
     const [name, setName] = useState("");
+    const [collegeName, setCollegeName] = useState("");
 
+    // =========================
     // Load Courses
+    // =========================
     useEffect(() => {
 
         const loadCourses = async () => {
@@ -35,7 +38,9 @@ const PrintMarksheet = () => {
 
     }, []);
 
+    // =========================
     // Handle Course Change
+    // =========================
     const handleCourseChange = (value) => {
 
         setCourse(value);
@@ -57,7 +62,9 @@ const PrintMarksheet = () => {
 
     };
 
+    // =========================
     // Load Students
+    // =========================
     useEffect(() => {
 
         if (!course || !sem) return;
@@ -79,7 +86,9 @@ const PrintMarksheet = () => {
 
     }, [course, sem]);
 
+    // =========================
     // Load Marksheet
+    // =========================
     const loadMarksheet = async () => {
 
         const res = await api.get(
@@ -89,20 +98,29 @@ const PrintMarksheet = () => {
             }
         );
 
-        if (res.data.length > 0) {
-            setName(res.data[0].firstname + " " + res.data[0].lastname);
-        }
+        setCollegeName(res.data.collegeName);
+        setData(res.data.marks);
 
-        setData(res.data);
+        if (res.data.marks.length > 0) {
+            setName(
+                res.data.marks[0].firstname +
+                " " +
+                res.data.marks[0].lastname
+            );
+        }
 
     };
 
-    // PDF Download
+    // =========================
+    // Download PDF
+    // =========================
     const downloadPDF = async () => {
 
         const element = document.getElementById("marksheet");
 
-        const canvas = await html2canvas(element);
+        const canvas = await html2canvas(element, {
+            scale: 2
+        });
 
         const imgData = canvas.toDataURL("image/png");
 
@@ -117,7 +135,9 @@ const PrintMarksheet = () => {
 
     };
 
-    // Total Marks
+    // =========================
+    // Calculate Totals
+    // =========================
     const totalObtained = data.reduce(
         (sum, r) => sum + (r.theorymarks || 0) + (r.practicalmarks || 0),
         0
@@ -130,7 +150,9 @@ const PrintMarksheet = () => {
 
     const percentage = totalFull ? (totalObtained / totalFull) * 100 : 0;
 
+    // =========================
     // Final Grade
+    // =========================
     let finalGrade = "F";
 
     if (percentage >= 90) finalGrade = "O";
@@ -146,8 +168,13 @@ const PrintMarksheet = () => {
 
             <h2>Print Marksheet</h2>
 
-            <select value={course} onChange={(e) => handleCourseChange(e.target.value)}>
+            {/* Course */}
+            <select
+                value={course}
+                onChange={(e) => handleCourseChange(e.target.value)}
+            >
                 <option value="">Select Course</option>
+
                 {courses.map(c => (
                     <option key={c.course_code} value={c.course_code}>
                         {c.course_name}
@@ -155,15 +182,27 @@ const PrintMarksheet = () => {
                 ))}
             </select>
 
-            <select value={sem} onChange={(e) => setSem(e.target.value)}>
+            {/* Semester */}
+            <select
+                value={sem}
+                onChange={(e) => setSem(e.target.value)}
+            >
                 <option value="">Select Semester</option>
+
                 {sems.map(s => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s}>
+                        {s}
+                    </option>
                 ))}
             </select>
 
-            <select value={roll} onChange={(e) => setRoll(e.target.value)}>
+            {/* Student */}
+            <select
+                value={roll}
+                onChange={(e) => setRoll(e.target.value)}
+            >
                 <option value="">Select Student</option>
+
                 {students.map(s => (
                     <option key={s.rollnumber} value={s.rollnumber}>
                         {s.rollnumber} - {s.firstname} {s.lastname}
@@ -171,32 +210,71 @@ const PrintMarksheet = () => {
                 ))}
             </select>
 
-            <button onClick={loadMarksheet}>Load Marksheet</button>
-            <button onClick={downloadPDF}>Download PDF</button>
+            <button onClick={loadMarksheet}>
+                Load Marksheet
+            </button>
+
+            <button onClick={downloadPDF}>
+                Download PDF
+            </button>
 
             <br /><br />
 
-            <div id="marksheet">
+            {/* ========================= */}
+            {/* MARKSHEET */}
+            {/* ========================= */}
 
-                <h2>ABC College</h2>
-                <h3>Semester Marksheet</h3>
+            <div
+                id="marksheet"
+                style={{
+                    width: "210mm",
+                    minHeight: "297mm",
+                    margin: "auto",
+                    padding: "20mm",
+                    background: "white",
+                    color: "black",
+                    fontFamily: "Arial, sans-serif",
+                    boxSizing: "border-box"
+                }}
+            >
 
-                <p><b>Name:</b> {name}</p>
-                <p><b>Roll Number:</b> {roll}</p>
-                <p><b>Course:</b> {course}</p>
-                <p><b>Semester:</b> {sem}</p>
+                {/* Header */}
 
-                <table border="1" width="100%">
+                <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                    <h1 style={{ margin: 0 }}>{collegeName}</h1>
+                    <h3 style={{ margin: "5px 0" }}>Semester Marksheet</h3>
+                </div>
+
+                {/* Student Info */}
+
+                <div style={{ marginBottom: "20px" }}>
+                    <p><b>Name:</b> {name}</p>
+                    <p><b>Roll Number:</b> {roll}</p>
+                    <p><b>Course:</b> {course}</p>
+                    <p><b>Semester:</b> {sem}</p>
+                </div>
+
+                {/* Marks Table */}
+
+                <table
+                    style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        marginTop: "10px"
+                    }}
+                >
 
                     <thead>
+
                     <tr>
-                        <th>Subject Code</th>
-                        <th>Subject</th>
-                        <th>Theory</th>
-                        <th>Practical</th>
-                        <th>Total</th>
-                        <th>Grade</th>
+                        <th style={{border:"1px solid black",padding:"6px"}}>Subject Code</th>
+                        <th style={{border:"1px solid black",padding:"6px"}}>Subject</th>
+                        <th style={{border:"1px solid black",padding:"6px"}}>Theory</th>
+                        <th style={{border:"1px solid black",padding:"6px"}}>Practical</th>
+                        <th style={{border:"1px solid black",padding:"6px"}}>Total</th>
+                        <th style={{border:"1px solid black",padding:"6px"}}>Grade</th>
                     </tr>
+
                     </thead>
 
                     <tbody>
@@ -228,12 +306,31 @@ const PrintMarksheet = () => {
                         return (
 
                             <tr key={i}>
-                                <td>{row.subjectcode}</td>
-                                <td>{row.subjectname}</td>
-                                <td>{theory} / {theoryFull}</td>
-                                <td>{practical} / {practicalFull}</td>
-                                <td>{total} / {totalFullMarks}</td>
-                                <td>{grade}</td>
+
+                                <td style={{border:"1px solid black",padding:"6px"}}>
+                                    {row.subjectcode}
+                                </td>
+
+                                <td style={{border:"1px solid black",padding:"6px"}}>
+                                    {row.subjectname}
+                                </td>
+
+                                <td style={{border:"1px solid black",padding:"6px"}}>
+                                    {theory} / {theoryFull}
+                                </td>
+
+                                <td style={{border:"1px solid black",padding:"6px"}}>
+                                    {practical} / {practicalFull}
+                                </td>
+
+                                <td style={{border:"1px solid black",padding:"6px"}}>
+                                    {total} / {totalFullMarks}
+                                </td>
+
+                                <td style={{border:"1px solid black",padding:"6px"}}>
+                                    {grade}
+                                </td>
+
                             </tr>
 
                         );
@@ -246,20 +343,36 @@ const PrintMarksheet = () => {
 
                 <br />
 
+                {/* Summary */}
+
                 <h3>Total Marks: {totalObtained} / {totalFull}</h3>
                 <h3>Percentage: {percentage.toFixed(2)}%</h3>
                 <h3>Final Grade: {finalGrade}</h3>
 
                 <br /><br />
 
-                <p>Generated On: {new Date().toLocaleDateString()}</p>
+                {/* Footer */}
 
-                <div style={{ textAlign: "right", marginTop: "40px" }}>
-                    __________________________
-                    <br />
-                    Authorized by
-                    <br />
-                    College Administration
+                <div
+                    style={{
+                        marginTop: "40px",
+                        display: "flex",
+                        justifyContent: "space-between"
+                    }}
+                >
+
+                    <div>
+                        <p>Generated On: {new Date().toLocaleDateString()}</p>
+                    </div>
+
+                    <div style={{ textAlign: "center" }}>
+                        __________________________
+                        <br />
+                        Authorized by
+                        <br />
+                        College Administration
+                    </div>
+
                 </div>
 
             </div>

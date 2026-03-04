@@ -354,39 +354,51 @@ exports.getStudentMarksheet = async (req, res) => {
 
         const { course, sem, roll } = req.query;
 
+        // get college name
+        const [adminRows] = await db.query(
+            `SELECT collagename FROM admin LIMIT 1`
+        );
+
+        const collegeName = adminRows.length
+            ? adminRows[0].collagename
+            : "College";
+
         const [rows] = await db.query(
-            `SELECT
-                 s.firstname,
-                 s.lastname,
-                 s.rollnumber,
-                 s.courcecode,
+            `SELECT 
+                s.firstname,
+                s.lastname,
+                s.rollnumber,
+                s.courcecode,
 
-                 m.subjectcode,
-                 m.subjectname,
+                m.subjectcode,
+                m.subjectname,
 
-                 sub.theorymarks AS theoryfull,
-                 sub.practicalmarks AS practicalfull,
+                sub.theorymarks AS theoryfull,
+                sub.practicalmarks AS practicalfull,
 
-                 m.theorymarks,
-                 m.practicalmarks
+                m.theorymarks,
+                m.practicalmarks
 
-             FROM marks m
+            FROM marks m
 
-                      JOIN students s
-                           ON m.rollnumber = s.rollnumber
+            JOIN students s
+            ON m.rollnumber = s.rollnumber
 
-                      JOIN subject sub
-                           ON sub.subjectcode = m.subjectcode
+            JOIN subject sub
+            ON sub.subjectcode = m.subjectcode
 
-             WHERE m.courcecode = ?
-               AND m.semoryear = ?
-               AND m.rollnumber = ?
+            WHERE m.courcecode = ?
+            AND m.semoryear = ?
+            AND m.rollnumber = ?
 
-             ORDER BY m.subjectcode`,
+            ORDER BY m.subjectcode`,
             [course, sem, roll]
         );
 
-        res.json(rows);
+        res.json({
+            collegeName,
+            marks: rows
+        });
 
     } catch (error) {
 
