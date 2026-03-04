@@ -199,7 +199,7 @@ exports.getAttendanceDates = async (req, res) => {
                 WHERE subjectcode = ?
                   AND courcecode = ?
                   AND semoryear = ?
-                ORDER BY attendance_date DESC
+                ORDER BY date DESC
             `,
             [subjectcode, courcecode, semoryear]
         );
