@@ -82,6 +82,10 @@ const AdminLayout = () => {
         { name: "Take Attendance", path: "/admin/take-attendance" },
         { name: "Edit Attendance", path: "/admin/edit-attendance" },
         { name: "Attendance Report", path: "/admin/attendance-report" },
+        { name: "Enter Marks", path: "/admin/enter-marks" },
+        { name: "Edit Marks", path: "/admin/edit-marks" },
+        { name: "Marks Report", path: "/admin/marks-report" },
+        { name: "Print Marksheet", path: "/admin/print-marksheet" },
         { name: "Profile", path: "/admin/profile" }
     ];
 
