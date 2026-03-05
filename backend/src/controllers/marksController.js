@@ -388,7 +388,15 @@ exports.getStudentMarksheet = async (req, res) => {
 
         const { course, sem, roll } = req.query;
 
-        // Get college information from admin table
+        // Basic validation
+        if (!course || !sem || !roll) {
+            return res.status(400).json({ message: "Missing parameters" });
+        }
+
+        // ============================
+        // Get College Info
+        // ============================
+
         const [adminRows] = await db.query(
             `SELECT collagename, logo FROM admin LIMIT 1`
         );
@@ -398,8 +406,11 @@ exports.getStudentMarksheet = async (req, res) => {
             : "College";
 
         const logoFile = getAdminLogo();
-
         const collegeLogo = `/uploads/admin/${logoFile}`;
+
+        // ============================
+        // Fetch Student Marks
+        // ============================
 
         const [rows] = await db.query(
             `SELECT
@@ -427,24 +438,126 @@ exports.getStudentMarksheet = async (req, res) => {
         );
 
         if (!rows.length) {
+
             return res.json({
                 collegeName,
                 collegeLogo,
-                marks: []
+                marks: [],
+                summary: null
             });
+
         }
 
-        // Ensure profile image always exists
+        // Ensure profile pic exists
         rows.forEach(r => {
             if (!r.profilepic) {
                 r.profilepic = "default.png";
             }
         });
 
+        // ============================
+        // Calculate Totals
+        // ============================
+
+        let totalObtained = 0;
+        let totalMaximum = 0;
+
+        let subjectFailed = false;
+
+        rows.forEach(r => {
+
+            const theory = r.theorymarks || 0;
+            const practical = r.practicalmarks || 0;
+
+            const theoryFull = r.theoryfull || 0;
+            const practicalFull = r.practicalfull || 0;
+
+            const subjectTotal = theory + practical;
+            const subjectMax = theoryFull + practicalFull;
+
+            totalObtained += subjectTotal;
+            totalMaximum += subjectMax;
+
+            const subjectPercentage =
+                subjectMax ? (subjectTotal / subjectMax) * 100 : 0;
+
+            if (subjectPercentage < 40) {
+                subjectFailed = true;
+            }
+
+        });
+
+        // ============================
+        // Percentage
+        // ============================
+
+        let percentage = 0;
+
+        if (totalMaximum > 0) {
+            percentage = (totalObtained / totalMaximum) * 100;
+        }
+
+        // ============================
+        // Final Grade
+        // ============================
+
+        let finalGrade = "F";
+
+        if (percentage >= 90) finalGrade = "O";
+        else if (percentage >= 80) finalGrade = "A+";
+        else if (percentage >= 70) finalGrade = "A";
+        else if (percentage >= 60) finalGrade = "B+";
+        else if (percentage >= 50) finalGrade = "B";
+        else if (percentage >= 40) finalGrade = "C";
+
+        // ============================
+        // Result + Division
+        // ============================
+
+        let result = "FAIL";
+        let division = "FAIL";
+
+        if (!subjectFailed && percentage >= 75) {
+
+            result = "PASS WITH DISTINCTION";
+            division = "FIRST CLASS WITH DISTINCTION";
+
+        }
+        else if (!subjectFailed && percentage >= 60) {
+
+            result = "PASS";
+            division = "FIRST CLASS";
+
+        }
+        else if (!subjectFailed && percentage >= 50) {
+
+            result = "PASS";
+            division = "SECOND CLASS";
+
+        }
+        else if (!subjectFailed && percentage >= 40) {
+
+            result = "PASS";
+            division = "PASS";
+
+        }
+
+        // ============================
+        // Response
+        // ============================
+
         res.json({
             collegeName,
             collegeLogo,
-            marks: rows
+            marks: rows,
+            summary: {
+                totalObtained,
+                totalMaximum,
+                percentage: Number(percentage.toFixed(2)),
+                finalGrade,
+                division,
+                result
+            }
         });
 
     } catch (error) {

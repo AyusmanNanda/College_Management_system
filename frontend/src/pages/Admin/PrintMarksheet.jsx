@@ -148,46 +148,7 @@ const PrintMarksheet = () => {
     };
 
     const marksheetCode = `MS-${selectedCourse}-${selectedSem}-${selectedRoll}`;
-    const summary = useMemo(() => {
-
-        if (!marksheet?.marks?.length) return null;
-
-        let totalObtained = 0;
-        let totalMaximum = 0;
-
-        marksheet.marks.forEach(m => {
-
-            const theory = m.theorymarks || 0;
-            const practical = m.practicalmarks || 0;
-
-            const theoryFull = m.theoryfull || 0;
-            const practicalFull = m.practicalfull || 0;
-
-            totalObtained += theory + practical;
-            totalMaximum += theoryFull + practicalFull;
-
-        });
-
-        const percentage = totalMaximum
-            ? (totalObtained / totalMaximum) * 100
-            : 0;
-
-        const finalGrade = getGrade(percentage);
-
-        let result = "FAIL";
-
-        if (percentage >= 75) result = "PASS WITH DISTINCTION";
-        else if (percentage >= 40) result = "PASS";
-
-        return {
-            totalObtained,
-            totalMaximum,
-            percentage: percentage.toFixed(2),
-            finalGrade,
-            result
-        };
-
-    }, [marksheet]);
+    const summary = marksheet?.summary;
 
     const [hash, setHash] = useState("");
 
@@ -520,7 +481,6 @@ const PrintMarksheet = () => {
 
                                 const percentage =
                                     maxTotal ? (total / maxTotal) * 100 : 0;
-
                                 const grade = getGrade(percentage);
 
                                 return (
@@ -533,7 +493,9 @@ const PrintMarksheet = () => {
                                         <td className="border px-3 py-2">{theory}/{theoryFull}</td>
                                         <td className="border px-3 py-2">{practical}/{practicalFull}</td>
                                         <td className="border px-3 py-2 font-semibold">{total}/{maxTotal}</td>
-                                        <td className="border px-3 py-2 font-bold">{grade}</td>
+                                        <td className="border px-3 py-2 font-bold">
+                                            {grade}
+                                        </td>
 
                                     </tr>
 
@@ -556,21 +518,11 @@ const PrintMarksheet = () => {
 
                                     <tr className="bg-gray-100 text-center font-semibold">
 
-                                        <td className="border px-3 py-2">
-                                            Total Marks
-                                        </td>
-
-                                        <td className="border px-3 py-2">
-                                            Percentage
-                                        </td>
-
-                                        <td className="border px-3 py-2">
-                                            Final Grade
-                                        </td>
-
-                                        <td className="border px-3 py-2">
-                                            Result
-                                        </td>
+                                        <td className="border px-3 py-2">Total Marks</td>
+                                        <td className="border px-3 py-2">Percentage</td>
+                                        <td className="border px-3 py-2">Final Grade</td>
+                                        <td className="border px-3 py-2">Division</td>
+                                        <td className="border px-3 py-2">Result</td>
 
                                     </tr>
 
@@ -586,6 +538,10 @@ const PrintMarksheet = () => {
 
                                         <td className="border px-3 py-3">
                                             {summary.finalGrade}
+                                        </td>
+
+                                        <td className="border px-3 py-3">
+                                            {summary.division}
                                         </td>
 
                                         <td
