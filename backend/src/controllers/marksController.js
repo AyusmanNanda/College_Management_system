@@ -44,9 +44,9 @@ exports.saveMarks = async (req, res) => {
                 `INSERT INTO marks
                  (courcecode, semoryear, subjectcode, subjectname, rollnumber, theorymarks, practicalmarks)
                  VALUES (?, ?, ?, ?, ?, ?, ?)
-                     ON DUPLICATE KEY UPDATE
-                                          theorymarks = VALUES(theorymarks),
-                                          practicalmarks = VALUES(practicalmarks)`,
+                 ON DUPLICATE KEY UPDATE
+                 theorymarks = VALUES(theorymarks),
+                 practicalmarks = VALUES(practicalmarks)`,
                 [
                     course,
                     sem,
@@ -90,13 +90,13 @@ exports.getMarksForEdit = async (req, res) => {
                  m.theorymarks,
                  m.practicalmarks
              FROM students s
-                      LEFT JOIN marks m
-                                ON s.rollnumber = m.rollnumber
-                                    AND m.subjectcode = ?
-                                    AND m.courcecode = ?
-                                    AND m.semoryear = ?
+             LEFT JOIN marks m
+               ON s.rollnumber = m.rollnumber
+               AND m.subjectcode = ?
+               AND m.courcecode = ?
+               AND m.semoryear = ?
              WHERE s.Courcecode = ?
-               AND s.semoryear = ?
+             AND s.semoryear = ?
              ORDER BY s.rollnumber`,
             [subject, course, sem, course, sem]
         );
@@ -131,9 +131,9 @@ exports.updateMarks = async (req, res) => {
                 `UPDATE marks
                  SET theorymarks = ?, practicalmarks = ?
                  WHERE rollnumber = ?
-                   AND subjectcode = ?
-                   AND courcecode = ?
-                   AND semoryear = ?`,
+                 AND subjectcode = ?
+                 AND courcecode = ?
+                 AND semoryear = ?`,
                 [
                     theorymarks,
                     practicalmarks,
@@ -176,10 +176,10 @@ exports.getMarksReport = async (req, res) => {
                  m.theorymarks,
                  m.practicalmarks
              FROM marks m
-                      JOIN students s
-                           ON m.rollnumber = s.rollnumber
+             JOIN students s
+             ON m.rollnumber = s.rollnumber
              WHERE m.courcecode = ?
-               AND m.semoryear = ?
+             AND m.semoryear = ?
              ORDER BY m.rollnumber`,
             [course, sem]
         );
@@ -240,8 +240,8 @@ exports.deleteSubjectMarks = async (req, res) => {
         await db.query(
             `DELETE FROM marks
              WHERE courcecode = ?
-               AND semoryear = ?
-               AND subjectcode = ?`,
+             AND semoryear = ?
+             AND subjectcode = ?`,
             [course, sem, subject]
         );
 
@@ -272,27 +272,20 @@ exports.getSubjectReport = async (req, res) => {
                  s.rollnumber,
                  s.firstname,
                  s.lastname,
-
                  m.theorymarks,
                  m.practicalmarks,
-
                  sub.theorymarks AS theoryfull,
                  sub.practicalmarks AS practicalfull
-
              FROM students s
-
-                      LEFT JOIN marks m
-                                ON m.rollnumber = s.rollnumber
-                                    AND m.subjectcode = ?
-                                    AND m.courcecode = ?
-                                    AND m.semoryear = ?
-
-                      JOIN subject sub
-                           ON sub.subjectcode = ?
-
+             LEFT JOIN marks m
+               ON m.rollnumber = s.rollnumber
+               AND m.subjectcode = ?
+               AND m.courcecode = ?
+               AND m.semoryear = ?
+             JOIN subject sub
+               ON sub.subjectcode = ?
              WHERE s.Courcecode = ?
-               AND s.semoryear = ?
-
+             AND s.semoryear = ?
              ORDER BY s.rollnumber`,
             [subject, course, sem, subject, course, sem]
         );
@@ -315,15 +308,11 @@ exports.getSubjectReport = async (req, res) => {
             return {
                 rollnumber: r.rollnumber,
                 name: r.firstname + " " + r.lastname,
-
                 theorymarks: theory,
                 practicalmarks: practical,
-
                 theoryfull: r.theoryfull,
                 practicalfull: r.practicalfull,
-
                 maxtotal: (r.theoryfull || 0) + (r.practicalfull || 0),
-
                 total,
                 grade
             };
@@ -356,7 +345,7 @@ exports.getSubjects = async (req, res) => {
             `SELECT subjectcode, subjectname
              FROM subject
              WHERE courcecode = ?
-               AND semoryear = ?
+             AND semoryear = ?
              ORDER BY subjectcode`,
             [course, sem]
         );
@@ -374,7 +363,7 @@ exports.getSubjects = async (req, res) => {
 
 
 // ============================
-// Get Student Marksheet (Semester Wise)
+// Get Student Marksheet
 // ============================
 
 exports.getStudentMarksheet = async (req, res) => {
@@ -398,31 +387,37 @@ exports.getStudentMarksheet = async (req, res) => {
                  s.rollnumber,
                  s.courcecode,
                  s.profilepic,
-
                  m.subjectcode,
                  m.subjectname,
-
                  sub.theorymarks AS theoryfull,
                  sub.practicalmarks AS practicalfull,
-
                  m.theorymarks,
                  m.practicalmarks
-
              FROM marks m
-
-                      JOIN students s
-                           ON m.rollnumber = s.rollnumber
-
-                      JOIN subject sub
-                           ON sub.subjectcode = m.subjectcode
-
+             JOIN students s
+             ON m.rollnumber = s.rollnumber
+             JOIN subject sub
+             ON sub.subjectcode = m.subjectcode
              WHERE m.courcecode = ?
-               AND m.semoryear = ?
-               AND m.rollnumber = ?
-
+             AND m.semoryear = ?
+             AND m.rollnumber = ?
              ORDER BY m.subjectcode`,
             [course, sem, roll]
         );
+
+        if (!rows.length) {
+            return res.json({
+                collegeName,
+                marks: []
+            });
+        }
+
+        // Ensure profile image always exists
+        rows.forEach(r => {
+            if (!r.profilepic) {
+                r.profilepic = "default.png";
+            }
+        });
 
         res.json({
             collegeName,

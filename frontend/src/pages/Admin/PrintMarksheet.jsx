@@ -153,185 +153,176 @@ const PrintMarksheet = () => {
 
     };
 
-    /* ================= MOBILE DIRECT DOWNLOAD ================= */
-
-    const mobileDownload = async () => {
-
-        if (!selectedCourse || !selectedSem || !selectedRoll) {
-            setError("Please select course, semester and student.");
-            return;
-        }
-
-        try {
-
-            const res = await api.get(
-                `/api/marks/student-marks?course=${selectedCourse}&sem=${selectedSem}&roll=${selectedRoll}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            setMarksheet(res.data);
-
-            setTimeout(() => {
-                downloadPDF();
-            }, 300);
-
-        } catch {
-            setError("Failed to download marksheet.");
-        }
-
-    };
-
     return (
 
-        <div>
+        <div className="p-6">
 
-            <h2>Student Marksheet</h2>
+            {/* PAGE TITLE */}
 
-            {error && <p>{error}</p>}
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+                Student Marksheet
+            </h2>
 
-            {/* ================= FILTERS ================= */}
+            {error && (
+                <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">
+                    {error}
+                </div>
+            )}
 
-            <div>
+            {/* ================= FILTER CARD ================= */}
 
-                {/* COURSE */}
+            <div className="bg-white shadow-md rounded-xl p-6 mb-6">
 
-                <select
-                    value={selectedCourse}
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                >
+                <div className="grid md:grid-cols-4 gap-4">
 
-                    <option value="">Select Course</option>
+                    {/* COURSE */}
 
-                    {courses.map(course => (
-                        <option key={course.id} value={course.course_code}>
-                            {course.course_name}
-                        </option>
-                    ))}
+                    <select
+                        value={selectedCourse}
+                        onChange={(e) => setSelectedCourse(e.target.value)}
+                        className="border rounded-lg px-3 py-2"
+                    >
+                        <option value="">Select Course</option>
 
-                </select>
+                        {courses.map(course => (
+                            <option key={course.id} value={course.course_code}>
+                                {course.course_name}
+                            </option>
+                        ))}
+                    </select>
 
-                {/* SEMESTER */}
+                    {/* SEMESTER */}
 
-                <select
-                    value={selectedSem}
-                    onChange={(e) => setSelectedSem(e.target.value)}
-                >
+                    <select
+                        value={selectedSem}
+                        onChange={(e) => setSelectedSem(e.target.value)}
+                        className="border rounded-lg px-3 py-2"
+                    >
+                        <option value="">Select {semLabel}</option>
 
-                    <option value="">Select {semLabel}</option>
+                        {semesterOptions.map(num => (
+                            <option key={num} value={num}>
+                                {semLabel} {num}
+                            </option>
+                        ))}
+                    </select>
 
-                    {semesterOptions.map(num => (
-                        <option key={num} value={num}>
-                            {semLabel} {num}
-                        </option>
-                    ))}
+                    {/* STUDENT */}
 
-                </select>
+                    <select
+                        value={selectedRoll}
+                        onChange={(e) => setSelectedRoll(e.target.value)}
+                        className="border rounded-lg px-3 py-2"
+                    >
+                        <option value="">Select Student</option>
 
-                {/* STUDENT */}
+                        {students.map(s => (
+                            <option key={s.rollnumber} value={s.rollnumber}>
+                                {s.rollnumber} - {s.firstname} {s.lastname}
+                            </option>
+                        ))}
+                    </select>
 
-                <select
-                    value={selectedRoll}
-                    onChange={(e) => setSelectedRoll(e.target.value)}
-                >
+                    {/* LOAD */}
 
-                    <option value="">Select Student</option>
+                    <button
+                        onClick={loadMarksheet}
+                        className="bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700"
+                    >
+                        Load Marksheet
+                    </button>
 
-                    {students.map(s => (
-                        <option key={s.rollnumber} value={s.rollnumber}>
-                            {s.rollnumber} - {s.firstname} {s.lastname}
-                        </option>
-                    ))}
-
-                </select>
-
-                {/* DESKTOP LOAD */}
-
-                <button
-                    onClick={loadMarksheet}
-                    className="hidden md:inline"
-                >
-                    Load Marksheet
-                </button>
-
-                {/* MOBILE DIRECT DOWNLOAD */}
-
-                <button
-                    onClick={mobileDownload}
-                    className="md:hidden"
-                >
-                    Download Marksheet
-                </button>
+                </div>
 
             </div>
 
-            {/* ================= MARKSHEET PREVIEW ================= */}
+            {/* ================= MARKSHEET ================= */}
 
             {marksheet && (
 
-                <div>
+                <div className="bg-white shadow-md rounded-xl p-6">
 
-                    <button onClick={downloadPDF}>
-                        Download PDF
-                    </button>
+                    {/* DOWNLOAD BUTTON */}
+
+                    <div className="flex justify-end mb-4">
+
+                        <button
+                            onClick={downloadPDF}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                        >
+                            Download PDF
+                        </button>
+
+                    </div>
+
+                    {/* MARKSHEET PREVIEW */}
 
                     <div
                         id="marksheet"
-                        style={{
-                            width: "800px",
-                            background: "white",
-                            color: "black",
-                            padding: "20px"
-                        }}
+                        className="bg-white text-black p-6 max-w-4xl mx-auto border"
                     >
 
-                        <h3>{marksheet.collegeName}</h3>
+                        <h2 className="text-center text-xl font-bold mb-4">
+                            {marksheet.collegeName}
+                        </h2>
 
-                        {/* STUDENT INFO */}
+                        {/* STUDENT HEADER */}
 
-                        <p>
-                            Name: {marksheet.marks[0].firstname} {marksheet.marks[0].lastname}
-                        </p>
+                        <div className="flex justify-between mb-6">
 
-                        <p>
-                            Roll: {marksheet.marks[0].rollnumber}
-                        </p>
+                            <div className="space-y-1">
 
-                        <p>
-                            Course: {marksheet.marks[0].courcecode}
-                        </p>
+                                <p>
+                                    <b>Name:</b>{" "}
+                                    {marksheet.marks[0].firstname}{" "}
+                                    {marksheet.marks[0].lastname}
+                                </p>
 
-                        <p>
-                            {semLabel}: {selectedSem}
-                        </p>
+                                <p>
+                                    <b>Roll:</b> {marksheet.marks[0].rollnumber}
+                                </p>
 
-                        {/* PROFILE PHOTO */}
+                                <p>
+                                    <b>Course:</b> {marksheet.marks[0].courcecode}
+                                </p>
 
-                        <img
-                            src={`${api.defaults.baseURL}/uploads/students/${marksheet.marks[0].profilepic || "default.png"}`}
-                            alt="student"
-                            width="96"
-                            height="96"
-                            crossOrigin="anonymous"
-                            onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = `${api.defaults.baseURL}/uploads/students/default.png`;
-                            }}
-                        />
+                                <p>
+                                    <b>{semLabel}:</b> {selectedSem}
+                                </p>
+
+                            </div>
+
+                            {/* PHOTO */}
+
+                            <img
+                                src={`${api.defaults.baseURL}/uploads/students/${marksheet.marks[0].profilepic || "default.png"}`}
+                                alt="student"
+                                className="w-24 h-24 object-cover border"
+                                crossOrigin="anonymous"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `${api.defaults.baseURL}/uploads/students/default.png`;
+                                }}
+                            />
+
+                        </div>
 
                         {/* MARKS TABLE */}
 
-                        <table border="1" width="100%">
+                        <table className="w-full border text-sm">
 
-                            <thead>
+                            <thead className="bg-gray-100">
+
                             <tr>
-                                <th>#</th>
-                                <th>Code</th>
-                                <th>Subject</th>
-                                <th>Theory</th>
-                                <th>Practical</th>
-                                <th>Total</th>
-                                <th>Grade</th>
+                                <th className="border p-2">#</th>
+                                <th className="border p-2">Code</th>
+                                <th className="border p-2">Subject</th>
+                                <th className="border p-2">Theory</th>
+                                <th className="border p-2">Practical</th>
+                                <th className="border p-2">Total</th>
+                                <th className="border p-2">Grade</th>
                             </tr>
+
                             </thead>
 
                             <tbody>
@@ -354,21 +345,29 @@ const PrintMarksheet = () => {
 
                                 return (
 
-                                    <tr key={i}>
+                                    <tr key={i} className="text-center">
 
-                                        <td>{i + 1}</td>
+                                        <td className="border p-2">{i + 1}</td>
 
-                                        <td>{m.subjectcode}</td>
+                                        <td className="border p-2">{m.subjectcode}</td>
 
-                                        <td>{m.subjectname}</td>
+                                        <td className="border p-2">{m.subjectname}</td>
 
-                                        <td>{theory}/{theoryFull}</td>
+                                        <td className="border p-2">
+                                            {theory}/{theoryFull}
+                                        </td>
 
-                                        <td>{practical}/{practicalFull}</td>
+                                        <td className="border p-2">
+                                            {practical}/{practicalFull}
+                                        </td>
 
-                                        <td>{total}/{maxTotal}</td>
+                                        <td className="border p-2">
+                                            {total}/{maxTotal}
+                                        </td>
 
-                                        <td>{grade}</td>
+                                        <td className="border p-2 font-semibold">
+                                            {grade}
+                                        </td>
 
                                     </tr>
 
