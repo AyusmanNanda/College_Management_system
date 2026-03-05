@@ -20,6 +20,10 @@ import Students from "./pages/Admin/Students.jsx";
 import TakeAttendance from "./pages/Admin/TakeAttendance";
 import EditAttendance from "./pages/Admin/EditAttendance";
 import AttendanceReport from "./pages/Admin/AttendanceReport";
+import EnterMarks from "./pages/Admin/EnterMarks";
+import EditMarks from "./pages/Admin/EditMarks";
+import MarksReport from "./pages/Admin/MarksReport";
+import PrintMarksheet from "./pages/Admin/PrintMarksheet";
 
 import FacultyDashboard from "./pages/Faculty/FacultyDashboard";
 import StudentDashboard from "./pages/Student/StudentDashboard";
@@ -105,6 +109,10 @@ function App() {
                     <Route path="take-attendance" element={<TakeAttendance />} />
                     <Route path="edit-attendance" element={<EditAttendance />} />
                     <Route path="attendance-report" element={<AttendanceReport />} />
+                    <Route path="enter-marks" element={<EnterMarks />} />
+                    <Route path="edit-marks" element={<EditMarks />} />
+                    <Route path="marks-report" element={<MarksReport />} />
+                    <Route path="print-marksheet" element={<PrintMarksheet />} />
                 </Route>
 
                 {/* ===================== Faculty ===================== */}

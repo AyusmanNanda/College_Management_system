@@ -1,3 +1,26 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@page {
+    size: A4;
+    margin: 0;
+}
+
+@media print {
+
+    body * {
+        visibility: hidden;
+    }
+
+    #marksheet, #marksheet * {
+        visibility: visible;
+    }
+
+    #marksheet {
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+}
