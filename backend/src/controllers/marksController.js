@@ -397,6 +397,7 @@ exports.getStudentMarksheet = async (req, res) => {
                  s.lastname,
                  s.rollnumber,
                  s.courcecode,
+                 s.profilepic,
 
                  m.subjectcode,
                  m.subjectname,

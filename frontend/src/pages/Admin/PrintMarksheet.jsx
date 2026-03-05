@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -8,374 +8,383 @@ const PrintMarksheet = () => {
     const token = localStorage.getItem("token");
 
     const [courses, setCourses] = useState([]);
-    const [sems, setSems] = useState([]);
     const [students, setStudents] = useState([]);
 
-    const [course, setCourse] = useState("");
-    const [sem, setSem] = useState("");
-    const [roll, setRoll] = useState("");
+    const [selectedCourse, setSelectedCourse] = useState("");
+    const [selectedSem, setSelectedSem] = useState("");
+    const [selectedRoll, setSelectedRoll] = useState("");
 
-    const [data, setData] = useState([]);
-    const [name, setName] = useState("");
-    const [collegeName, setCollegeName] = useState("");
+    const [marksheet, setMarksheet] = useState(null);
+    const [error, setError] = useState("");
 
-    // =========================
-    // Load Courses
-    // =========================
+    /* ================= FETCH COURSES ================= */
+
     useEffect(() => {
 
-        const loadCourses = async () => {
+        const fetchCourses = async () => {
+            try {
 
-            const res = await api.get("/api/courses", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+                const res = await api.get("/api/courses", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
 
-            setCourses(res.data);
+                setCourses(res.data || []);
 
+            } catch {
+                setCourses([]);
+            }
         };
 
-        loadCourses();
+        fetchCourses();
 
     }, []);
 
-    // =========================
-    // Handle Course Change
-    // =========================
-    const handleCourseChange = (value) => {
+    /* ================= COURSE OBJECT ================= */
 
-        setCourse(value);
-        setSem("");
-        setRoll("");
-        setStudents([]);
+    const selectedCourseObj = useMemo(() => {
+        return courses.find(c => c.course_code === selectedCourse);
+    }, [courses, selectedCourse]);
 
-        const selected = courses.find(c => c.course_code === value);
+    const semLabel =
+        selectedCourseObj?.sem_or_year?.toLowerCase() === "year"
+            ? "Year"
+            : "Semester";
 
-        if (!selected) return;
+    const semesterOptions = useMemo(() => {
 
-        const arr = [];
+        if (!selectedCourseObj) return [];
 
-        for (let i = 1; i <= selected.total_semesters; i++) {
-            arr.push(i);
-        }
+        const total = Number(selectedCourseObj.total_semesters);
 
-        setSems(arr);
+        return Array.from({ length: total }, (_, i) => i + 1);
 
-    };
+    }, [selectedCourseObj]);
 
-    // =========================
-    // Load Students
-    // =========================
+    /* ================= LOAD STUDENTS ================= */
+
     useEffect(() => {
 
-        if (!course || !sem) return;
+        if (!selectedCourse || !selectedSem) return;
 
-        const loadStudents = async () => {
+        const fetchStudents = async () => {
 
-            const res = await api.get(
-                `/api/marks/students?course=${course}&sem=${sem}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
+            try {
 
-            setStudents(res.data);
+                const res = await api.get(
+                    `/api/marks/students?course=${selectedCourse}&sem=${selectedSem}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                setStudents(res.data || []);
+
+            } catch {
+                setStudents([]);
+            }
 
         };
 
-        loadStudents();
+        fetchStudents();
 
-    }, [course, sem]);
+    }, [selectedCourse, selectedSem]);
 
-    // =========================
-    // Load Marksheet
-    // =========================
+    /* ================= LOAD MARKSHEET ================= */
+
     const loadMarksheet = async () => {
 
-        const res = await api.get(
-            `/api/marks/student-marks?course=${course}&sem=${sem}&roll=${roll}`,
-            {
-                headers: { Authorization: `Bearer ${token}` }
-            }
-        );
+        if (!selectedCourse || !selectedSem || !selectedRoll) {
+            setError("Please select course, semester and student.");
+            return;
+        }
 
-        setCollegeName(res.data.collegeName);
-        setData(res.data.marks);
+        try {
 
-        if (res.data.marks.length > 0) {
-            setName(
-                res.data.marks[0].firstname +
-                " " +
-                res.data.marks[0].lastname
+            const res = await api.get(
+                `/api/marks/student-marks?course=${selectedCourse}&sem=${selectedSem}&roll=${selectedRoll}`,
+                { headers: { Authorization: `Bearer ${token}` } }
             );
+
+            setMarksheet(res.data);
+            setError("");
+
+        } catch {
+            setError("Failed to load marksheet.");
         }
 
     };
 
-    // =========================
-    // Download PDF
-    // =========================
+    /* ================= GRADE FUNCTION ================= */
+
+    const getGrade = (percentage) => {
+
+        if (percentage >= 90) return "O";
+        if (percentage >= 80) return "A+";
+        if (percentage >= 70) return "A";
+        if (percentage >= 60) return "B+";
+        if (percentage >= 50) return "B";
+        if (percentage >= 40) return "C";
+        return "F";
+
+    };
+
+    /* ================= DOWNLOAD PDF ================= */
+
     const downloadPDF = async () => {
 
         const element = document.getElementById("marksheet");
 
+        if (!element) return;
+
         const canvas = await html2canvas(element, {
-            scale: 2
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true
         });
 
         const imgData = canvas.toDataURL("image/png");
 
         const pdf = new jsPDF("p", "mm", "a4");
 
-        const imgWidth = 190;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const width = 210;
+        const height = (canvas.height * width) / canvas.width;
 
-        pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+        pdf.addImage(imgData, "PNG", 0, 0, width, height);
 
-        pdf.save(`marksheet_${roll}.pdf`);
+        pdf.save(`marksheet-${selectedRoll}.pdf`);
 
     };
 
-    // =========================
-    // Calculate Totals
-    // =========================
-    const totalObtained = data.reduce(
-        (sum, r) => sum + (r.theorymarks || 0) + (r.practicalmarks || 0),
-        0
-    );
+    /* ================= MOBILE DIRECT DOWNLOAD ================= */
 
-    const totalFull = data.reduce(
-        (sum, r) => sum + (r.theoryfull || 0) + (r.practicalfull || 0),
-        0
-    );
+    const mobileDownload = async () => {
 
-    const percentage = totalFull ? (totalObtained / totalFull) * 100 : 0;
+        if (!selectedCourse || !selectedSem || !selectedRoll) {
+            setError("Please select course, semester and student.");
+            return;
+        }
 
-    // =========================
-    // Final Grade
-    // =========================
-    let finalGrade = "F";
+        try {
 
-    if (percentage >= 90) finalGrade = "O";
-    else if (percentage >= 80) finalGrade = "A+";
-    else if (percentage >= 70) finalGrade = "A";
-    else if (percentage >= 60) finalGrade = "B+";
-    else if (percentage >= 50) finalGrade = "B";
-    else if (percentage >= 40) finalGrade = "C";
+            const res = await api.get(
+                `/api/marks/student-marks?course=${selectedCourse}&sem=${selectedSem}&roll=${selectedRoll}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setMarksheet(res.data);
+
+            setTimeout(() => {
+                downloadPDF();
+            }, 300);
+
+        } catch {
+            setError("Failed to download marksheet.");
+        }
+
+    };
 
     return (
 
         <div>
 
-            <h2>Print Marksheet</h2>
+            <h2>Student Marksheet</h2>
 
-            {/* Course */}
-            <select
-                value={course}
-                onChange={(e) => handleCourseChange(e.target.value)}
-            >
-                <option value="">Select Course</option>
+            {error && <p>{error}</p>}
 
-                {courses.map(c => (
-                    <option key={c.course_code} value={c.course_code}>
-                        {c.course_name}
-                    </option>
-                ))}
-            </select>
+            {/* ================= FILTERS ================= */}
 
-            {/* Semester */}
-            <select
-                value={sem}
-                onChange={(e) => setSem(e.target.value)}
-            >
-                <option value="">Select Semester</option>
+            <div>
 
-                {sems.map(s => (
-                    <option key={s} value={s}>
-                        {s}
-                    </option>
-                ))}
-            </select>
+                {/* COURSE */}
 
-            {/* Student */}
-            <select
-                value={roll}
-                onChange={(e) => setRoll(e.target.value)}
-            >
-                <option value="">Select Student</option>
-
-                {students.map(s => (
-                    <option key={s.rollnumber} value={s.rollnumber}>
-                        {s.rollnumber} - {s.firstname} {s.lastname}
-                    </option>
-                ))}
-            </select>
-
-            <button onClick={loadMarksheet}>
-                Load Marksheet
-            </button>
-
-            <button onClick={downloadPDF}>
-                Download PDF
-            </button>
-
-            <br /><br />
-
-            {/* ========================= */}
-            {/* MARKSHEET */}
-            {/* ========================= */}
-
-            <div
-                id="marksheet"
-                style={{
-                    width: "210mm",
-                    minHeight: "297mm",
-                    margin: "auto",
-                    padding: "20mm",
-                    background: "white",
-                    color: "black",
-                    fontFamily: "Arial, sans-serif",
-                    boxSizing: "border-box"
-                }}
-            >
-
-                {/* Header */}
-
-                <div style={{ textAlign: "center", marginBottom: "20px" }}>
-                    <h1 style={{ margin: 0 }}>{collegeName}</h1>
-                    <h3 style={{ margin: "5px 0" }}>Semester Marksheet</h3>
-                </div>
-
-                {/* Student Info */}
-
-                <div style={{ marginBottom: "20px" }}>
-                    <p><b>Name:</b> {name}</p>
-                    <p><b>Roll Number:</b> {roll}</p>
-                    <p><b>Course:</b> {course}</p>
-                    <p><b>Semester:</b> {sem}</p>
-                </div>
-
-                {/* Marks Table */}
-
-                <table
-                    style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        marginTop: "10px"
-                    }}
+                <select
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
                 >
 
-                    <thead>
+                    <option value="">Select Course</option>
 
-                    <tr>
-                        <th style={{border:"1px solid black",padding:"6px"}}>Subject Code</th>
-                        <th style={{border:"1px solid black",padding:"6px"}}>Subject</th>
-                        <th style={{border:"1px solid black",padding:"6px"}}>Theory</th>
-                        <th style={{border:"1px solid black",padding:"6px"}}>Practical</th>
-                        <th style={{border:"1px solid black",padding:"6px"}}>Total</th>
-                        <th style={{border:"1px solid black",padding:"6px"}}>Grade</th>
-                    </tr>
+                    {courses.map(course => (
+                        <option key={course.id} value={course.course_code}>
+                            {course.course_name}
+                        </option>
+                    ))}
 
-                    </thead>
+                </select>
 
-                    <tbody>
+                {/* SEMESTER */}
 
-                    {data.map((row, i) => {
-
-                        const theory = row.theorymarks || 0;
-                        const practical = row.practicalmarks || 0;
-
-                        const theoryFull = row.theoryfull || 0;
-                        const practicalFull = row.practicalfull || 0;
-
-                        const total = theory + practical;
-                        const totalFullMarks = theoryFull + practicalFull;
-
-                        const percent = totalFullMarks
-                            ? (total / totalFullMarks) * 100
-                            : 0;
-
-                        let grade = "F";
-
-                        if (percent >= 90) grade = "O";
-                        else if (percent >= 80) grade = "A+";
-                        else if (percent >= 70) grade = "A";
-                        else if (percent >= 60) grade = "B+";
-                        else if (percent >= 50) grade = "B";
-                        else if (percent >= 40) grade = "C";
-
-                        return (
-
-                            <tr key={i}>
-
-                                <td style={{border:"1px solid black",padding:"6px"}}>
-                                    {row.subjectcode}
-                                </td>
-
-                                <td style={{border:"1px solid black",padding:"6px"}}>
-                                    {row.subjectname}
-                                </td>
-
-                                <td style={{border:"1px solid black",padding:"6px"}}>
-                                    {theory} / {theoryFull}
-                                </td>
-
-                                <td style={{border:"1px solid black",padding:"6px"}}>
-                                    {practical} / {practicalFull}
-                                </td>
-
-                                <td style={{border:"1px solid black",padding:"6px"}}>
-                                    {total} / {totalFullMarks}
-                                </td>
-
-                                <td style={{border:"1px solid black",padding:"6px"}}>
-                                    {grade}
-                                </td>
-
-                            </tr>
-
-                        );
-
-                    })}
-
-                    </tbody>
-
-                </table>
-
-                <br />
-
-                {/* Summary */}
-
-                <h3>Total Marks: {totalObtained} / {totalFull}</h3>
-                <h3>Percentage: {percentage.toFixed(2)}%</h3>
-                <h3>Final Grade: {finalGrade}</h3>
-
-                <br /><br />
-
-                {/* Footer */}
-
-                <div
-                    style={{
-                        marginTop: "40px",
-                        display: "flex",
-                        justifyContent: "space-between"
-                    }}
+                <select
+                    value={selectedSem}
+                    onChange={(e) => setSelectedSem(e.target.value)}
                 >
 
-                    <div>
-                        <p>Generated On: {new Date().toLocaleDateString()}</p>
-                    </div>
+                    <option value="">Select {semLabel}</option>
 
-                    <div style={{ textAlign: "center" }}>
-                        __________________________
-                        <br />
-                        Authorized by
-                        <br />
-                        College Administration
-                    </div>
+                    {semesterOptions.map(num => (
+                        <option key={num} value={num}>
+                            {semLabel} {num}
+                        </option>
+                    ))}
 
-                </div>
+                </select>
+
+                {/* STUDENT */}
+
+                <select
+                    value={selectedRoll}
+                    onChange={(e) => setSelectedRoll(e.target.value)}
+                >
+
+                    <option value="">Select Student</option>
+
+                    {students.map(s => (
+                        <option key={s.rollnumber} value={s.rollnumber}>
+                            {s.rollnumber} - {s.firstname} {s.lastname}
+                        </option>
+                    ))}
+
+                </select>
+
+                {/* DESKTOP LOAD */}
+
+                <button
+                    onClick={loadMarksheet}
+                    className="hidden md:inline"
+                >
+                    Load Marksheet
+                </button>
+
+                {/* MOBILE DIRECT DOWNLOAD */}
+
+                <button
+                    onClick={mobileDownload}
+                    className="md:hidden"
+                >
+                    Download Marksheet
+                </button>
 
             </div>
+
+            {/* ================= MARKSHEET PREVIEW ================= */}
+
+            {marksheet && (
+
+                <div>
+
+                    <button onClick={downloadPDF}>
+                        Download PDF
+                    </button>
+
+                    <div
+                        id="marksheet"
+                        style={{
+                            width: "800px",
+                            background: "white",
+                            color: "black",
+                            padding: "20px"
+                        }}
+                    >
+
+                        <h3>{marksheet.collegeName}</h3>
+
+                        {/* STUDENT INFO */}
+
+                        <p>
+                            Name: {marksheet.marks[0].firstname} {marksheet.marks[0].lastname}
+                        </p>
+
+                        <p>
+                            Roll: {marksheet.marks[0].rollnumber}
+                        </p>
+
+                        <p>
+                            Course: {marksheet.marks[0].courcecode}
+                        </p>
+
+                        <p>
+                            {semLabel}: {selectedSem}
+                        </p>
+
+                        {/* PROFILE PHOTO */}
+
+                        <img
+                            src={`${api.defaults.baseURL}/uploads/students/${marksheet.marks[0].profilepic || "default.png"}`}
+                            alt="student"
+                            width="96"
+                            height="96"
+                            crossOrigin="anonymous"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = `${api.defaults.baseURL}/uploads/students/default.png`;
+                            }}
+                        />
+
+                        {/* MARKS TABLE */}
+
+                        <table border="1" width="100%">
+
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Code</th>
+                                <th>Subject</th>
+                                <th>Theory</th>
+                                <th>Practical</th>
+                                <th>Total</th>
+                                <th>Grade</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                            {marksheet.marks.map((m, i) => {
+
+                                const theory = m.theorymarks || 0;
+                                const practical = m.practicalmarks || 0;
+
+                                const theoryFull = m.theoryfull || 0;
+                                const practicalFull = m.practicalfull || 0;
+
+                                const total = theory + practical;
+                                const maxTotal = theoryFull + practicalFull;
+
+                                const percentage =
+                                    maxTotal ? (total / maxTotal) * 100 : 0;
+
+                                const grade = getGrade(percentage);
+
+                                return (
+
+                                    <tr key={i}>
+
+                                        <td>{i + 1}</td>
+
+                                        <td>{m.subjectcode}</td>
+
+                                        <td>{m.subjectname}</td>
+
+                                        <td>{theory}/{theoryFull}</td>
+
+                                        <td>{practical}/{practicalFull}</td>
+
+                                        <td>{total}/{maxTotal}</td>
+
+                                        <td>{grade}</td>
+
+                                    </tr>
+
+                                );
+
+                            })}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            )}
 
         </div>
 
