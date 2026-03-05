@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import api from "../../utils/api";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -148,6 +149,8 @@ const PrintMarksheet = () => {
     };
 
     const marksheetCode = `MS-${selectedCourse}-${selectedSem}-${selectedRoll}`;
+    const verificationUrl =
+        `${window.location.origin}/verify/marksheet/${marksheetCode}`;
     const summary = marksheet?.summary;
 
     const [hash, setHash] = useState("");
@@ -292,10 +295,32 @@ const PrintMarksheet = () => {
 
                     <div
                         id="marksheet"
-                        className="bg-white text-black mx-auto border border-gray-400 flex flex-col"
+                        className="relative bg-white text-black mx-auto border border-gray-400 flex flex-col overflow-hidden"
                         style={{ width: "794px", height: "1123px", padding: "48px" }}
                     >
+                        {/* PROFESSIONAL LOGO WATERMARK */}
 
+                        <div
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                            style={{ zIndex: 0 }}
+                        >
+                            <img
+                                src={
+                                    marksheet?.collegeLogo
+                                        ? `${api.defaults.baseURL}${marksheet.collegeLogo}`
+                                        : `${api.defaults.baseURL}/uploads/admin/default.png`
+                                }
+                                alt="watermark"
+                                crossOrigin="anonymous"
+                                style={{
+                                    width: "420px",
+                                    opacity: 0.06,
+                                    filter: "grayscale(100%)",
+                                    objectFit: "contain"
+                                }}
+                            />
+                        </div>
+                        <div className="relative z-10 flex flex-col h-full">
                         {/* HEADER */}
 
                         <div className="text-center border-b border-gray-500 pb-5 mb-8">
@@ -588,11 +613,19 @@ const PrintMarksheet = () => {
 
                                 {/* CENTER */}
 
-                                <div className="text-center text-gray-600 px-4">
+                                {/* CENTER */}
 
-                                    This is a digitally generated marksheet.
-                                    The integrity of this document can be verified
-                                    using the SHA256 hash printed below.
+                                <div className="flex flex-col items-center justify-center">
+
+                                    <QRCodeCanvas
+                                        value={verificationUrl}
+                                        size={90}
+                                        includeMargin={true}
+                                    />
+
+                                    <p className="text-[11px] text-gray-600 mt-2 text-center">
+                                        Scan to verify marksheet
+                                    </p>
 
                                 </div>
 
@@ -616,15 +649,21 @@ const PrintMarksheet = () => {
 
                             {/* HASH */}
 
-                            <div className="mt-6 text-center text-[10px] break-all text-gray-600">
+                            <div className="mt-6 text-center text-[10px] text-gray-600 space-y-1 break-all">
 
-                                <span className="font-semibold">SHA256:</span>{" "}
-                                {hash}
+                                <p>
+                                    <span className="font-semibold">SHA256:</span> {hash}
+                                </p>
+
+                                <p>
+                                    Scan the QR code above to verify authenticity of this marksheet.
+                                </p>
 
                             </div>
 
                         </div>
 
+                    </div>
                     </div>
 
                 </div>
