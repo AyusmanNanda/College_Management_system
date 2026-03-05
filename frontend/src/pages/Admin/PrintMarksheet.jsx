@@ -331,8 +331,8 @@ const PrintMarksheet = () => {
 
                     <div
                         id="marksheet"
-                        className="bg-white text-black p-12 mx-auto border border-gray-400"
-                        style={{ width: "794px", minHeight: "1123px" }}
+                        className="bg-white text-black mx-auto border border-gray-400 flex flex-col"
+                        style={{ width: "794px", height: "1123px", padding: "48px" }}
                     >
 
                         {/* HEADER */}
@@ -363,6 +363,7 @@ const PrintMarksheet = () => {
                             </p>
 
                         </div>
+                        <div className="flex-1 flex flex-col justify-center">
 
                         {/* STUDENT INFO */}
 
@@ -608,6 +609,7 @@ const PrintMarksheet = () => {
                             </div>
 
                         )}
+                        </div>
                         <div className="mt-12 pt-6 border-t border-gray-400 text-xs">
 
                             <div className="grid grid-cols-3 items-end">
