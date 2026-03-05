@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
+import ConfirmSaveModal from "./ConfirmSaveModal";
 
 const EnterMarks = () => {
 
@@ -19,6 +20,57 @@ const EnterMarks = () => {
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+
+    const [showSaveModal, setShowSaveModal] = useState(false);
+
+    /* ================= UX HELPERS ================= */
+
+    const handleEnterMove = (e) => {
+
+        if (e.key === "Enter") {
+
+            e.preventDefault();
+
+            const table = e.target.closest("table");
+            const inputs = table.querySelectorAll("input[type='number']");
+            const index = Array.from(inputs).indexOf(e.target);
+
+            if (inputs[index + 1]) {
+                inputs[index + 1].focus();
+                inputs[index + 1].select();
+            }
+
+        }
+
+        if (e.key === "ArrowDown") {
+
+            const table = e.target.closest("table");
+            const inputs = table.querySelectorAll("input[type='number']");
+            const index = Array.from(inputs).indexOf(e.target);
+
+            if (inputs[index + 1]) {
+                inputs[index + 1].focus();
+            }
+
+        }
+
+        if (e.key === "ArrowUp") {
+
+            const table = e.target.closest("table");
+            const inputs = table.querySelectorAll("input[type='number']");
+            const index = Array.from(inputs).indexOf(e.target);
+
+            if (inputs[index - 1]) {
+                inputs[index - 1].focus();
+            }
+
+        }
+
+    };
+
+    const handleFocus = (e) => {
+        e.target.select();
+    };
 
     /* ================= FETCH COURSES ================= */
 
@@ -210,18 +262,38 @@ const EnterMarks = () => {
     };
 
     return (
-        <div>
-
-            <h2>Enter Marks</h2>
-
-            {error && <p>{error}</p>}
-            {success && <p>{success}</p>}
+        <div className="space-y-10">
 
             <div>
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                    Enter Marks
+                </h2>
+
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Enter student marks for the selected subject.
+                </p>
+            </div>
+
+            {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm rounded-md">
+                    {success}
+                </div>
+            )}
+
+            {/* FILTER CARD */}
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
 
                 <select
                     value={selectedCourse}
                     onChange={(e) => setSelectedCourse(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
 
@@ -236,6 +308,7 @@ const EnterMarks = () => {
                 <select
                     value={selectedSem}
                     onChange={(e) => setSelectedSem(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select {semLabel}</option>
 
@@ -250,6 +323,7 @@ const EnterMarks = () => {
                 <select
                     value={selectedSubject}
                     onChange={(e) => handleSubjectChange(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Subject</option>
 
@@ -265,82 +339,128 @@ const EnterMarks = () => {
 
             {selectedSubject && students.length > 0 && (
 
-                <table border="1">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
 
-                    <thead>
-                    <tr>
-                        <th>Roll</th>
-                        <th>Name</th>
-                        <th>Theory</th>
+                    <div className="w-full overflow-x-auto">
 
-                        {subjectDetails?.practicalmarks > 0 && (
-                            <th>Practical</th>
-                        )}
+                        <table className="w-full text-xs sm:text-sm text-left">
 
-                    </tr>
-                    </thead>
+                            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
 
-                    <tbody>
+                            <tr>
+                                <th className="px-4 py-3">Student</th>
+                                <th className="px-4 py-3">Theory</th>
 
-                    {students.map(student => (
+                                {subjectDetails?.practicalmarks > 0 && (
+                                    <th className="px-4 py-3">Practical</th>
+                                )}
 
-                        <tr key={student.rollnumber}>
+                            </tr>
 
-                            <td>{student.rollnumber}</td>
+                            </thead>
 
-                            <td>
-                                {student.firstname} {student.lastname}
-                            </td>
+                            <tbody>
 
-                            <td>
-                                <input
-                                    type="number"
-                                    max={subjectDetails?.theorymarks}
-                                    value={marks[student.rollnumber]?.theory || ""}
-                                    onChange={(e) =>
-                                        handleMarkChange(
-                                            student.rollnumber,
-                                            "theory",
-                                            e.target.value
-                                        )
-                                    }
-                                />
-                            </td>
+                            {students.map(student => (
 
-                            {subjectDetails?.practicalmarks > 0 && (
+                                <tr
+                                    key={student.rollnumber}
+                                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                                >
 
-                                <td>
-                                    <input
-                                        type="number"
-                                        max={subjectDetails?.practicalmarks}
-                                        value={marks[student.rollnumber]?.practical || ""}
-                                        onChange={(e) =>
-                                            handleMarkChange(
-                                                student.rollnumber,
-                                                "practical",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </td>
+                                    <td className="px-4 py-3 dark:text-gray-200">
 
-                            )}
+                                        <div className="flex flex-col">
 
-                        </tr>
+                                            <span className="font-medium">
+                                                {student.firstname} {student.lastname}
+                                            </span>
 
-                    ))}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                {student.rollnumber}
+                                            </span>
 
-                    </tbody>
+                                        </div>
 
-                </table>
+                                    </td>
+
+                                    <td className="px-4 py-3">
+
+                                        <input
+                                            type="number"
+                                            max={subjectDetails?.theorymarks}
+                                            value={marks[student.rollnumber]?.theory || ""}
+                                            onChange={(e) =>
+                                                handleMarkChange(
+                                                    student.rollnumber,
+                                                    "theory",
+                                                    e.target.value
+                                                )
+                                            }
+                                            onKeyDown={handleEnterMove}
+                                            onFocus={handleFocus}
+                                            className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-2 focus:ring-gray-500 outline-none"
+                                        />
+
+                                    </td>
+
+                                    {subjectDetails?.practicalmarks > 0 && (
+
+                                        <td className="px-4 py-3">
+
+                                            <input
+                                                type="number"
+                                                max={subjectDetails?.practicalmarks}
+                                                value={marks[student.rollnumber]?.practical || ""}
+                                                onChange={(e) =>
+                                                    handleMarkChange(
+                                                        student.rollnumber,
+                                                        "practical",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                onKeyDown={handleEnterMove}
+                                                onFocus={handleFocus}
+                                                className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-2 focus:ring-gray-500 outline-none"
+                                            />
+
+                                        </td>
+
+                                    )}
+
+                                </tr>
+
+                            ))}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
+
+                        <button
+                            onClick={() => setShowSaveModal(true)}
+                            className="w-full sm:w-auto px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                        >
+                            Save Marks
+                        </button>
+
+                    </div>
+
+                </div>
 
             )}
 
-            {students.length > 0 && (
-                <button onClick={saveMarks}>
-                    Save Marks
-                </button>
-            )}
+            <ConfirmSaveModal
+                show={showSaveModal}
+                title="Confirm Marks Save"
+                message="Are you sure you want to save marks for this subject?"
+                confirmText="Save Marks"
+                onCancel={() => setShowSaveModal(false)}
+                onConfirm={saveMarks}
+            />
 
         </div>
     );
