@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 
 const MarksReport = () => {
@@ -6,21 +6,21 @@ const MarksReport = () => {
     const token = localStorage.getItem("token");
 
     const [courses, setCourses] = useState([]);
-    const [sems, setSems] = useState([]);
     const [subjects, setSubjects] = useState([]);
-    const [data, setData] = useState([]);
+    const [reportData, setReportData] = useState([]);
 
-    const [course, setCourse] = useState("");
-    const [sem, setSem] = useState("");
-    const [subject, setSubject] = useState("");
+    const [selectedCourse, setSelectedCourse] = useState("");
+    const [selectedSem, setSelectedSem] = useState("");
+    const [selectedSubject, setSelectedSubject] = useState("");
 
-    // =============================
-    // Load Courses
-    // =============================
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    /* ================= FETCH COURSES ================= */
 
     useEffect(() => {
 
-        const loadCourses = async () => {
+        const fetchCourses = async () => {
 
             try {
 
@@ -28,60 +28,52 @@ const MarksReport = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                setCourses(res.data);
+                setCourses(res.data || []);
 
-            } catch (error) {
+            } catch {
 
-                console.error("Error loading courses", error);
+                setError("Failed to load courses.");
 
             }
 
         };
 
-        loadCourses();
+        if (token) fetchCourses();
 
-    }, []);
+    }, [token]);
 
-    // =============================
-    // Handle Course Change
-    // =============================
+    /* ================= DERIVED SEM OPTIONS ================= */
 
-    const handleCourseChange = (value) => {
+    const selectedCourseObj = useMemo(() => {
+        return courses.find(c => c.course_code === selectedCourse);
+    }, [courses, selectedCourse]);
 
-        setCourse(value);
-        setSem("");
-        setSubject("");
-        setSubjects([]);
-        setData([]);
+    const semesterOptions = useMemo(() => {
 
-        const selected = courses.find(c => c.course_code === value);
+        if (!selectedCourseObj) return [];
 
-        if (!selected) return;
+        return Array.from(
+            { length: Number(selectedCourseObj.total_semesters) },
+            (_, i) => i + 1
+        );
 
-        const arr = [];
+    }, [selectedCourseObj]);
 
-        for (let i = 1; i <= selected.total_semesters; i++) {
-            arr.push(i);
-        }
-
-        setSems(arr);
-
-    };
-
-    // =============================
-    // Load Subjects
-    // =============================
+    /* ================= FETCH SUBJECTS ================= */
 
     useEffect(() => {
 
-        if (!course || !sem) return;
+        if (!selectedCourse || !selectedSem) {
+            setSubjects([]);
+            return;
+        }
 
-        const loadSubjects = async () => {
+        const fetchSubjects = async () => {
 
             try {
 
                 const res = await api.get(
-                    `/api/marks/subjects?course=${course}&sem=${sem}`,
+                    `/api/marks/subjects?course=${selectedCourse}&sem=${selectedSem}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -89,158 +81,311 @@ const MarksReport = () => {
                     }
                 );
 
-                setSubjects(res.data);
+                setSubjects(res.data || []);
 
-            } catch (error) {
+            } catch {
 
-                console.error("Error loading subjects", error);
+                setError("Failed to load subjects.");
 
             }
 
         };
 
-        loadSubjects();
+        fetchSubjects();
 
-    }, [course, sem]);
+    }, [selectedCourse, selectedSem, token]);
 
-    // =============================
-    // Load Subject Report
-    // =============================
+    /* ================= FETCH REPORT ================= */
 
-    const loadReport = async () => {
+    useEffect(() => {
 
-        if (!course || !sem || !subject) return;
-
-        try {
-
-            const res = await api.get(
-                `/api/marks/subject-report?course=${course}&sem=${sem}&subject=${subject}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
-
-            setData(res.data);
-
-        } catch (error) {
-
-            console.error("Error loading report", error);
-
+        if (!selectedSubject) {
+            setReportData([]);
+            return;
         }
 
-    };
+        const fetchReport = async () => {
+
+            try {
+
+                setLoading(true);
+
+                const res = await api.get(
+                    `/api/marks/subject-report?course=${selectedCourse}&sem=${selectedSem}&subject=${selectedSubject}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+
+                setReportData(res.data || []);
+
+            } catch {
+
+                setError("Failed to load report.");
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+        fetchReport();
+
+    }, [selectedSubject, selectedCourse, selectedSem, token]);
+
+    /* ================= SUMMARY ================= */
+
+    const summary = useMemo(() => {
+
+        if (reportData.length === 0) return null;
+
+        const totalStudents = reportData.length;
+
+        const avg =
+            reportData.reduce((acc, s) => acc + Number(s.total), 0) /
+            totalStudents;
+
+        const highest = Math.max(...reportData.map(s => Number(s.total)));
+        const lowest = Math.min(...reportData.map(s => Number(s.total)));
+
+        return {
+            totalStudents,
+            average: avg.toFixed(2),
+            highest,
+            lowest
+        };
+
+    }, [reportData]);
 
     return (
+        <div className="space-y-10">
 
-        <div>
-
-            <h2>Subject Wise Marks Report</h2>
+            {/* HEADER */}
 
             <div>
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                    Marks Report
+                </h2>
 
-                {/* Course */}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Subject-wise marks analytics.
+                </p>
+            </div>
+
+            {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
+                    {error}
+                </div>
+            )}
+
+            {/* FILTER SECTION */}
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
 
                 <select
-                    value={course}
-                    onChange={(e) => handleCourseChange(e.target.value)}
+                    value={selectedCourse}
+                    onChange={(e) => {
+                        setSelectedCourse(e.target.value);
+                        setSelectedSem("");
+                        setSelectedSubject("");
+                        setReportData([]);
+                    }}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
 
-                    {courses.map(c => (
-                        <option key={c.course_code} value={c.course_code}>
-                            {c.course_name}
+                    {courses.map(course => (
+                        <option key={course.id} value={course.course_code}>
+                            {course.course_name}
                         </option>
                     ))}
-
                 </select>
 
-                {/* Semester */}
-
                 <select
-                    value={sem}
+                    value={selectedSem}
                     onChange={(e) => {
-                        setSem(e.target.value);
-                        setSubject("");
-                        setData([]);
+                        setSelectedSem(e.target.value);
+                        setSelectedSubject("");
+                        setReportData([]);
                     }}
+                    disabled={!selectedCourse}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Semester</option>
 
-                    {sems.map(s => (
-                        <option key={s} value={s}>
-                            {s}
+                    {semesterOptions.map(sem => (
+                        <option key={sem} value={sem}>
+                            Semester {sem}
                         </option>
                     ))}
-
                 </select>
 
-                {/* Subject */}
-
                 <select
-                    value={subject}
-                    onChange={(e) => {
-                        setSubject(e.target.value);
-                        setData([]);
-                    }}
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    disabled={!selectedSem}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Subject</option>
 
-                    {subjects.map(s => (
-                        <option key={s.subjectcode} value={s.subjectcode}>
-                            {s.subjectname}
+                    {subjects.map(sub => (
+                        <option key={sub.subjectcode} value={sub.subjectcode}>
+                            {sub.subjectname}
                         </option>
                     ))}
-
                 </select>
-
-                <button onClick={loadReport}>
-                    Load Report
-                </button>
 
             </div>
 
-            <br />
+            {/* SUMMARY */}
 
-            {/* Report Table */}
+            {summary && (
 
-            <table border="1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-                <thead>
-                <tr>
-                    <th>Roll</th>
-                    <th>Name</th>
-                    <th>Theory</th>
-                    <th>Practical</th>
-                    <th>Total</th>
-                    <th>Grade</th>
-                </tr>
-                </thead>
+                    {[
+                        { label: "Students", value: summary.totalStudents },
+                        { label: "Average Marks", value: summary.average },
+                        { label: "Highest", value: summary.highest },
+                        { label: "Lowest", value: summary.lowest }
+                    ].map((item, index) => (
 
-                <tbody>
+                        <div
+                            key={index}
+                            className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm"
+                        >
 
-                {data.map((row, i) => (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {item.label}
+                            </p>
 
-                    <tr key={i}>
-                        <td>{row.rollnumber}</td>
-                        <td>{row.name}</td>
-                        <td>{row.theorymarks}</td>
-                        <td>{row.practicalmarks}</td>
-                        <td>{row.total}</td>
-                        <td>{row.grade}</td>
+                            <p className="text-lg sm:text-xl font-semibold dark:text-gray-100">
+                                {item.value}
+                            </p>
+
+                        </div>
+
+                    ))}
+
+                </div>
+
+            )}
+
+            {/* REPORT TABLE */}
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-x-auto">
+
+                <table className="w-full text-xs sm:text-sm text-left">
+
+                    <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
+
+                    <tr>
+
+                        <th className="px-2 sm:px-4 py-3 w-[35%]">
+                            Student
+                        </th>
+
+                        <th className="px-2 sm:px-4 py-3 text-center w-[16%]">
+                            Theory
+                            <br />
+                            <span className="text-[10px] normal-case text-gray-400">
+                                out of {reportData[0]?.theory_max || "-"}
+                            </span>
+                        </th>
+
+                        <th className="px-2 sm:px-4 py-3 text-center w-[16%]">
+                            Practical
+                            <br />
+                            <span className="text-[10px] normal-case text-gray-400">
+                                out of {reportData[0]?.practical_max || "-"}
+                            </span>
+                        </th>
+
+                        <th className="px-2 sm:px-4 py-3 text-center hidden sm:table-cell w-[16%]">
+                            Total
+                        </th>
+
+                        <th className="px-2 sm:px-4 py-3 text-center w-[17%]">
+                            Grade
+                        </th>
+
                     </tr>
 
-                ))}
+                    </thead>
 
-                </tbody>
+                    <tbody>
 
-            </table>
+                    {loading ? (
+
+                        <tr>
+                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                Loading...
+                            </td>
+                        </tr>
+
+                    ) : reportData.length === 0 ? (
+
+                        <tr>
+                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                No report data available.
+                            </td>
+                        </tr>
+
+                    ) : (
+
+                        reportData.map(student => (
+
+                            <tr
+                                key={student.rollnumber}
+                                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                            >
+
+                                <td className="px-2 sm:px-4 py-3">
+
+                                    <div className="font-medium text-sm dark:text-gray-200 leading-tight">
+                                        {student.rollnumber}
+                                    </div>
+
+                                    <div className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
+                                        {student.name}
+                                    </div>
+
+                                </td>
+
+                                <td className="px-2 sm:px-4 py-3 text-center dark:text-gray-200">
+                                    {student.theorymarks}
+                                </td>
+
+                                <td className="px-2 sm:px-4 py-3 text-center dark:text-gray-200">
+                                    {student.practicalmarks}
+                                </td>
+
+                                <td className="px-2 sm:px-4 py-3 text-center font-semibold dark:text-gray-100 hidden sm:table-cell">
+                                    {student.total}
+                                </td>
+
+                                <td className="px-2 sm:px-4 py-3 text-center font-semibold dark:text-gray-100">
+                                    {student.grade}
+                                </td>
+
+                            </tr>
+
+                        ))
+
+                    )}
+
+                    </tbody>
+
+                </table>
+
+            </div>
 
         </div>
-
     );
-
 };
 
 export default MarksReport;

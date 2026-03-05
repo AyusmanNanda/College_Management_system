@@ -11,9 +11,9 @@ exports.getStudentsForMarks = async (req, res) => {
 
         const [rows] = await db.query(
             `SELECT rollnumber, firstname, lastname
-       FROM students
-       WHERE Courcecode = ? AND semoryear = ?
-       ORDER BY rollnumber`,
+             FROM students
+             WHERE Courcecode = ? AND semoryear = ?
+             ORDER BY rollnumber`,
             [course, sem]
         );
 
@@ -42,11 +42,11 @@ exports.saveMarks = async (req, res) => {
 
             await db.query(
                 `INSERT INTO marks
-        (courcecode, semoryear, subjectcode, subjectname, rollnumber, theorymarks, practicalmarks)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-        theorymarks = VALUES(theorymarks),
-        practicalmarks = VALUES(practicalmarks)`,
+                 (courcecode, semoryear, subjectcode, subjectname, rollnumber, theorymarks, practicalmarks)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE
+                                          theorymarks = VALUES(theorymarks),
+                                          practicalmarks = VALUES(practicalmarks)`,
                 [
                     course,
                     sem,
@@ -83,21 +83,21 @@ exports.getMarksForEdit = async (req, res) => {
         const { course, sem, subject } = req.query;
 
         const [rows] = await db.query(
-            `SELECT 
-        s.rollnumber,
-        s.firstname,
-        s.lastname,
-        m.theorymarks,
-        m.practicalmarks
-       FROM students s
-       LEFT JOIN marks m
-       ON s.rollnumber = m.rollnumber
-       AND m.subjectcode = ?
-       AND m.courcecode = ?
-       AND m.semoryear = ?
-       WHERE s.Courcecode = ?
-       AND s.semoryear = ?
-       ORDER BY s.rollnumber`,
+            `SELECT
+                 s.rollnumber,
+                 s.firstname,
+                 s.lastname,
+                 m.theorymarks,
+                 m.practicalmarks
+             FROM students s
+                      LEFT JOIN marks m
+                                ON s.rollnumber = m.rollnumber
+                                    AND m.subjectcode = ?
+                                    AND m.courcecode = ?
+                                    AND m.semoryear = ?
+             WHERE s.Courcecode = ?
+               AND s.semoryear = ?
+             ORDER BY s.rollnumber`,
             [subject, course, sem, course, sem]
         );
 
@@ -129,11 +129,11 @@ exports.updateMarks = async (req, res) => {
 
             await db.query(
                 `UPDATE marks
-         SET theorymarks = ?, practicalmarks = ?
-         WHERE rollnumber = ?
-         AND subjectcode = ?
-         AND courcecode = ?
-         AND semoryear = ?`,
+                 SET theorymarks = ?, practicalmarks = ?
+                 WHERE rollnumber = ?
+                   AND subjectcode = ?
+                   AND courcecode = ?
+                   AND semoryear = ?`,
                 [
                     theorymarks,
                     practicalmarks,
@@ -170,17 +170,17 @@ exports.getMarksReport = async (req, res) => {
 
         const [rows] = await db.query(
             `SELECT
-        m.rollnumber,
-        CONCAT(s.firstname, ' ', s.lastname) AS name,
-        m.subjectcode,
-        m.theorymarks,
-        m.practicalmarks
-       FROM marks m
-       JOIN students s
-       ON m.rollnumber = s.rollnumber
-       WHERE m.courcecode = ?
-       AND m.semoryear = ?
-       ORDER BY m.rollnumber`,
+                 m.rollnumber,
+                 CONCAT(s.firstname, ' ', s.lastname) AS name,
+                 m.subjectcode,
+                 m.theorymarks,
+                 m.practicalmarks
+             FROM marks m
+                      JOIN students s
+                           ON m.rollnumber = s.rollnumber
+             WHERE m.courcecode = ?
+               AND m.semoryear = ?
+             ORDER BY m.rollnumber`,
             [course, sem]
         );
 
@@ -194,6 +194,12 @@ exports.getMarksReport = async (req, res) => {
     }
 
 };
+
+
+// ============================
+// Delete Marks (Single Student)
+// ============================
+
 exports.deleteMarks = async (req, res) => {
 
     try {
@@ -220,6 +226,11 @@ exports.deleteMarks = async (req, res) => {
 
 };
 
+
+// ============================
+// Delete All Marks For Subject
+// ============================
+
 exports.deleteSubjectMarks = async (req, res) => {
 
     try {
@@ -229,8 +240,8 @@ exports.deleteSubjectMarks = async (req, res) => {
         await db.query(
             `DELETE FROM marks
              WHERE courcecode = ?
-             AND semoryear = ?
-             AND subjectcode = ?`,
+               AND semoryear = ?
+               AND subjectcode = ?`,
             [course, sem, subject]
         );
 
@@ -245,6 +256,7 @@ exports.deleteSubjectMarks = async (req, res) => {
 
 };
 
+
 // ============================
 // Subject Wise Marks Report
 // ============================
@@ -257,25 +269,32 @@ exports.getSubjectReport = async (req, res) => {
 
         const [rows] = await db.query(
             `SELECT
-                s.rollnumber,
-                s.firstname,
-                s.lastname,
-                m.theorymarks,
-                m.practicalmarks
+                 s.rollnumber,
+                 s.firstname,
+                 s.lastname,
 
-            FROM students s
+                 m.theorymarks,
+                 m.practicalmarks,
 
-            LEFT JOIN marks m
-            ON m.rollnumber = s.rollnumber
-            AND m.subjectcode = ?
-            AND m.courcecode = ?
-            AND m.semoryear = ?
+                 sub.theorymarks AS theoryfull,
+                 sub.practicalmarks AS practicalfull
 
-            WHERE s.Courcecode = ?
-            AND s.semoryear = ?
+             FROM students s
 
-            ORDER BY s.rollnumber`,
-            [subject, course, sem, course, sem]
+                      LEFT JOIN marks m
+                                ON m.rollnumber = s.rollnumber
+                                    AND m.subjectcode = ?
+                                    AND m.courcecode = ?
+                                    AND m.semoryear = ?
+
+                      JOIN subject sub
+                           ON sub.subjectcode = ?
+
+             WHERE s.Courcecode = ?
+               AND s.semoryear = ?
+
+             ORDER BY s.rollnumber`,
+            [subject, course, sem, subject, course, sem]
         );
 
         const data = rows.map(r => {
@@ -296,8 +315,15 @@ exports.getSubjectReport = async (req, res) => {
             return {
                 rollnumber: r.rollnumber,
                 name: r.firstname + " " + r.lastname,
+
                 theorymarks: theory,
                 practicalmarks: practical,
+
+                theoryfull: r.theoryfull,
+                practicalfull: r.practicalfull,
+
+                maxtotal: (r.theoryfull || 0) + (r.practicalfull || 0),
+
                 total,
                 grade
             };
@@ -314,6 +340,8 @@ exports.getSubjectReport = async (req, res) => {
     }
 
 };
+
+
 // ============================
 // Get Subjects For Marks
 // ============================
@@ -344,6 +372,7 @@ exports.getSubjects = async (req, res) => {
 
 };
 
+
 // ============================
 // Get Student Marksheet (Semester Wise)
 // ============================
@@ -354,7 +383,6 @@ exports.getStudentMarksheet = async (req, res) => {
 
         const { course, sem, roll } = req.query;
 
-        // get college name
         const [adminRows] = await db.query(
             `SELECT collagename FROM admin LIMIT 1`
         );
@@ -364,34 +392,34 @@ exports.getStudentMarksheet = async (req, res) => {
             : "College";
 
         const [rows] = await db.query(
-            `SELECT 
-                s.firstname,
-                s.lastname,
-                s.rollnumber,
-                s.courcecode,
+            `SELECT
+                 s.firstname,
+                 s.lastname,
+                 s.rollnumber,
+                 s.courcecode,
 
-                m.subjectcode,
-                m.subjectname,
+                 m.subjectcode,
+                 m.subjectname,
 
-                sub.theorymarks AS theoryfull,
-                sub.practicalmarks AS practicalfull,
+                 sub.theorymarks AS theoryfull,
+                 sub.practicalmarks AS practicalfull,
 
-                m.theorymarks,
-                m.practicalmarks
+                 m.theorymarks,
+                 m.practicalmarks
 
-            FROM marks m
+             FROM marks m
 
-            JOIN students s
-            ON m.rollnumber = s.rollnumber
+                      JOIN students s
+                           ON m.rollnumber = s.rollnumber
 
-            JOIN subject sub
-            ON sub.subjectcode = m.subjectcode
+                      JOIN subject sub
+                           ON sub.subjectcode = m.subjectcode
 
-            WHERE m.courcecode = ?
-            AND m.semoryear = ?
-            AND m.rollnumber = ?
+             WHERE m.courcecode = ?
+               AND m.semoryear = ?
+               AND m.rollnumber = ?
 
-            ORDER BY m.subjectcode`,
+             ORDER BY m.subjectcode`,
             [course, sem, roll]
         );
 
