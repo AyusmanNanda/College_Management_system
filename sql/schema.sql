@@ -116,9 +116,9 @@ CREATE TABLE `courses` (
 --
 
 INSERT INTO `courses` (`id`, `course_code`, `course_name`, `total_semesters`, `created_at`, `updated_at`, `sem_or_year`) VALUES
-                                                                                                                             (9,  'CSE', 'Computer Science & Engineering',   8, '2026-02-25 12:32:58', '2026-02-25 12:32:58', 'sem'),
-                                                                                                                             (10, 'IT',  'Information Technology',            8, '2026-02-25 12:33:26', '2026-02-25 12:33:26', 'sem'),
-                                                                                                                             (15, 'BCA', 'Bachelor In Computer Application',  3, '2026-03-01 09:55:38', '2026-03-01 09:55:38', 'year');
+                                                                                                                             (9,  'CSE', 'Computer Science & Engineering',  8, '2026-02-25 12:32:58', '2026-02-25 12:32:58', 'sem'),
+                                                                                                                             (10, 'IT',  'Information Technology',           8, '2026-02-25 12:33:26', '2026-02-25 12:33:26', 'sem'),
+                                                                                                                             (15, 'BCA', 'Bachelor In Computer Application', 3, '2026-03-01 09:55:38', '2026-03-01 09:55:38', 'year');
 
 -- --------------------------------------------------------
 
@@ -272,7 +272,7 @@ CREATE TABLE `students` (
                             `admissiondate` VARCHAR(50) DEFAULT NULL,
                             PRIMARY KEY (`sr_no`),
                             UNIQUE KEY `emailid` (`emailid`),
-                            KEY `idx_rollnumber` (`rollnumber`)
+                            UNIQUE KEY `idx_rollnumber` (`rollnumber`)  -- FIX: changed KEY to UNIQUE KEY for fk_marks_student
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci AUTO_INCREMENT=29;
 
 --
@@ -280,8 +280,8 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`Courcecode`, `semoryear`, `rollnumber`, `optionalsubject`, `firstname`, `lastname`, `emailid`, `contactnumber`, `dateofbirth`, `gender`, `state`, `city`, `fathername`, `fatheroccupation`, `mothername`, `motheroccupation`, `profilepic`, `sr_no`, `lastlogin`, `password`, `activestatus`, `admissiondate`) VALUES
-                                                                                                                                                                                                                                                                                                                                            ('CSE', 1, 23011006, NULL,         'Amir', 'khan',   'rahul11111@example.com',   '9876543210', '2003-01-06', 'Male', 'Odisha', 'Bhubaneswar', NULL,            NULL,            NULL,             NULL,      '23011006.jpg', 23, NULL,                        '$2b$10$W/LY1RVk6B4xvl8TDtMXZO4yRVsKhThteiQF6trPsxx2ARc3.KX9S', NULL, '2026-03-01'),
-                                                                                                                                                                                                                                                                                                                                            ('CSE', 1, 23011007, 'Mathematics', 'Aman', 'Sharma', 'student22@gcekjr.ac.in', '9867896540', '2000-11-25', 'Male', 'Odisha', 'Keonjhar',    'Rajesh Sharma', 'Businessman',   'Sunita Sharma',  'Teacher', NULL,           28, '2026-03-04T07:18:49.906Z', '$2b$10$iBPLpoBk2HZmleqr3EHuTOlBcZGPfvD/vY3ab1W0dfjBLHLmVyZDu', 1,    '2026-03-03');
+                                                                                                                                                                                                                                                                                                                                            ('CSE', 1, 23011006, NULL,          'Amir', 'khan',   'rahul11111@example.com', '9876543210', '2003-01-06', 'Male', 'Odisha', 'Bhubaneswar', NULL,            NULL,          NULL,            NULL,      '23011006.jpg', 23, NULL,                        '$2b$10$W/LY1RVk6B4xvl8TDtMXZO4yRVsKhThteiQF6trPsxx2ARc3.KX9S', NULL, '2026-03-01'),
+                                                                                                                                                                                                                                                                                                                                            ('CSE', 1, 23011007, 'Mathematics', 'Aman', 'Sharma', 'student22@gcekjr.ac.in', '9867896540', '2000-11-25', 'Male', 'Odisha', 'Keonjhar',    'Rajesh Sharma', 'Businessman', 'Sunita Sharma', 'Teacher', NULL,           28, '2026-03-04T07:18:49.906Z', '$2b$10$iBPLpoBk2HZmleqr3EHuTOlBcZGPfvD/vY3ab1W0dfjBLHLmVyZDu', 1,    '2026-03-03');
 
 -- --------------------------------------------------------
 
@@ -297,6 +297,7 @@ CREATE TABLE `subject` (
                            `subjecttype` VARCHAR(30) DEFAULT NULL,
                            `theorymarks` INT DEFAULT NULL,
                            `practicalmarks` INT DEFAULT NULL,
+                           UNIQUE KEY `subjectcode` (`subjectcode`),                              -- FIX: added standalone unique key for fk_attendance_subject and fk_marks_subject
                            UNIQUE KEY `subject_unique` (`subjectcode`, `courcecode`, `semoryear`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
