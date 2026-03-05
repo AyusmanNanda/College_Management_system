@@ -1,4 +1,21 @@
+const fs = require("fs");
+const path = require("path");
 const db = require("../config/db");
+
+const adminUploadDir = path.resolve(__dirname, "../../uploads/admin");
+
+const getAdminLogo = () => {
+    if (!fs.existsSync(adminUploadDir)) return "default.png";
+
+    const files = fs.readdirSync(adminUploadDir);
+
+    const match = files.find(file => {
+        const name = path.basename(file, path.extname(file));
+        return name === "admin";
+    });
+
+    return match || "default.png";
+};
 
 // ============================
 // Get Students For Marks Entry
@@ -361,7 +378,6 @@ exports.getSubjects = async (req, res) => {
 
 };
 
-
 // ============================
 // Get Student Marksheet
 // ============================
@@ -372,13 +388,18 @@ exports.getStudentMarksheet = async (req, res) => {
 
         const { course, sem, roll } = req.query;
 
+        // Get college information from admin table
         const [adminRows] = await db.query(
-            `SELECT collagename FROM admin LIMIT 1`
+            `SELECT collagename, logo FROM admin LIMIT 1`
         );
 
         const collegeName = adminRows.length
             ? adminRows[0].collagename
             : "College";
+
+        const logoFile = getAdminLogo();
+
+        const collegeLogo = `/uploads/admin/${logoFile}`;
 
         const [rows] = await db.query(
             `SELECT
@@ -395,9 +416,9 @@ exports.getStudentMarksheet = async (req, res) => {
                  m.practicalmarks
              FROM marks m
              JOIN students s
-             ON m.rollnumber = s.rollnumber
+               ON m.rollnumber = s.rollnumber
              JOIN subject sub
-             ON sub.subjectcode = m.subjectcode
+               ON sub.subjectcode = m.subjectcode
              WHERE m.courcecode = ?
              AND m.semoryear = ?
              AND m.rollnumber = ?
@@ -408,6 +429,7 @@ exports.getStudentMarksheet = async (req, res) => {
         if (!rows.length) {
             return res.json({
                 collegeName,
+                collegeLogo,
                 marks: []
             });
         }
@@ -421,6 +443,7 @@ exports.getStudentMarksheet = async (req, res) => {
 
         res.json({
             collegeName,
+            collegeLogo,
             marks: rows
         });
 
