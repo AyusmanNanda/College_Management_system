@@ -17,8 +17,6 @@ const PrintMarksheet = () => {
     const [marksheet, setMarksheet] = useState(null);
     const [error, setError] = useState("");
 
-    /* ================= FETCH COURSES ================= */
-
     useEffect(() => {
 
         const fetchCourses = async () => {
@@ -43,12 +41,8 @@ const PrintMarksheet = () => {
 
     }, []);
 
-    /* ================= COURSE OBJECT ================= */
-
     const selectedCourseObj = useMemo(() => {
-
         return courses.find(c => c.course_code === selectedCourse);
-
     }, [courses, selectedCourse]);
 
     const semLabel =
@@ -65,8 +59,6 @@ const PrintMarksheet = () => {
         return Array.from({ length: total }, (_, i) => i + 1);
 
     }, [selectedCourseObj]);
-
-    /* ================= LOAD STUDENTS ================= */
 
     useEffect(() => {
 
@@ -95,8 +87,6 @@ const PrintMarksheet = () => {
 
     }, [selectedCourse, selectedSem]);
 
-    /* ================= LOAD MARKSHEET ================= */
-
     const loadMarksheet = async () => {
 
         if (!selectedCourse || !selectedSem || !selectedRoll) {
@@ -124,8 +114,6 @@ const PrintMarksheet = () => {
 
     };
 
-    /* ================= GRADE FUNCTION ================= */
-
     const getGrade = (percentage) => {
 
         if (percentage >= 90) return "O";
@@ -139,16 +127,12 @@ const PrintMarksheet = () => {
 
     };
 
-    /* ================= DOWNLOAD PDF ================= */
-
     const downloadPDF = async () => {
 
         const element = document.getElementById("marksheet");
 
-        if (!element) return;
-
         const canvas = await html2canvas(element, {
-            scale: 2,
+            scale: 3,
             backgroundColor: "#ffffff",
             useCORS: true
         });
@@ -157,22 +141,104 @@ const PrintMarksheet = () => {
 
         const pdf = new jsPDF("p", "mm", "a4");
 
-        const width = 210;
-        const height = (canvas.height * width) / canvas.width;
-
-        pdf.addImage(imgData, "PNG", 0, 0, width, height);
+        pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
 
         pdf.save(`marksheet-${selectedRoll}.pdf`);
 
     };
 
     const marksheetCode = `MS-${selectedCourse}-${selectedSem}-${selectedRoll}`;
+    const summary = useMemo(() => {
 
+        if (!marksheet?.marks?.length) return null;
+
+        let totalObtained = 0;
+        let totalMaximum = 0;
+
+        marksheet.marks.forEach(m => {
+
+            const theory = m.theorymarks || 0;
+            const practical = m.practicalmarks || 0;
+
+            const theoryFull = m.theoryfull || 0;
+            const practicalFull = m.practicalfull || 0;
+
+            totalObtained += theory + practical;
+            totalMaximum += theoryFull + practicalFull;
+
+        });
+
+        const percentage = totalMaximum
+            ? (totalObtained / totalMaximum) * 100
+            : 0;
+
+        const finalGrade = getGrade(percentage);
+
+        let result = "FAIL";
+
+        if (percentage >= 75) result = "PASS WITH DISTINCTION";
+        else if (percentage >= 40) result = "PASS";
+
+        return {
+            totalObtained,
+            totalMaximum,
+            percentage: percentage.toFixed(2),
+            finalGrade,
+            result
+        };
+
+    }, [marksheet]);
+
+    const [hash, setHash] = useState("");
+
+    useEffect(() => {
+
+        const generateHash = async () => {
+
+            if (!marksheet?.marks) return;
+
+            const dataString = JSON.stringify({
+                course: selectedCourse,
+                semester: selectedSem,
+                roll: selectedRoll,
+                marks: marksheet.marks
+            });
+
+            const encoder = new TextEncoder();
+            const data = encoder.encode(dataString);
+
+            const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+            const hashHex = hashArray
+                .map(b => b.toString(16).padStart(2, "0"))
+                .join("");
+
+            setHash(hashHex);
+
+        };
+
+        generateHash();
+
+    }, [marksheet]);
+
+    const courseDisplay = useMemo(() => {
+
+        if (!marksheet?.marks?.length) return "";
+
+        const code = marksheet.marks[0].courcecode;
+
+        const course = courses.find(c => c.course_code === code);
+
+        if (!course) return code;
+
+        return `${course.course_name} (${code})`;
+
+    }, [marksheet, courses]);
     return (
 
         <div className="space-y-10 p-6">
-
-            {/* HEADER */}
 
             <div>
 
@@ -185,8 +251,6 @@ const PrintMarksheet = () => {
                 </p>
 
             </div>
-
-            {/* FILTERS */}
 
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
 
@@ -250,16 +314,6 @@ const PrintMarksheet = () => {
 
             </div>
 
-            {error && (
-
-                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md">
-                    {error}
-                </div>
-
-            )}
-
-            {/* ================= MARKSHEET ================= */}
-
             {marksheet && (
 
                 <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
@@ -278,12 +332,12 @@ const PrintMarksheet = () => {
                     <div
                         id="marksheet"
                         className="bg-white text-black p-12 mx-auto border border-gray-400"
-                        style={{ width: "794px" }}
+                        style={{ width: "794px", minHeight: "1123px" }}
                     >
 
                         {/* HEADER */}
 
-                        <div className="text-center border-b border-gray-400 pb-4 mb-6">
+                        <div className="text-center border-b border-gray-500 pb-5 mb-8">
 
                             <img
                                 src={
@@ -292,31 +346,27 @@ const PrintMarksheet = () => {
                                         : `${api.defaults.baseURL}/uploads/admin/default.png`
                                 }
                                 alt="college logo"
-                                className="h-24 mx-auto mb-2"
+                                className="h-14 mx-auto mb-2"
                                 crossOrigin="anonymous"
                             />
 
-                            <h1 className="text-2xl font-bold uppercase tracking-wide">
+                            <h1 className="text-[22px] font-bold uppercase tracking-wide">
                                 {marksheet?.collegeName}
                             </h1>
 
-                            <p className="text-sm font-semibold uppercase mt-1">
-                                Statement of Marks
+                            <p className="text-[12px] uppercase tracking-wider font-semibold mt-1">
+                                Statement of Marks – {semLabel} Examination {selectedSem}
                             </p>
 
-                            <p className="text-sm text-gray-700">
-                                {semLabel} Examination – {selectedSem}
-                            </p>
-
-                            <p className="text-xs mt-1 text-gray-600">
-                                Marksheet No: {marksheetCode}
+                            <p className="text-[11px] text-gray-600 mt-1">
+                                Marksheet No: <span className="font-semibold">{marksheetCode}</span>
                             </p>
 
                         </div>
 
                         {/* STUDENT INFO */}
 
-                        <div className="grid grid-cols-3 gap-6 mb-8 items-center">
+                        <div className="grid grid-cols-3 gap-6 mb-8 items-start">
 
                             <div className="col-span-2">
 
@@ -325,46 +375,46 @@ const PrintMarksheet = () => {
                                     <tbody>
 
                                     <tr>
-                                        <td className="border p-2 bg-gray-100 font-semibold w-40">
+                                        <td className="border px-3 py-2 bg-gray-100 font-semibold w-40">
                                             Student Name
                                         </td>
-                                        <td className="border p-2">
+                                        <td className="border px-3 py-2">
                                             {marksheet?.marks?.[0]?.firstname} {marksheet?.marks?.[0]?.lastname}
                                         </td>
                                     </tr>
 
                                     <tr>
-                                        <td className="border p-2 bg-gray-100 font-semibold">
+                                        <td className="border px-3 py-2 bg-gray-100 font-semibold">
                                             Roll Number
                                         </td>
-                                        <td className="border p-2">
+                                        <td className="border px-3 py-2">
                                             {marksheet?.marks?.[0]?.rollnumber}
                                         </td>
                                     </tr>
 
                                     <tr>
-                                        <td className="border p-2 bg-gray-100 font-semibold">
-                                            Course Code
+                                        <td className="border px-3 py-2 bg-gray-100 font-semibold">
+                                            Course
                                         </td>
-                                        <td className="border p-2">
-                                            {marksheet?.marks?.[0]?.courcecode}
+                                        <td className="border px-3 py-2">
+                                            {courseDisplay}
                                         </td>
                                     </tr>
 
                                     <tr>
-                                        <td className="border p-2 bg-gray-100 font-semibold">
+                                        <td className="border px-3 py-2 bg-gray-100 font-semibold">
                                             {semLabel}
                                         </td>
-                                        <td className="border p-2">
+                                        <td className="border px-3 py-2">
                                             {selectedSem}
                                         </td>
                                     </tr>
 
                                     <tr>
-                                        <td className="border p-2 bg-gray-100 font-semibold">
+                                        <td className="border px-3 py-2 bg-gray-100 font-semibold">
                                             Issue Date
                                         </td>
-                                        <td className="border p-2">
+                                        <td className="border px-3 py-2">
                                             {new Date().toLocaleDateString()}
                                         </td>
                                     </tr>
@@ -377,9 +427,9 @@ const PrintMarksheet = () => {
 
                             {/* PHOTO + TEXT SEAL */}
 
-                            <div className="flex justify-center">
+                            <div className="flex justify-center items-start pt-2">
 
-                                <div className="relative w-44 h-44 flex items-center justify-center">
+                                <div className="relative w-[180px] h-[180px] flex items-center justify-center">
 
                                     <svg viewBox="0 0 200 200" className="absolute w-full h-full">
 
@@ -393,13 +443,17 @@ const PrintMarksheet = () => {
                                         </defs>
 
                                         <text
-                                            fontSize="11"
-                                            fontWeight="bold"
-                                            letterSpacing="2"
+                                            fontSize="12"
+                                            fontWeight="700"
+                                            letterSpacing="3"
                                             fill="#111"
                                         >
 
-                                            <textPath href="#sealCircle">
+                                            <textPath
+                                                href="#sealCircle"
+                                                startOffset="50%"
+                                                textAnchor="middle"
+                                            >
 
                                                 {marksheet?.collegeName?.toUpperCase()} • {marksheetCode} •
 
@@ -412,7 +466,7 @@ const PrintMarksheet = () => {
                                     <img
                                         src={`${api.defaults.baseURL}/uploads/students/${marksheet?.marks?.[0]?.profilepic}`}
                                         alt="student"
-                                        className="w-32 h-40 object-cover border-2 border-gray-700 bg-white"
+                                        className="w-[120px] h-[150px] object-cover border-2 border-gray-700 bg-white"
                                         crossOrigin="anonymous"
                                         onError={(e) => {
 
@@ -438,13 +492,13 @@ const PrintMarksheet = () => {
 
                             <tr className="bg-gray-200 text-center font-semibold">
 
-                                <th className="border p-2">#</th>
-                                <th className="border p-2">Code</th>
-                                <th className="border p-2 text-left">Subject</th>
-                                <th className="border p-2">Theory</th>
-                                <th className="border p-2">Practical</th>
-                                <th className="border p-2">Total</th>
-                                <th className="border p-2">Grade</th>
+                                <th className="border px-3 py-2">#</th>
+                                <th className="border px-3 py-2">Code</th>
+                                <th className="border px-3 py-2 text-left">Subject</th>
+                                <th className="border px-3 py-2">Theory</th>
+                                <th className="border px-3 py-2">Practical</th>
+                                <th className="border px-3 py-2">Total</th>
+                                <th className="border px-3 py-2">Grade</th>
 
                             </tr>
 
@@ -472,13 +526,13 @@ const PrintMarksheet = () => {
 
                                     <tr key={i} className="text-center">
 
-                                        <td className="border p-2">{i + 1}</td>
-                                        <td className="border p-2">{m.subjectcode}</td>
-                                        <td className="border p-2 text-left">{m.subjectname}</td>
-                                        <td className="border p-2">{theory}/{theoryFull}</td>
-                                        <td className="border p-2">{practical}/{practicalFull}</td>
-                                        <td className="border p-2 font-semibold">{total}/{maxTotal}</td>
-                                        <td className="border p-2 font-bold">{grade}</td>
+                                        <td className="border px-3 py-2">{i + 1}</td>
+                                        <td className="border px-3 py-2">{m.subjectcode}</td>
+                                        <td className="border px-3 py-2 text-left">{m.subjectname}</td>
+                                        <td className="border px-3 py-2">{theory}/{theoryFull}</td>
+                                        <td className="border px-3 py-2">{practical}/{practicalFull}</td>
+                                        <td className="border px-3 py-2 font-semibold">{total}/{maxTotal}</td>
+                                        <td className="border px-3 py-2 font-bold">{grade}</td>
 
                                     </tr>
 
@@ -489,11 +543,128 @@ const PrintMarksheet = () => {
                             </tbody>
 
                         </table>
+                        {/* SUMMARY */}
 
-                        {/* FOOTER */}
+                        {summary && (
 
-                        <div className="text-xs text-center text-gray-600">
-                            This is a computer-generated statement of marks. No signature is required.
+                            <div className="mt-6 border border-gray-400">
+
+                                <table className="w-full text-sm">
+
+                                    <tbody>
+
+                                    <tr className="bg-gray-100 text-center font-semibold">
+
+                                        <td className="border px-3 py-2">
+                                            Total Marks
+                                        </td>
+
+                                        <td className="border px-3 py-2">
+                                            Percentage
+                                        </td>
+
+                                        <td className="border px-3 py-2">
+                                            Final Grade
+                                        </td>
+
+                                        <td className="border px-3 py-2">
+                                            Result
+                                        </td>
+
+                                    </tr>
+
+                                    <tr className="text-center font-semibold">
+
+                                        <td className="border px-3 py-3">
+                                            {summary.totalObtained} / {summary.totalMaximum}
+                                        </td>
+
+                                        <td className="border px-3 py-3">
+                                            {summary.percentage}%
+                                        </td>
+
+                                        <td className="border px-3 py-3">
+                                            {summary.finalGrade}
+                                        </td>
+
+                                        <td
+                                            className={`border px-3 py-3 font-bold ${
+                                                summary.result.includes("FAIL")
+                                                    ? "text-red-700"
+                                                    : summary.result.includes("DISTINCTION")
+                                                        ? "text-blue-700"
+                                                        : "text-green-700"
+                                            }`}
+                                        >
+                                            {summary.result}
+                                        </td>
+
+                                    </tr>
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        )}
+                        <div className="mt-12 pt-6 border-t border-gray-400 text-xs">
+
+                            <div className="grid grid-cols-3 items-end">
+
+                                {/* LEFT */}
+
+                                <div className="space-y-1">
+
+                                    <p>
+                                        <span className="font-semibold">Issue Date:</span>{" "}
+                                        {new Date().toLocaleDateString()}
+                                    </p>
+
+                                    <p>
+                                        <span className="font-semibold">Marksheet ID:</span>{" "}
+                                        {marksheetCode}
+                                    </p>
+
+                                </div>
+
+                                {/* CENTER */}
+
+                                <div className="text-center text-gray-600 px-4">
+
+                                    This is a digitally generated marksheet.
+                                    The integrity of this document can be verified
+                                    using the SHA256 hash printed below.
+
+                                </div>
+
+                                {/* SIGNATURE */}
+
+                                <div className="text-center">
+
+                                    <div className="h-12"></div>
+
+                                    <div className="border-t border-gray-600 w-40 mx-auto pt-1">
+
+                                        <p className="font-semibold">
+                                            Controller of Examination
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            {/* HASH */}
+
+                            <div className="mt-6 text-center text-[10px] break-all text-gray-600">
+
+                                <span className="font-semibold">SHA256:</span>{" "}
+                                {hash}
+
+                            </div>
+
                         </div>
 
                     </div>
