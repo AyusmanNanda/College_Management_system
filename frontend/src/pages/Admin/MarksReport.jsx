@@ -182,7 +182,7 @@ const MarksReport = () => {
                 </div>
             )}
 
-            {/* FILTER SECTION */}
+            {/* FILTER CARD */}
 
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -292,21 +292,25 @@ const MarksReport = () => {
                         <th className="px-2 sm:px-4 py-3 text-center w-[16%]">
                             Theory
                             <br />
-                            <span className="text-[10px] normal-case text-gray-400">
-                                out of {reportData[0]?.theory_max || "-"}
+                            <span className="text-[11px] normal-case text-gray-500">
+                                {reportData[0]?.theoryfull ?? "-"}
                             </span>
                         </th>
 
                         <th className="px-2 sm:px-4 py-3 text-center w-[16%]">
                             Practical
                             <br />
-                            <span className="text-[10px] normal-case text-gray-400">
-                                out of {reportData[0]?.practical_max || "-"}
+                            <span className="text-[11px] normal-case text-gray-500">
+                                {reportData[0]?.practicalfull ?? "-"}
                             </span>
                         </th>
 
                         <th className="px-2 sm:px-4 py-3 text-center hidden sm:table-cell w-[16%]">
                             Total
+                            <br />
+                            <span className="text-[11px] normal-case text-gray-500">
+                                {reportData[0]?.maxtotal ?? "-"}
+                            </span>
                         </th>
 
                         <th className="px-2 sm:px-4 py-3 text-center w-[17%]">
