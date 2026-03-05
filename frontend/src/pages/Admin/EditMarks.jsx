@@ -300,8 +300,6 @@ const EditMarks = () => {
     return (
         <div className="space-y-10">
 
-            {/* HEADER */}
-
             <div>
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
                     Edit Marks
@@ -372,8 +370,6 @@ const EditMarks = () => {
 
             </div>
 
-            {/* TABLE */}
-
             {selectedSubject && students.length > 0 && (
 
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
@@ -383,9 +379,7 @@ const EditMarks = () => {
                         <table className="w-full text-xs sm:text-sm text-left">
 
                             <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
-
                             <tr>
-
                                 <th className="px-4 py-3">Student</th>
                                 <th className="px-4 py-3">Theory</th>
 
@@ -396,9 +390,7 @@ const EditMarks = () => {
                                 <th className="px-4 py-3 text-center hidden sm:table-cell">
                                     Action
                                 </th>
-
                             </tr>
-
                             </thead>
 
                             <tbody>
@@ -410,11 +402,11 @@ const EditMarks = () => {
                                     className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                                 >
 
-                                    <td className="px-3 py-3 min-w-[140px]">
+                                    <td className="px-3 py-3 min-w-[140px] text-gray-800 dark:text-gray-200">
 
                                         <div className="flex flex-col leading-tight">
 
-                                            <span className="font-medium text-sm">
+                                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                                                 {student.firstname} {student.lastname}
                                             </span>
 
@@ -487,8 +479,6 @@ const EditMarks = () => {
 
                     </div>
 
-                    {/* FOOTER BUTTONS */}
-
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex flex-col sm:flex-row gap-3 justify-end">
 
                         <button
@@ -517,8 +507,6 @@ const EditMarks = () => {
                 </div>
 
             )}
-
-            {/* MODALS */}
 
             <ConfirmSaveModal
                 show={showSaveModal}
