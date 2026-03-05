@@ -2,11 +2,21 @@ const ConfirmSaveModal = ({
                               show,
                               title = "Confirm Save",
                               message = "Are you sure you want to save?",
+                              confirmText = "Save",
                               onCancel,
                               onConfirm,
                               loading = false
                           }) => {
+
     if (!show) return null;
+
+    const handleConfirm = async () => {
+        try {
+            await onConfirm?.();
+        } finally {
+            onCancel?.();
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
@@ -30,11 +40,11 @@ const ConfirmSaveModal = ({
                     </button>
 
                     <button
-                        onClick={onConfirm}
+                        onClick={handleConfirm}
                         disabled={loading}
                         className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-60"
                     >
-                        {loading ? "Saving..." : "Save Attendance"}
+                        {loading ? "Saving..." : confirmText}
                     </button>
                 </div>
             </div>
