@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
+import ConfirmSaveModal from "./ConfirmSaveModal";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const EditMarks = () => {
 
@@ -19,6 +21,10 @@ const EditMarks = () => {
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+    const [studentToDelete, setStudentToDelete] = useState(null);
 
     /* ================= FETCH COURSES ================= */
 
@@ -158,6 +164,14 @@ const EditMarks = () => {
 
     };
 
+    /* ================= CLEAR MARKS ================= */
+
+    const clearMarks = () => {
+        setMarks({});
+        setError("");
+        setSuccess("");
+    };
+
     /* ================= DELETE MARKS (STUDENT) ================= */
 
     const deleteMarks = async (rollnumber) => {
@@ -284,18 +298,40 @@ const EditMarks = () => {
     };
 
     return (
-        <div>
+        <div className="space-y-10">
 
-            <h2>Edit Marks</h2>
-
-            {error && <p>{error}</p>}
-            {success && <p>{success}</p>}
+            {/* HEADER */}
 
             <div>
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                    Edit Marks
+                </h2>
+
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Update or delete student marks.
+                </p>
+            </div>
+
+            {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm rounded-md">
+                    {success}
+                </div>
+            )}
+
+            {/* FILTER CARD */}
+
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
 
                 <select
                     value={selectedCourse}
                     onChange={(e) => setSelectedCourse(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
 
@@ -304,12 +340,12 @@ const EditMarks = () => {
                             {course.course_name}
                         </option>
                     ))}
-
                 </select>
 
                 <select
                     value={selectedSem}
                     onChange={(e) => setSelectedSem(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select {semLabel}</option>
 
@@ -318,12 +354,12 @@ const EditMarks = () => {
                             {semLabel} {num}
                         </option>
                     ))}
-
                 </select>
 
                 <select
                     value={selectedSubject}
                     onChange={(e) => handleSubjectChange(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Subject</option>
 
@@ -332,103 +368,188 @@ const EditMarks = () => {
                             {sub.subjectname}
                         </option>
                     ))}
-
                 </select>
 
             </div>
 
-            {selectedSubject && students.length > 0 && (
-                <button onClick={deleteAllMarks}>
-                    Delete All Marks For This Subject
-                </button>
-            )}
+            {/* TABLE */}
 
             {selectedSubject && students.length > 0 && (
 
-                <table border="1">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
 
-                    <thead>
-                    <tr>
-                        <th>Roll</th>
-                        <th>Name</th>
-                        <th>Theory</th>
+                    <div className="w-full overflow-x-auto">
 
-                        {subjectDetails?.practicalmarks > 0 && (
-                            <th>Practical</th>
-                        )}
+                        <table className="w-full text-xs sm:text-sm text-left">
 
-                        <th>Action</th>
+                            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
 
-                    </tr>
-                    </thead>
+                            <tr>
 
-                    <tbody>
+                                <th className="px-4 py-3">Student</th>
+                                <th className="px-4 py-3">Theory</th>
 
-                    {students.map(student => (
+                                {subjectDetails?.practicalmarks > 0 && (
+                                    <th className="px-4 py-3">Practical</th>
+                                )}
 
-                        <tr key={student.rollnumber}>
+                                <th className="px-4 py-3 text-center hidden sm:table-cell">
+                                    Action
+                                </th>
 
-                            <td>{student.rollnumber}</td>
+                            </tr>
 
-                            <td>
-                                {student.firstname} {student.lastname}
-                            </td>
+                            </thead>
 
-                            <td>
-                                <input
-                                    type="number"
-                                    max={subjectDetails?.theorymarks}
-                                    value={marks[student.rollnumber]?.theory || ""}
-                                    onChange={(e) =>
-                                        handleMarkChange(
-                                            student.rollnumber,
-                                            "theory",
-                                            e.target.value
-                                        )
-                                    }
-                                />
-                            </td>
+                            <tbody>
 
-                            {subjectDetails?.practicalmarks > 0 && (
+                            {students.map(student => (
 
-                                <td>
-                                    <input
-                                        type="number"
-                                        max={subjectDetails?.practicalmarks}
-                                        value={marks[student.rollnumber]?.practical || ""}
-                                        onChange={(e) =>
-                                            handleMarkChange(
-                                                student.rollnumber,
-                                                "practical",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </td>
+                                <tr
+                                    key={student.rollnumber}
+                                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                                >
 
-                            )}
+                                    <td className="px-3 py-3 min-w-[140px]">
 
-                            <td>
-                                <button onClick={() => deleteMarks(student.rollnumber)}>
-                                    Delete
-                                </button>
-                            </td>
+                                        <div className="flex flex-col leading-tight">
 
-                        </tr>
+                                            <span className="font-medium text-sm">
+                                                {student.firstname} {student.lastname}
+                                            </span>
 
-                    ))}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                {student.rollnumber}
+                                            </span>
 
-                    </tbody>
+                                        </div>
 
-                </table>
+                                    </td>
+
+                                    <td className="px-3 py-3">
+
+                                        <input
+                                            type="number"
+                                            max={subjectDetails?.theorymarks}
+                                            value={marks[student.rollnumber]?.theory || ""}
+                                            onChange={(e) =>
+                                                handleMarkChange(
+                                                    student.rollnumber,
+                                                    "theory",
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="w-12 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm text-center"
+                                        />
+
+                                    </td>
+
+                                    {subjectDetails?.practicalmarks > 0 && (
+
+                                        <td className="px-3 py-3">
+
+                                            <input
+                                                type="number"
+                                                max={subjectDetails?.practicalmarks}
+                                                value={marks[student.rollnumber]?.practical || ""}
+                                                onChange={(e) =>
+                                                    handleMarkChange(
+                                                        student.rollnumber,
+                                                        "practical",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="w-12 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm text-center"
+                                            />
+
+                                        </td>
+
+                                    )}
+
+                                    <td className="px-3 py-3 text-center hidden sm:table-cell">
+
+                                        <button
+                                            onClick={() => setStudentToDelete(student.rollnumber)}
+                                            className="px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition"
+                                        >
+                                            Delete
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            ))}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    {/* FOOTER BUTTONS */}
+
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex flex-col sm:flex-row gap-3 justify-end">
+
+                        <button
+                            onClick={clearMarks}
+                            className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                        >
+                            Clear
+                        </button>
+
+                        <button
+                            onClick={() => setShowDeleteAllModal(true)}
+                            className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
+                        >
+                            Delete All Marks
+                        </button>
+
+                        <button
+                            onClick={() => setShowSaveModal(true)}
+                            className="w-full sm:w-auto px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                        >
+                            Update Marks
+                        </button>
+
+                    </div>
+
+                </div>
 
             )}
 
-            {students.length > 0 && (
-                <button onClick={updateMarks}>
-                    Update Marks
-                </button>
-            )}
+            {/* MODALS */}
+
+            <ConfirmSaveModal
+                show={showSaveModal}
+                title="Confirm Marks Update"
+                message="Are you sure you want to update these marks?"
+                confirmText="Update Marks"
+                onCancel={() => setShowSaveModal(false)}
+                onConfirm={updateMarks}
+            />
+
+            <ConfirmDeleteModal
+                show={!!studentToDelete}
+                title="Delete Marks"
+                message="Are you sure you want to delete this student's marks?"
+                onCancel={() => setStudentToDelete(null)}
+                onConfirm={() => {
+                    deleteMarks(studentToDelete);
+                    setStudentToDelete(null);
+                }}
+            />
+
+            <ConfirmDeleteModal
+                show={showDeleteAllModal}
+                title="Delete All Marks"
+                message="Are you sure you want to delete all marks for this subject?"
+                onCancel={() => setShowDeleteAllModal(false)}
+                onConfirm={() => {
+                    deleteAllMarks();
+                    setShowDeleteAllModal(false);
+                }}
+            />
 
         </div>
     );
