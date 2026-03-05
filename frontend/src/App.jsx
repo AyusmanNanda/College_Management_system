@@ -112,7 +112,7 @@ function App() {
                     <Route path="enter-marks" element={<EnterMarks />} />
                     <Route path="edit-marks" element={<EditMarks />} />
                     <Route path="marks-report" element={<MarksReport />} />
-                    <Route path="/admin/print-marksheet" element={<PrintMarksheet />} />
+                    <Route path="print-marksheet" element={<PrintMarksheet />} />
                 </Route>
 
                 {/* ===================== Faculty ===================== */}

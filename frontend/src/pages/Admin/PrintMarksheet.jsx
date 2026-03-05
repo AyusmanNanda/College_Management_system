@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import MarksheetLayout from "./MarksheetLayout";
 
 const PrintMarksheet = () => {
@@ -19,6 +17,8 @@ const PrintMarksheet = () => {
     const [error, setError] = useState("");
 
     const [hash, setHash] = useState("");
+
+    /* ================= FETCH COURSES ================= */
 
     useEffect(() => {
 
@@ -44,6 +44,8 @@ const PrintMarksheet = () => {
 
     }, []);
 
+    /* ================= COURSE HELPERS ================= */
+
     const selectedCourseObj = useMemo(() => {
         return courses.find(c => c.course_code === selectedCourse);
     }, [courses, selectedCourse]);
@@ -62,6 +64,8 @@ const PrintMarksheet = () => {
         return Array.from({ length: total }, (_, i) => i + 1);
 
     }, [selectedCourseObj]);
+
+    /* ================= FETCH STUDENTS ================= */
 
     useEffect(() => {
 
@@ -90,6 +94,8 @@ const PrintMarksheet = () => {
 
     }, [selectedCourse, selectedSem]);
 
+    /* ================= LOAD MARKSHEET ================= */
+
     const loadMarksheet = async () => {
 
         if (!selectedCourse || !selectedSem || !selectedRoll) {
@@ -117,6 +123,8 @@ const PrintMarksheet = () => {
 
     };
 
+    /* ================= GRADE ================= */
+
     const getGrade = (percentage) => {
 
         if (percentage >= 90) return "O";
@@ -130,25 +138,13 @@ const PrintMarksheet = () => {
 
     };
 
-    const downloadPDF = async () => {
+    /* ================= PRINT ================= */
 
-        const element = document.getElementById("marksheet");
-
-        const canvas = await html2canvas(element, {
-            scale: 3,
-            backgroundColor: "#ffffff",
-            useCORS: true
-        });
-
-        const imgData = canvas.toDataURL("image/png");
-
-        const pdf = new jsPDF("p", "mm", "a4");
-
-        pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
-
-        pdf.save(`marksheet-${selectedRoll}.pdf`);
-
+    const downloadPDF = () => {
+        window.print();
     };
+
+    /* ================= MARKSHEET META ================= */
 
     const marksheetCode = `MS-${selectedCourse}-${selectedSem}-${selectedRoll}`;
 
@@ -156,6 +152,8 @@ const PrintMarksheet = () => {
         `${window.location.origin}/verify/marksheet/${marksheetCode}`;
 
     const summary = marksheet?.summary;
+
+    /* ================= HASH ================= */
 
     useEffect(() => {
 
@@ -189,6 +187,8 @@ const PrintMarksheet = () => {
 
     }, [marksheet]);
 
+    /* ================= COURSE DISPLAY ================= */
+
     const courseDisplay = useMemo(() => {
 
         if (!marksheet?.marks?.length) return "";
@@ -203,26 +203,30 @@ const PrintMarksheet = () => {
 
     }, [marksheet, courses]);
 
+    /* ================= UI ================= */
+
     return (
 
-        <div className="space-y-10 p-6">
+        <div className="space-y-10">
 
+            {/* HEADER */}
             <div>
-                <h2 className="text-2xl font-semibold text-gray-800">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
                     Student Marksheet
                 </h2>
 
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                     Generate and download semester marksheets.
                 </p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* FILTER PANEL */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
 
                 <select
                     value={selectedCourse}
                     onChange={(e) => setSelectedCourse(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Course</option>
 
@@ -237,7 +241,7 @@ const PrintMarksheet = () => {
                 <select
                     value={selectedSem}
                     onChange={(e) => setSelectedSem(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select {semLabel}</option>
 
@@ -252,7 +256,7 @@ const PrintMarksheet = () => {
                 <select
                     value={selectedRoll}
                     onChange={(e) => setSelectedRoll(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                     <option value="">Select Student</option>
 
@@ -273,9 +277,17 @@ const PrintMarksheet = () => {
 
             </div>
 
+            {/* ERROR */}
+            {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
+                    {error}
+                </div>
+            )}
+
+            {/* MARKSHEET */}
             {marksheet && (
 
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-6">
 
                     <div className="flex justify-end mb-6">
 

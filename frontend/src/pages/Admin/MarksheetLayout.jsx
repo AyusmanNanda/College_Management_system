@@ -21,7 +21,7 @@ const MarksheetLayout = ({
             style={{
                 width: "794px",
                 height: "1123px",
-                padding: "25px",
+                padding: "10px",
                 boxSizing: "border-box"
             }}
         >
@@ -306,16 +306,18 @@ const MarksheetLayout = ({
                                         {summary.division}
                                     </td>
 
-                                    <td
-                                        className={`border px-3 py-3 font-bold ${
-                                            summary.result.includes("FAIL")
+                                    <td className="border px-3 py-3 font-bold text-center">
+                                        <span
+                                            className={
+                                                summary.result.includes("FAIL")
                                                 ? "text-red-700"
                                                 : summary.result.includes("DISTINCTION")
-                                                    ? "text-blue-700"
-                                                    : "text-green-700"
-                                        }`}
-                                    >
+                                                ? "text-blue-700"
+                                                : "text-green-700"
+                                            }
+                                            >
                                         {summary.result}
+                                        </span>
                                     </td>
 
                                 </tr>

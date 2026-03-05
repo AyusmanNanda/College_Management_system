@@ -388,7 +388,6 @@ exports.getStudentMarksheet = async (req, res) => {
 
         const { course, sem, roll } = req.query;
 
-        // Basic validation
         if (!course || !sem || !roll) {
             return res.status(400).json({ message: "Missing parameters" });
         }
@@ -426,13 +425,13 @@ exports.getStudentMarksheet = async (req, res) => {
                  m.theorymarks,
                  m.practicalmarks
              FROM marks m
-             JOIN students s
-               ON m.rollnumber = s.rollnumber
-             JOIN subject sub
-               ON sub.subjectcode = m.subjectcode
+                      JOIN students s
+                           ON m.rollnumber = s.rollnumber
+                      JOIN subject sub
+                           ON sub.subjectcode = m.subjectcode
              WHERE m.courcecode = ?
-             AND m.semoryear = ?
-             AND m.rollnumber = ?
+               AND m.semoryear = ?
+               AND m.rollnumber = ?
              ORDER BY m.subjectcode`,
             [course, sem, roll]
         );
@@ -461,16 +460,15 @@ exports.getStudentMarksheet = async (req, res) => {
 
         let totalObtained = 0;
         let totalMaximum = 0;
-
         let subjectFailed = false;
 
         rows.forEach(r => {
 
-            const theory = r.theorymarks || 0;
-            const practical = r.practicalmarks || 0;
+            const theory = r.theorymarks ?? 0;
+            const practical = r.practicalmarks ?? 0;
 
-            const theoryFull = r.theoryfull || 0;
-            const practicalFull = r.practicalfull || 0;
+            const theoryFull = r.theoryfull ?? 0;
+            const practicalFull = r.practicalfull ?? 0;
 
             const subjectTotal = theory + practical;
             const subjectMax = theoryFull + practicalFull;
@@ -491,11 +489,11 @@ exports.getStudentMarksheet = async (req, res) => {
         // Percentage
         // ============================
 
-        let percentage = 0;
+        let percentage = totalMaximum
+            ? (totalObtained / totalMaximum) * 100
+            : 0;
 
-        if (totalMaximum > 0) {
-            percentage = (totalObtained / totalMaximum) * 100;
-        }
+        percentage = Number(percentage.toFixed(2));
 
         // ============================
         // Final Grade
@@ -515,30 +513,30 @@ exports.getStudentMarksheet = async (req, res) => {
         // ============================
 
         let result = "FAIL";
-        let division = "FAIL";
+        let division = "N/A";
 
-        if (!subjectFailed && percentage >= 75) {
-
-            result = "PASS WITH DISTINCTION";
-            division = "FIRST CLASS WITH DISTINCTION";
-
-        }
-        else if (!subjectFailed && percentage >= 60) {
+        if (!subjectFailed) {
 
             result = "PASS";
-            division = "FIRST CLASS";
 
-        }
-        else if (!subjectFailed && percentage >= 50) {
+            if (percentage >= 75) {
+                result = "PASS WITH DISTINCTION";
+                division = "FIRST CLASS WITH DISTINCTION";
+            }
+            else if (percentage >= 60) {
+                division = "FIRST CLASS";
+            }
+            else if (percentage >= 50) {
+                division = "SECOND CLASS";
+            }
+            else if (percentage >= 40) {
+                division = "PASS";
+            }
 
-            result = "PASS";
-            division = "SECOND CLASS";
+        } else {
 
-        }
-        else if (!subjectFailed && percentage >= 40) {
-
-            result = "PASS";
-            division = "PASS";
+            result = "FAIL (BACKLOG)";
+            division = "N/A";
 
         }
 
@@ -553,7 +551,7 @@ exports.getStudentMarksheet = async (req, res) => {
             summary: {
                 totalObtained,
                 totalMaximum,
-                percentage: Number(percentage.toFixed(2)),
+                percentage,
                 finalGrade,
                 division,
                 result
