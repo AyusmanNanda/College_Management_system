@@ -25,19 +25,35 @@ router.get(
     facultyController.getFaculties
 );
 
-// Update faculty with optional image update
-router.put(
-    "/:id",
-    authMiddleware,
-    facultyController.upload.single("profilepic"),
-    facultyController.updateFaculty
+router.get(
+  "/profile",
+  authMiddleware,
+  facultyController.getFacultyProfile
 );
 
-// Delete faculty
-router.delete(
-    "/:id",
-    authMiddleware,
-    facultyController.deleteFaculty
+router.put(
+  "/profile",
+  authMiddleware,
+  facultyController.uploadProfile.single("profilepic"),
+  facultyController.updateFacultyProfile
+);
+
+router.put(
+  "/change-password",
+  authMiddleware,
+  facultyController.changeFacultyPassword
+);
+
+router.put(
+  "/change-email",
+  authMiddleware,
+  facultyController.changeFacultyEmail
+);
+
+router.get(
+  "/dashboard",
+  authMiddleware,
+  facultyController.getFacultyDashboardStats
 );
 
 router.get(
@@ -51,6 +67,21 @@ router.post(
     authMiddleware,
     facultyController.uploadExcel.single("file"),
     facultyController.importFacultiesFromExcel
+);
+
+// Update faculty with optional image update
+router.put(
+    "/:id",
+    authMiddleware,
+    facultyController.upload.single("profilepic"),
+    facultyController.updateFaculty
+);
+
+// Delete faculty
+router.delete(
+    "/:id",
+    authMiddleware,
+    facultyController.deleteFaculty
 );
 
 module.exports = router;

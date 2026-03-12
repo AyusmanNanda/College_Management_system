@@ -778,3 +778,378 @@ exports.importFacultiesFromExcel = async (req, res) => {
         });
     }
 };
+
+
+
+
+
+
+
+
+
+// ==============================
+// GET FACULTY SELF PROFILE
+// ==============================
+exports.getFacultySelfProfile = async (req, res) => {
+  try {
+    const user = req.user || {};
+    const email = user.emailid || user.email;
+
+    if (!email) {
+      return res.status(401).json({ message: "Token does not contain emailid" });
+    }
+
+    const [rows] = await db.query(
+      `SELECT
+          sr_no,
+          facultyid,
+          facultyname,
+          state,
+          city,
+          emailid,
+          contactnumber,
+          qualification,
+          experience,
+          DATE_FORMAT(birthdate, '%Y-%m-%d') AS birthdate,
+          gender,
+          profilepic,
+          courcecode,
+          semoryear,
+          subject,
+          position,
+          DATE_FORMAT(joineddate, '%Y-%m-%d') AS joineddate,
+          activestatus,
+          lastlogin
+       FROM faculties
+       WHERE emailid = ? OR facultyid = ?
+       LIMIT 1`,
+      [email, email]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Faculty not found" });
+    }
+
+    return res.json(rows[0]);
+  } catch (error) {
+    console.error("getFacultySelfProfile error:", error);
+    return res.status(500).json({ message: "Error fetching faculty profile" });
+  }
+};
+
+// alias
+exports.getFacultyProfile = exports.getFacultySelfProfile;
+
+// ==============================
+// FACULTY DASHBOARD STATS
+// ==============================
+exports.getFacultyDashboardStats = async (req, res) => {
+  try {
+    const user = req.user || {};
+    const email = user.emailid || user.email;
+
+    if (!email) {
+      return res.status(401).json({ message: "Token does not contain emailid" });
+    }
+
+    const [rows] = await db.query(
+      `SELECT facultyid
+       FROM faculties
+       WHERE emailid = ? OR facultyid = ?
+       LIMIT 1`,
+      [email, email]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Faculty not found" });
+    }
+
+    const [[studentRow]] = await db.query(
+      `SELECT COUNT(*) AS total_students
+       FROM students`
+    );
+
+    const [[facultyRow]] = await db.query(
+      `SELECT COUNT(*) AS total_faculty
+       FROM faculties`
+    );
+
+    const [[subjectRow]] = await db.query(
+      `SELECT COUNT(*) AS total_subjects
+       FROM subject`
+    );
+
+    return res.json({
+      total_students: Number(studentRow.total_students || 0),
+      total_faculty: Number(facultyRow.total_faculty || 0),
+      total_subjects: Number(subjectRow.total_subjects || 0),
+    });
+  } catch (error) {
+    console.error("Faculty dashboard error:", error);
+    return res.status(500).json({ message: "Error fetching faculty dashboard" });
+  }
+};
+
+// ==============================
+// UPDATE FACULTY PROFILE
+// ==============================
+exports.updateFacultyProfile = async (req, res) => {
+  try {
+    const user = req.user || {};
+    const email = user.emailid || user.email;
+
+    if (!email) {
+      return res.status(401).json({ message: "Token does not contain emailid" });
+    }
+
+    const [rows] = await db.query(
+      `SELECT sr_no, facultyid
+       FROM faculties
+       WHERE emailid = ? OR facultyid = ?
+       LIMIT 1`,
+      [email, email]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Faculty not found" });
+    }
+
+    const current = rows[0];
+
+    const allowed = [
+      "facultyname",
+      "emailid",
+      "contactnumber",
+      "gender",
+      "birthdate",
+      "state",
+      "city",
+      "qualification",
+      "experience",
+      "position",
+    ];
+
+    const sets = [];
+    const values = [];
+
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        sets.push(`${key} = ?`);
+        values.push(req.body[key]);
+      }
+    }
+
+    if (req.file) {
+      const facultyid = current.facultyid;
+      const ext =
+        path.extname(req.file.filename).toLowerCase() ||
+        path.extname(req.file.originalname).toLowerCase();
+
+      deleteOldFacultyPhoto(facultyid);
+
+      const finalFileName = `${facultyid}${ext}`;
+      const finalPath = path.join(facultyUploadDir, finalFileName);
+
+      fs.renameSync(req.file.path, finalPath);
+
+      sets.push("profilepic = ?");
+      values.push(finalFileName);
+    }
+
+    if (req.body.password && String(req.body.password).trim() !== "") {
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      sets.push("password = ?");
+      values.push(hashedPassword);
+    }
+
+    if (!sets.length) {
+      return res.status(400).json({ message: "Nothing to update" });
+    }
+
+    values.push(current.sr_no);
+
+    await db.query(
+      `UPDATE faculties SET ${sets.join(", ")} WHERE sr_no = ?`,
+      values
+    );
+
+    const [updatedRows] = await db.query(
+      `SELECT
+          sr_no,
+          facultyid,
+          facultyname,
+          state,
+          city,
+          emailid,
+          contactnumber,
+          qualification,
+          experience,
+          DATE_FORMAT(birthdate, '%Y-%m-%d') AS birthdate,
+          gender,
+          profilepic,
+          courcecode,
+          semoryear,
+          subject,
+          position,
+          DATE_FORMAT(joineddate, '%Y-%m-%d') AS joineddate,
+          activestatus,
+          lastlogin
+       FROM faculties
+       WHERE sr_no = ?
+       LIMIT 1`,
+      [current.sr_no]
+    );
+
+    return res.json(updatedRows[0]);
+  } catch (error) {
+    console.error("updateFacultyProfile error:", error);
+    return res.status(500).json({ message: "Error updating faculty profile" });
+  }
+};
+
+// ==============================
+// CHANGE PASSWORD
+// ==============================
+exports.changeFacultyPassword = async (req, res) => {
+  try {
+    const user = req.user || {};
+    const email = user.emailid || user.email;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!email) {
+      return res.status(401).json({ message: "Token does not contain emailid" });
+    }
+
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "currentPassword and newPassword are required" });
+    }
+
+    const [rows] = await db.query(
+      "SELECT sr_no, password FROM faculties WHERE emailid = ? OR facultyid = ? LIMIT 1",
+      [email, email]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Faculty not found" });
+    }
+
+    const faculty = rows[0];
+    const isMatch = await bcrypt.compare(currentPassword, faculty.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await db.query("UPDATE faculties SET password = ? WHERE sr_no = ?", [
+      hashed,
+      faculty.sr_no,
+    ]);
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("changeFacultyPassword error:", error);
+    return res.status(500).json({ message: "Error changing password" });
+  }
+};
+
+// ==============================
+// CHANGE EMAIL
+// ==============================
+exports.changeFacultyEmail = async (req, res) => {
+  try {
+    const jwt = require("jsonwebtoken");
+    const user = req.user || {};
+    const tokenEmail = user.emailid || user.email;
+    const { currentEmail, newEmail } = req.body;
+
+    if (!tokenEmail) {
+      return res.status(401).json({ message: "Token does not contain emailid" });
+    }
+
+    if (!currentEmail || !newEmail) {
+      return res
+        .status(400)
+        .json({ message: "currentEmail and newEmail are required" });
+    }
+
+    if (currentEmail.trim() !== tokenEmail.trim()) {
+      return res
+        .status(401)
+        .json({ message: "Current email does not match your account" });
+    }
+
+    const [rows] = await db.query(
+      "SELECT sr_no FROM faculties WHERE emailid = ? OR facultyid = ? LIMIT 1",
+      [tokenEmail, tokenEmail]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Faculty not found" });
+    }
+
+    const [exists] = await db.query(
+      "SELECT sr_no FROM faculties WHERE emailid = ? LIMIT 1",
+      [newEmail]
+    );
+
+    if (exists.length) {
+      return res.status(409).json({ message: "Email already in use" });
+    }
+
+    await db.query("UPDATE faculties SET emailid = ? WHERE sr_no = ?", [
+      newEmail,
+      rows[0].sr_no,
+    ]);
+
+    const token = jwt.sign(
+      { email: newEmail, role: "faculty" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    return res.json({
+      message: "Email updated successfully",
+      token,
+      emailid: newEmail,
+    });
+  } catch (error) {
+    console.error("changeFacultyEmail error:", error);
+    return res.status(500).json({ message: "Error changing email" });
+  }
+};
+
+// ============================
+// FACULTY SELF PROFILE UPLOAD
+// ============================
+const facultyTmpDir = path.resolve(__dirname, "../../uploads/faculties/tmp");
+
+if (!fs.existsSync(facultyTmpDir)) {
+  fs.mkdirSync(facultyTmpDir, { recursive: true });
+}
+
+const profileStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, facultyTmpDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `tmp_${Date.now()}${ext}`);
+  },
+});
+
+exports.uploadProfile = multer({ storage: profileStorage });
+
+const deleteOldFacultyPhoto = (facultyid) => {
+  if (!fs.existsSync(facultyUploadDir)) return;
+
+  const files = fs.readdirSync(facultyUploadDir);
+
+  files.forEach((file) => {
+    const name = path.basename(file, path.extname(file));
+    if (name === String(facultyid)) {
+      fs.unlinkSync(path.join(facultyUploadDir, file));
+    }
+  });
+};
