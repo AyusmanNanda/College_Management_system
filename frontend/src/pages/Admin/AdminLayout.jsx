@@ -78,10 +78,7 @@ const AdminLayout = () => {
 
     const handleLogout = () => {
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("lastPage");
-
+        localStorage.clear();
         navigate("/", { replace: true });
 
     };
