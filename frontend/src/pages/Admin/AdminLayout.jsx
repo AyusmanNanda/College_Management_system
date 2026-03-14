@@ -10,7 +10,8 @@ import {
     ClipboardCheck,
     GraduationCap,
     BarChart3,
-    User
+    User,
+    ChevronRight
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -21,14 +22,12 @@ const AdminLayout = () => {
     const token = localStorage.getItem("token");
 
     const [admin, setAdmin] = useState(null);
-
     const [collapsed, setCollapsed] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [openSections, setOpenSections] = useState({});
 
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem("theme");
-
         if (savedTheme) return savedTheme;
 
         return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -90,9 +89,7 @@ const AdminLayout = () => {
     /* ===================== Theme ===================== */
 
     const toggleTheme = () => {
-
         setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-
     };
 
     /* ===================== Sidebar Section Toggle ===================== */
@@ -177,14 +174,12 @@ const AdminLayout = () => {
 
         <div className="h-screen flex bg-gray-100 dark:bg-gray-950 overflow-hidden transition-colors">
 
-            {/* Overlay (Mobile) */}
+            {/* Overlay */}
             {isSidebarOpen && (
-
                 <div
                     className="fixed inset-0 bg-black/30 z-30 lg:hidden"
                     onClick={() => setIsSidebarOpen(false)}
                 />
-
             )}
 
             {/* Sidebar */}
@@ -235,16 +230,48 @@ const AdminLayout = () => {
 
                     </div>
 
+                    {admin && !collapsed && (
+                        <div className="mt-3 text-xs space-y-1 leading-relaxed">
+
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-400">Status:</span>
+
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className={`h-2 w-2 rounded-full ${
+                                            admin.activestatus
+                                                ? "bg-green-500"
+                                                : "bg-red-500"
+                                        }`}
+                                    />
+                                    <span className="text-gray-600 dark:text-gray-300">
+                                        {admin.activestatus ? "Active" : "Inactive"}
+                                    </span>
+                                </span>
+                            </div>
+
+                            <div>
+                                <span className="text-gray-400">
+                                    Last login:
+                                </span>{" "}
+                                <span className="text-gray-600 dark:text-gray-300 break-words">
+                                    {admin.lastlogin
+                                        ? new Date(admin.lastlogin).toLocaleString()
+                                        : "Not available"}
+                                </span>
+                            </div>
+
+                        </div>
+                    )}
+
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+                <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
                     {menuItems.map((item) => {
 
                         const Icon = item.icon;
-
-                        /* Section with children */
 
                         if (item.children) {
 
@@ -258,23 +285,25 @@ const AdminLayout = () => {
 
                                     <button
                                         onClick={() => toggleSection(item.name)}
-                                        className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+                                        className={`w-full flex items-center
+                                        ${collapsed ? "justify-center" : "justify-between"}
+                                        px-3 py-2 text-sm font-medium rounded-md
+                                        text-gray-600 dark:text-gray-300
+                                        hover:bg-gray-100 dark:hover:bg-gray-800
+                                        transition-colors`}
                                     >
 
-                                        <div className="flex items-center gap-3">
-
+                                        <div className={`flex items-center ${collapsed ? "" : "gap-3"}`}>
                                             <Icon size={18} />
-
                                             {!collapsed && item.name}
-
                                         </div>
 
                                         {!collapsed && (
-                                            <span
-                                                className={`transition-transform ${isOpen ? "rotate-90" : ""}`}
-                                            >
-                                                ▶
-                                            </span>
+                                            <ChevronRight
+                                                size={16}
+                                                className={`transition-transform duration-200 text-gray-400
+                                                ${isOpen ? "rotate-90" : ""}`}
+                                            />
                                         )}
 
                                     </button>
@@ -297,7 +326,7 @@ const AdminLayout = () => {
                                                                 setIsSidebarOpen(false);
                                                             }
                                                         }}
-                                                        className={`block px-3 py-1.5 rounded-md text-sm transition
+                                                        className={`block px-3 py-1.5 rounded-md text-sm transition-colors
                                                         ${
                                                             active
                                                                 ? "bg-gray-900 text-white dark:bg-gray-700"
@@ -321,8 +350,6 @@ const AdminLayout = () => {
 
                         }
 
-                        /* Single item */
-
                         const isActive = location.pathname === item.path;
 
                         return (
@@ -330,18 +357,16 @@ const AdminLayout = () => {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition
+                                className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}
+                                px-3 py-2 rounded-md text-sm font-medium transition-colors
                                 ${
                                     isActive
                                         ? "bg-gray-900 text-white dark:bg-gray-700"
                                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                 }`}
                             >
-
                                 <Icon size={18} />
-
                                 {!collapsed && item.name}
-
                             </Link>
 
                         );
@@ -364,7 +389,6 @@ const AdminLayout = () => {
 
                     <div className="flex items-center gap-4">
 
-                        {/* Collapse button */}
                         <button
                             onClick={() => setCollapsed(!collapsed)}
                             className="hidden lg:block text-gray-700 dark:text-gray-300"
@@ -372,7 +396,6 @@ const AdminLayout = () => {
                             ☰
                         </button>
 
-                        {/* Mobile sidebar button */}
                         <button
                             onClick={() => setIsSidebarOpen(true)}
                             className="lg:hidden text-gray-700 dark:text-gray-300 text-xl"
@@ -406,7 +429,6 @@ const AdminLayout = () => {
 
                 </header>
 
-                {/* Content */}
                 <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 lg:p-8 min-h-[80vh]">
