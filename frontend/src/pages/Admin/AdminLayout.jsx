@@ -49,7 +49,10 @@ const AdminLayout = () => {
 
     useEffect(() => {
 
-        if (!token) return;
+        if (!token) {
+            navigate("/", { replace: true });
+            return;
+        }
 
         const fetchAdmin = async () => {
 
