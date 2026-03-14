@@ -95,12 +95,9 @@ const AdminLayout = () => {
     /* ===================== Sidebar Section Toggle ===================== */
 
     const toggleSection = (section) => {
-
         setOpenSections((prev) => ({
-            ...prev,
             [section]: !prev[section]
         }));
-
     };
 
     /* ===================== Menu ===================== */
@@ -169,6 +166,20 @@ const AdminLayout = () => {
         }
 
     ];
+
+    /* ===================== Auto open active section ===================== */
+
+    useEffect(() => {
+
+        const activeSection = menuItems.find((item) =>
+            item.children?.some((c) => location.pathname.startsWith(c.path))
+        );
+
+        if (activeSection) {
+            setOpenSections({ [activeSection.name]: true });
+        }
+
+    }, [location.pathname]);
 
     return (
 
@@ -272,12 +283,9 @@ const AdminLayout = () => {
                     {menuItems.map((item) => {
 
                         const Icon = item.icon;
+                        const isOpen = openSections[item.name];
 
                         if (item.children) {
-
-                            const isOpen =
-                                openSections[item.name] ||
-                                item.children.some((c) => location.pathname === c.path);
 
                             return (
 
@@ -413,9 +421,20 @@ const AdminLayout = () => {
 
                         <button
                             onClick={toggleTheme}
-                            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800"
+                            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-all duration-300 group"
+                            title="Toggle theme"
                         >
-                            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                            {theme === "dark" ? (
+                                <Sun
+                                    size={20}
+                                    className="text-gray-300 transition-transform duration-300 group-hover:rotate-12"
+                                />
+                            ) : (
+                                <Moon
+                                    size={20}
+                                    className="text-gray-700 transition-transform duration-300 group-hover:-rotate-12"
+                                />
+                            )}
                         </button>
 
                         <button
