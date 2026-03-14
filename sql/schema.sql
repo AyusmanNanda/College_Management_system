@@ -32,20 +32,21 @@ USE `collegedata`;
 -- Table structure for table `admin`
 --
 
-CREATE TABLE `admin` (
-  `collagename` VARCHAR(50) DEFAULT NULL,
-  `address` VARCHAR(100) DEFAULT NULL,
-  `emailid` VARCHAR(50) DEFAULT NULL,
-  `contactnumber` VARCHAR(40) DEFAULT NULL,
-  `website` VARCHAR(30) DEFAULT NULL,
-  `lastlogin` VARCHAR(40) DEFAULT NULL,
-  `password` VARCHAR(255) DEFAULT NULL,
-  `facebook` VARCHAR(100) DEFAULT NULL,
-  `instagram` VARCHAR(100) DEFAULT NULL,
-  `twitter` VARCHAR(100) DEFAULT NULL,
-  `linkedin` VARCHAR(100) DEFAULT NULL,
-  `logo` VARCHAR(255) DEFAULT NULL,
-  `activestatus` TINYINT DEFAULT 0
+CREATE TABLE admin (
+                       collegename VARCHAR(50) DEFAULT NULL,
+                       address VARCHAR(100) DEFAULT NULL,
+                       emailid VARCHAR(255) NOT NULL,
+                       contactnumber VARCHAR(40) DEFAULT NULL,
+                       website VARCHAR(255) DEFAULT NULL,
+                       lastlogin DATETIME DEFAULT NULL,
+                       password VARCHAR(255) DEFAULT NULL,
+                       facebook VARCHAR(100) DEFAULT NULL,
+                       instagram VARCHAR(100) DEFAULT NULL,
+                       twitter VARCHAR(100) DEFAULT NULL,
+                       linkedin VARCHAR(100) DEFAULT NULL,
+                       logo VARCHAR(255) DEFAULT NULL,
+                       activestatus TINYINT DEFAULT 0,
+                       PRIMARY KEY (emailid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --

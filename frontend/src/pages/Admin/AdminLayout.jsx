@@ -49,7 +49,10 @@ const AdminLayout = () => {
 
     useEffect(() => {
 
-        if (!token) return;
+        if (!token) {
+            navigate("/", { replace: true });
+            return;
+        }
 
         const fetchAdmin = async () => {
 
@@ -78,10 +81,7 @@ const AdminLayout = () => {
 
     const handleLogout = () => {
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("lastPage");
-
+        localStorage.clear();
         navigate("/", { replace: true });
 
     };
