@@ -126,11 +126,8 @@ export default function FacultyLayout() {
   }, [user, imgBust]);
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
-    localStorage.removeItem("lastlogin");
-    navigate("/login");
+    localStorage.clear();
+    navigate("/", { replace: true });
   };
 
   return (

@@ -1,7 +1,8 @@
 const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 /*
   Role-Based Login
   Supports bcrypt OR plain text passwords
@@ -145,5 +146,95 @@ exports.logout = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Logout failed" });
+    }
+};
+
+exports.googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body;
+
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        const email = payload.email;
+
+        let user = null;
+        let role = null;
+        let table = null;
+
+        // Check admin
+        const [adminRows] = await db.query(
+            "SELECT * FROM admin WHERE emailid = ?",
+            [email]
+        );
+
+        if (adminRows.length > 0) {
+            user = adminRows[0];
+            role = "admin";
+            table = "admin";
+        }
+
+        // Check faculty
+        if (!user) {
+            const [facultyRows] = await db.query(
+                "SELECT * FROM faculties WHERE emailid = ?",
+                [email]
+            );
+
+            if (facultyRows.length > 0) {
+                user = facultyRows[0];
+                role = "faculty";
+                table = "faculties";
+            }
+        }
+
+        // Check students
+        if (!user) {
+            const [studentRows] = await db.query(
+                "SELECT * FROM students WHERE emailid = ?",
+                [email]
+            );
+
+            if (studentRows.length > 0) {
+                user = studentRows[0];
+                role = "student";
+                table = "students";
+            }
+        }
+
+        if (!user) {
+            return res.status(403).json({
+                message: "Google account not registered in system"
+            });
+        }
+
+        const token = jwt.sign(
+            { email: user.emailid, role },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+
+        await db.query(
+            `
+            UPDATE ${table}
+            SET activestatus = 1,
+                lastlogin = ?
+            WHERE emailid = ?
+            `,
+            [new Date().toISOString(), email]
+        );
+
+        res.json({
+            message: "Google login successful",
+            token,
+            role
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Google login failed" });
     }
 };
