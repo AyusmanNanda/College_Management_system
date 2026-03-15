@@ -8,6 +8,7 @@ import {
 import { useEffect } from "react";
 
 import Login from "./pages/Login";
+import OAuthSuccess from "./pages/OAuthSuccess";
 
 import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -39,7 +40,11 @@ const RouteTracker = () => {
     const token = localStorage.getItem("token");
 
     useEffect(() => {
-        if (token && location.pathname !== "/") {
+        if (
+            token &&
+            location.pathname !== "/" &&
+            location.pathname !== "/oauth-success"
+        ) {
             localStorage.setItem("lastPage", location.pathname);
         }
     }, [location, token]);
@@ -91,6 +96,9 @@ function App() {
 
                 {/* Smart Root Route */}
                 <Route path="/" element={<RootHandler />} />
+
+                {/* OAuth Redirect Handler */}
+                <Route path="/oauth-success" element={<OAuthSuccess />} />
 
                 {/* ===================== Admin Section ===================== */}
                 <Route
