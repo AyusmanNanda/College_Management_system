@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "../Admin/ConfirmSaveModal";
+import ImportMarksModal from "./ImportMarksModal";
 
 function InfoCard({ label, value }) {
   return (
@@ -30,6 +31,7 @@ export default function FacultyEnterMarks() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
 
   useEffect(() => {
@@ -226,30 +228,50 @@ export default function FacultyEnterMarks() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
-        <select
-          value={selectedSubject}
-          onChange={(e) => {
-            setSelectedSubject(e.target.value);
-            setError("");
-            setSuccess("");
-          }}
-          disabled={loadingSubjects}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-        >
-          <option value="">
-            {loadingSubjects ? "Loading Subjects..." : "Select Subject"}
-          </option>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+  <div className="flex-1">
+    <select
+      value={selectedSubject}
+      onChange={(e) => {
+        setSelectedSubject(e.target.value);
+        setError("");
+        setSuccess("");
+      }}
+      disabled={loadingSubjects}
+      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+    >
+      <option value="">
+        {loadingSubjects ? "Loading Subjects..." : "Select Subject"}
+      </option>
 
-          {assignedSubjects.map((sub, index) => (
-            <option key={`${sub.subjectcode}-${index}`} value={sub.subjectcode}>
-              {sub.subjectname}
-            </option>
-          ))}
-        </select>
-      </div>
+      {assignedSubjects.map((sub, index) => (
+        <option key={`${sub.subjectcode}-${index}`} value={sub.subjectcode}>
+          {sub.subjectname}
+        </option>
+      ))}
+    </select>
+  </div>
 
-      {selectedSubjectObj && (
+  <div className="flex justify-end">
+    <button
+      onClick={() => {
+        setError("");
+        setSuccess("");
+        setShowImportModal(true);
+      }}
+      disabled={!selectedSubject || !selectedCourse || !selectedSem}
+      className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+  selectedSubject && selectedCourse && selectedSem
+    ? "bg-gray-300 hover:bg-gray-400 border border-gray-400 text-black dark:text-white dark:bg-gray-600 dark:border-gray-500 dark:hover:bg-gray-500"
+    : "bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300 dark:bg-gray-700 dark:text-gray-500 dark:border-gray-600"
+}`}
+    >
+      Import From File
+    </button>
+  </div>
+</div>
+
+{selectedSubjectObj && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <InfoCard label="Subject Code" value={selectedSubjectObj?.subjectcode} />
             <InfoCard label="Course" value={selectedCourse} />
@@ -412,6 +434,30 @@ export default function FacultyEnterMarks() {
     saveMarks();
   }}
 />
-    </div>
+
+{/* 🔥 IMPORT MODAL */}
+{showImportModal && (
+  <ImportMarksModal
+    token={token}
+    course={selectedCourse}
+    sem={selectedSem}
+    subject={selectedSubject}
+    onClose={() => setShowImportModal(false)}
+    onImportSuccess={(data) => {
+      setSuccess(data?.message || "Marks imported successfully.");
+      setError("");
+
+      setTimeout(() => {
+        setSelectedSubject("");
+        setStudents([]);
+        setMarks({});
+        setSuccess("");
+        setShowImportModal(false);
+      }, 1500);
+    }}
+  />
+)}
+
+</div>
   );
 }
