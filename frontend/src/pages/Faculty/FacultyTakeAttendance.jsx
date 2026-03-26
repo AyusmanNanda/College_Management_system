@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
+import ImportAttendanceModal from "./ImportAttendanceModal";
 
 function InfoCard({ label, value }) {
   return (
@@ -27,6 +28,8 @@ export default function FacultyTakeAttendance() {
 
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -132,9 +135,9 @@ export default function FacultyTakeAttendance() {
 
   const toggleStudent = (id) => {
     setCheckedStudents((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  ...prev,
+  [id]: !prev[id],
+}));
   };
 
   const saveAttendance = async () => {
@@ -231,39 +234,65 @@ export default function FacultyTakeAttendance() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select
-          value={selectedSubject}
-          onChange={(e) => {
-            setSelectedSubject(e.target.value);
-            setCheckedStudents({});
-            setError("");
-            setSuccess("");
-          }}
-          disabled={loadingSubjects}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-        >
-          <option value="">
-            {loadingSubjects ? "Loading Subjects..." : "Select Subject"}
-          </option>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
-          {assignedSubjects.map((sub, index) => (
-            <option key={`${sub.subjectcode}-${index}`} value={sub.subjectcode}>
-              {sub.subjectname}
-            </option>
-          ))}
-        </select>
+  {/* LEFT SIDE → DROPDOWNS */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+    
+    <select
+      value={selectedSubject}
+      onChange={(e) => {
+        setSelectedSubject(e.target.value);
+        setCheckedStudents({});
+        setError("");
+        setSuccess("");
+      }}
+      disabled={loadingSubjects}
+      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+    >
+      <option value="">
+        {loadingSubjects ? "Loading Subjects..." : "Select Subject"}
+      </option>
 
-        <select
-          value={markMode}
-          onChange={(e) => setMarkMode(e.target.value)}
-          disabled={!selectedSubject}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-        >
-          <option value="present">Mark Present</option>
-          <option value="absent">Mark Absent</option>
-        </select>
-      </div>
+      {assignedSubjects.map((sub, index) => (
+        <option key={`${sub.subjectcode}-${index}`} value={sub.subjectcode}>
+          {sub.subjectname}
+        </option>
+      ))}
+    </select>
+
+    <select
+      value={markMode}
+      onChange={(e) => setMarkMode(e.target.value)}
+      disabled={!selectedSubject}
+      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
+    >
+      <option value="present">Mark Present</option>
+      <option value="absent">Mark Absent</option>
+    </select>
+
+  </div>
+
+  {/* RIGHT SIDE → IMPORT BUTTON */}
+  <div className="flex justify-end">
+    <button
+      onClick={() => {
+        setError("");
+        setSuccess("");
+        setShowImportModal(true);
+      }}
+      disabled={!selectedSubject || !selectedCourse || !selectedSem}
+      className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+        selectedSubject && selectedCourse && selectedSem
+          ? "bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100"
+          : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+      }`}
+    >
+      Import From File
+    </button>
+  </div>
+
+</div>
 
       {selectedSubjectObj && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -367,6 +396,34 @@ export default function FacultyTakeAttendance() {
           </div>
         </div>
       )}
+{/* IMPORT MODAL */}
+      {showImportModal && (
+        <ImportAttendanceModal
+          onClose={() => setShowImportModal(false)}
+          token={token}
+          subjectcode={selectedSubject}
+          courcecode={selectedCourse}
+          semoryear={selectedSem}
+          date={todayDate}
+          onImportSuccess={() => {
+            setSuccess("Attendance imported successfully.");
+            setError("");
+
+            setTimeout(() => {
+              setSelectedSubject("");
+              setMarkMode("present");
+              setCheckedStudents({});
+              setStudents([]);
+              setExistingDates([]);
+              setSuccess("");
+              setShowImportModal(false);
+            }, 2000);
+          }}
+        />
+      )}
+
     </div>
+
+
   );
 }
