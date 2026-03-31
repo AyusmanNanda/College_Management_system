@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
 import ImportAttendanceModal from "./ImportAttendanceModal";
+import ConfirmSaveModal from "../Admin/ConfirmSaveModal";
 
 function InfoCard({ label, value }) {
   return (
@@ -30,6 +31,8 @@ export default function FacultyTakeAttendance() {
   const [loadingStudents, setLoadingStudents] = useState(false);
   
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [savingAttendance, setSavingAttendance] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -141,73 +144,78 @@ export default function FacultyTakeAttendance() {
   };
 
   const saveAttendance = async () => {
-    if (!selectedSubject || !selectedCourse || !selectedSem) {
-      setError("Please select a subject.");
-      return;
-    }
+  if (!selectedSubject || !selectedCourse || !selectedSem) {
+    setError("Please select a subject.");
+    return;
+  }
 
-    if (existingDates.includes(todayDate)) {
+  if (existingDates.includes(todayDate)) {
     setError("Today's attendance has already been taken for this subject.");
 
     setTimeout(() => {
-    setSelectedSubject("");
-    setMarkMode("present");
-    setCheckedStudents({});
-    setStudents([]);
-    setExistingDates([]);
-    setError("");
-  }, 1200);
-
-  return;
-}
-
-    try {
-      const records = students.map((student) => {
-        const isChecked = !!checkedStudents[student.student_id];
-
-        return {
-          student_id: student.student_id,
-          present:
-            markMode === "present"
-              ? isChecked
-                ? 1
-                : 0
-              : isChecked
-              ? 0
-              : 1,
-        };
-      });
-
-      await api.post(
-        "/api/attendance",
-        {
-          subjectcode: selectedSubject,
-          date: todayDate,
-          courcecode: selectedCourse,
-          semoryear: Number(selectedSem),
-          records,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      setSuccess("Attendance saved successfully for today.");
+      setSelectedSubject("");
+      setMarkMode("present");
+      setCheckedStudents({});
+      setStudents([]);
+      setExistingDates([]);
       setError("");
+    }, 1200);
 
-      setTimeout(() => {
+    return;
+  }
+
+  try {
+    setSavingAttendance(true);
+    setShowConfirmModal(false);
+
+    const records = students.map((student) => {
+      const isChecked = !!checkedStudents[student.student_id];
+
+      return {
+        student_id: student.student_id,
+        present:
+          markMode === "present"
+            ? isChecked
+              ? 1
+              : 0
+            : isChecked
+            ? 0
+            : 1,
+      };
+    });
+
+    await api.post(
+      "/api/attendance",
+      {
+        subjectcode: selectedSubject,
+        date: todayDate,
+        courcecode: selectedCourse,
+        semoryear: Number(selectedSem),
+        records,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    setSuccess("Attendance saved successfully for today.");
+    setError("");
+
+    setTimeout(() => {
       setSelectedSubject("");
       setMarkMode("present");
       setCheckedStudents({});
       setStudents([]);
       setExistingDates([]);
       setSuccess("");
-      }, 1200);
-    } catch (err) {
-      console.error("Save attendance error:", err);
-      setError(err?.response?.data?.message || "Failed to save attendance.");
-    }
-  };
+    }, 1200);
+  } catch (err) {
+    console.error("Save attendance error:", err);
+    setError(err?.response?.data?.message || "Failed to save attendance.");
+  } finally {
+    setSavingAttendance(false);
+  }
+};
 
   const isReady = selectedSubject && selectedCourse && selectedSem;
 
@@ -382,17 +390,17 @@ export default function FacultyTakeAttendance() {
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
-            <button
-              onClick={saveAttendance}
-              disabled={!isReady || students.length === 0}
-              className={`w-full sm:w-auto px-4 py-3 sm:py-2 text-sm rounded-md transition ${
-                isReady && students.length > 0
-                  ? "bg-gray-900 text-white hover:bg-black"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
-              }`}
-            >
-              Save Attendance
-            </button>
+           <button
+  onClick={() => setShowConfirmModal(true)}
+  disabled={!isReady || students.length === 0 || savingAttendance}
+  className={`w-full sm:w-auto px-4 py-3 sm:py-2 text-sm rounded-md transition ${
+    isReady && students.length > 0
+      ? "bg-gray-900 text-white hover:bg-black"
+      : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+  }`}
+>
+  {savingAttendance ? "Saving..." : "Save Attendance"}
+</button>
           </div>
         </div>
       )}
@@ -421,6 +429,17 @@ export default function FacultyTakeAttendance() {
           }}
         />
       )}
+
+
+      <ConfirmSaveModal
+  show={showConfirmModal}
+  title="Confirm Attendance Save"
+  message="Are you sure you want to save today's attendance for this subject?"
+  confirmText="Save Attendance"
+  loading={savingAttendance}
+  onCancel={() => setShowConfirmModal(false)}
+  onConfirm={saveAttendance}
+/>
 
     </div>
 
