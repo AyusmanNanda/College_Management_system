@@ -415,7 +415,7 @@ setSuccessMsg("Details saved successfully");
 
 setTimeout(() => {
   onClose(res.data);
-}, 200);
+}, 1500);
     } catch (err) {
       console.error(err);
 

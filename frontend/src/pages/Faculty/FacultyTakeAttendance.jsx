@@ -159,7 +159,7 @@ export default function FacultyTakeAttendance() {
       setStudents([]);
       setExistingDates([]);
       setError("");
-    }, 1200);
+    }, 1500);
 
     return;
   }
@@ -425,7 +425,7 @@ export default function FacultyTakeAttendance() {
               setExistingDates([]);
               setSuccess("");
               setShowImportModal(false);
-            }, 2000);
+            }, 1500);
           }}
         />
       )}

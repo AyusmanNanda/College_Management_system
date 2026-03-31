@@ -206,7 +206,7 @@ useEffect(() => {
 
     const timer = setTimeout(() => {
       setWarning("");
-    }, 1200);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }
@@ -268,7 +268,7 @@ useEffect(() => {
       setAttendanceDates([]);
       setCheckedStudents({});
       setSuccess("");
-      }, 1200);
+      }, 1500);
     } catch (err) {
       console.error("Update attendance error:", err);
       setError(err?.response?.data?.message || "Failed to update attendance.");

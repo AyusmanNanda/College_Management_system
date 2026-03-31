@@ -34,23 +34,12 @@ export default function FacultyEnterMarks() {
   const [showImportModal, setShowImportModal] = useState(false);
 
 
-  useEffect(() => {
-  if (!error) return;
-
-  const timer = setTimeout(() => {
-    setError("");
-  }, 1200);
-
-  return () => clearTimeout(timer);
-}, [error]);
-
-
 
   useEffect(() => {
     const fetchAssignedSubjects = async () => {
       try {
         setLoadingSubjects(true);
-        setError("");
+        
 
         const res = await api.get("/api/faculty/assigned-subjects", {
           headers: { Authorization: `Bearer ${token}` },
@@ -196,7 +185,7 @@ export default function FacultyEnterMarks() {
         setStudents([]);
         setMarks({});
         setSuccess("");
-      }, 1200);
+      }, 1500);
     } catch (err) {
       console.error("Save marks error:", err);
       setError(err?.response?.data?.message || "Failed to save marks.");
