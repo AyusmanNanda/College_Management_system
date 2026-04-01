@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "../Admin/ConfirmSaveModal";
 
 const hideScrollbarStyle = `
 .hide-scrollbar::-webkit-scrollbar { width: 0px; height: 0px; }
@@ -12,7 +11,6 @@ const FacultyProfile = () => {
 
   const [faculty, setFaculty] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  
  
 
   //  ADDED (cache bust for image refresh)
@@ -242,7 +240,7 @@ const EditDetailsModalAll = ({ faculty, token, onClose }) => {
     // professional
     qualification: faculty.qualification || "",
     experience: faculty.experience || "",
-    position: faculty.position || "",
+    position: faculty.position || "NOT ASSIGNED",
     
     
     
@@ -289,7 +287,6 @@ const EditDetailsModalAll = ({ faculty, token, onClose }) => {
   }, [faculty?.profilepic]);
 
   const [saving, setSaving] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -309,16 +306,9 @@ const EditDetailsModalAll = ({ faculty, token, onClose }) => {
     setPreview(URL.createObjectURL(file));
   };
 
-  const openConfirmModal = () => {
-  setErrorMsg("");
-  setSuccessMsg("");
-  setShowConfirmModal(true);
-};
-
   const handleSubmit = async () => {
-  setShowConfirmModal(false);
-  setSaving(true);
-  setErrorMsg("");
+    setSaving(true);
+    setErrorMsg("");
 
     try {
       let authToken = localStorage.getItem("token");
@@ -539,7 +529,25 @@ setTimeout(() => {
           onChange={handleChange}
           placeholder="e.g. 3 years"
         />
-        <StyledInput label="Position" name="position" value={form.position} onChange={handleChange} />
+        <div>
+  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+    Position
+  </label>
+  <select
+    name="position"
+    value={form.position || "NOT ASSIGNED"}
+    onChange={handleChange}
+    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-gray-400"
+  >
+    <option value="NOT ASSIGNED">NOT ASSIGNED</option>
+    <option value="Full Professor">Full Professor</option>
+    <option value="Associate Professor">Associate Professor</option>
+    <option value="Assistant Professor">Assistant Professor</option>
+    <option value="Lecturer">Lecturer</option>
+    <option value="Lab Assistant">Lab Assistant</option>
+    <option value="Visiting Faculty">Visiting Faculty</option>
+  </select>
+</div>
         
 
 
@@ -589,24 +597,14 @@ setTimeout(() => {
       </div>
 
       <div className="flex justify-end mt-6">
-  <button
-    onClick={openConfirmModal}
-    disabled={saving}
-    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-60"
-  >
-    {saving ? "Saving..." : "Update Details"}
-  </button>
-</div>
-
-    <ConfirmSaveModal
-  show={showConfirmModal}
-  title="Confirm Profile Update"
-  message="Are you sure you want to update your profile details?"
-  confirmText="Update"
-  loading={saving}
-  onCancel={() => setShowConfirmModal(false)}
-  onConfirm={handleSubmit}
-/>
+        <button
+          onClick={handleSubmit}
+          disabled={saving}
+          className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Update Details"}
+        </button>
+      </div>
     </ModalWrapper>
   );
 };
