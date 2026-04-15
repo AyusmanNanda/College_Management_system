@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "../Admin/ConfirmSaveModal";
+import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
 
 const hideScrollbarStyle = `
 .hide-scrollbar::-webkit-scrollbar { width: 0px; height: 0px; }

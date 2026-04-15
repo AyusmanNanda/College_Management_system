@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "../Admin/ConfirmSaveModal";
+import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
 
 function InfoCard({ label, value }) {
   return (
