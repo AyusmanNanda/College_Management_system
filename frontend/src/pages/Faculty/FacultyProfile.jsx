@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
+import ConfirmSaveModal from "../Admin/ConfirmSaveModal";
 
 const hideScrollbarStyle = `
 .hide-scrollbar::-webkit-scrollbar { width: 0px; height: 0px; }
@@ -12,6 +13,7 @@ const FacultyProfile = () => {
   const [faculty, setFaculty] = useState(null);
   const [assignedSubjects, setAssignedSubjects] = useState([]);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  
  
 
   //  ADDED (cache bust for image refresh)
@@ -310,6 +312,7 @@ const EditDetailsModalAll = ({ faculty, token, onClose }) => {
   }, [faculty?.profilepic]);
 
   const [saving, setSaving] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -428,7 +431,7 @@ setSuccessMsg("Details saved successfully");
 
 setTimeout(() => {
   onClose(res.data);
-}, 1500);
+}, 500);
     } catch (err) {
       console.error(err);
 
@@ -603,13 +606,22 @@ setTimeout(() => {
 
       <div className="flex justify-end mt-6">
         <button
-          onClick={handleSubmit}
+          onClick={() => setShowConfirmModal(true)}
           disabled={saving}
           className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-60"
         >
           {saving ? "Saving..." : "Update Details"}
         </button>
       </div>
+      <ConfirmSaveModal
+  show={showConfirmModal}
+  title="Confirm Profile Update"
+  message="Are you sure you want to update your profile?"
+  confirmText="Update Details"
+  loading={saving}
+  onCancel={() => setShowConfirmModal(false)}
+  onConfirm={handleSubmit}
+/>
     </ModalWrapper>
   );
 };
