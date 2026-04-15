@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
-import api from "../../utils/api";
+import api from "../../../utils/api.js";
 import ConfirmSaveModal from "./ConfirmSaveModal.jsx";
 
-const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
+const ImportStudentModal = ({ token, onClose, onImportSuccess }) => {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
@@ -15,7 +15,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
     const handleDownloadTemplate = async () => {
         try {
             setError("");
-            const url = `${api.defaults.baseURL}/api/faculty/template`;
+            const url = `${api.defaults.baseURL}/api/student/template`;
 
             if (Capacitor.isNativePlatform()) {
                 setLoading(true);
@@ -34,8 +34,9 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                 const blob = await response.blob();
 
                 const reader = new FileReader();
+
                 reader.onload = async () => {
-                    const filePath = "Faculty_Import_Template.xlsx";
+                    const filePath = "Student_Import_Template.xlsx";
                     const fileData = reader.result;
 
                     try {
@@ -97,15 +98,16 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                         setError("");
                         alert("Download complete");
 
-                    } catch (err) {
-                        console.error(err);
-                        setError("Failed to save file");
+                    } catch (e) {
+                        console.error(e);
+                        setError("Failed to save file.");
                     } finally {
                         setLoading(false);
                     }
                 };
 
                 reader.onerror = () => {
+                    console.error("FileReader error");
                     setError("Failed to process file");
                     setLoading(false);
                 };
@@ -114,7 +116,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                 return;
             }
 
-            const response = await api.get("/api/faculty/template", {
+            const response = await api.get("/api/student/template", {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: "blob"
             });
@@ -122,7 +124,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
             const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement("a");
             link.href = blobUrl;
-            link.setAttribute("download", "Faculty_Import_Template.xlsx");
+            link.setAttribute("download", "Student_Import_Template.xlsx");
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -130,8 +132,8 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
 
         } catch (err) {
             console.error(err);
-            setLoading(false);
             setError("Failed to download template.");
+            setLoading(false);
         }
     };
 
@@ -147,7 +149,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
             setResult(null);
 
             const response = await api.post(
-                "/api/faculty/import",
+                "/api/student/import",
                 formData,
                 {
                     headers: {
@@ -168,15 +170,12 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-
             <div
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                 onClick={onClose}
             />
 
-            <div
-                className="relative bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6 sm:p-8 transition-colors">
-
+            <div className="relative bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6 sm:p-8 transition-colors">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-5 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white text-sm transition"
@@ -185,7 +184,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                 </button>
 
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
-                    Import Faculty from Excel
+                    Import Students from Excel
                 </h2>
 
                 <div className="space-y-6">
@@ -209,8 +208,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                         </p>
 
                         <label className="block sm:inline-block">
-                            <span
-                                className="block sm:inline-block text-center w-full sm:w-auto px-5 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer dark:text-gray-200">
+                            <span className="block sm:inline-block text-center w-full sm:w-auto px-5 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer dark:text-gray-200">
                                 Choose Excel File
                             </span>
 
@@ -232,15 +230,13 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                         </label>
 
                         {file && (
-                            <div
-                                className="mt-3 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 break-all">
+                            <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 break-all">
                                 Selected file: <span className="font-medium">{file.name}</span>
                             </div>
                         )}
                     </div>
 
                     <div className="flex flex-col sm:flex-row justify-end gap-3">
-
                         <button
                             onClick={handleImport}
                             disabled={!file || loading}
@@ -250,7 +246,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                                     : "bg-gray-900 text-white hover:bg-black"
                             }`}
                         >
-                            {loading ? "Importing..." : "Import Faculties"}
+                            {loading ? "Importing..." : "Import Students"}
                         </button>
                     </div>
 
@@ -262,8 +258,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                         )}
 
                         {result && (
-                            <div
-                                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-sm text-gray-700 dark:text-gray-200">
+                            <div className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-sm text-gray-700 dark:text-gray-200">
                                 <p><strong>Total Rows:</strong> {result.totalRows}</p>
                                 <p><strong>Inserted:</strong> {result.inserted}</p>
                                 <p><strong>Duplicates:</strong> {result.duplicates}</p>
@@ -296,4 +291,4 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
     );
 };
 
-export default ImportFacultyModal;
+export default ImportStudentModal;

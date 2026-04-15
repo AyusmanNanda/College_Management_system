@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "./ConfirmSaveModal";
+import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
 
 const EnterMarks = () => {
 

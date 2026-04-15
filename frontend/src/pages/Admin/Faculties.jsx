@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import FacultyProfile from "./FacultyProfile";
-import ImportFacultyModal from "./ImportFacultyModal";
-import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import ImportFacultyModal from "./modals/ImportFacultyModal.jsx";
+import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
 
 const Faculties = () => {
     const BASE_URL = api.defaults.baseURL;
