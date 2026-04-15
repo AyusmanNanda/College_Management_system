@@ -333,6 +333,24 @@ exports.importAttendance = async (req, res) => {
     if (!subjectcode || !date || !courcecode || !semoryear) {
         return res.status(400).json({ message: "Missing required fields" });
     }
+    const [existingAttendance] = await db.query(
+    `
+        SELECT 1
+        FROM attendance
+        WHERE subjectcode = ?
+          AND attendance_date = ?
+          AND courcecode = ?
+          AND semoryear = ?
+        LIMIT 1
+    `,
+    [subjectcode, date, courcecode, Number(semoryear)]
+);
+
+if (existingAttendance.length > 0) {
+    return res.status(400).json({
+        message: "Attendance is already taken for this date, so import is not allowed."
+    });
+}
 
     date = String(date).slice(0, 10);
 
@@ -398,51 +416,89 @@ exports.importAttendance = async (req, res) => {
                 return;
             }
 
-            const normalizedPresent = Number(presentValue);
-            const normalizedAbsent = Number(absentValue);
+            const hasPresent = presentValue !== "";
+const hasAbsent = absentValue !== "";
 
-            const presentOk = normalizedPresent === 0 || normalizedPresent === 1;
-            const absentOk = normalizedAbsent === 0 || normalizedAbsent === 1;
+// both filled -> invalid
+if (hasPresent && hasAbsent) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Both present and absent are filled"
+    });
+    return;
+}
 
-            if (!presentOk || !absentOk) {
-                invalidRows++;
-                errors.push({
-                    row: excelRowNumber,
-                    reason: "present and absent must be 0 or 1"
-                });
-                return;
-            }
+// both empty -> invalid
+if (!hasPresent && !hasAbsent) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Either present or absent must be filled"
+    });
+    return;
+}
 
-            if (normalizedPresent === normalizedAbsent) {
-                invalidRows++;
-                errors.push({
-                    row: excelRowNumber,
-                    reason: "Exactly one of present or absent must be 1"
-                });
-                return;
-            }
+// validate the filled field only
+if (hasPresent && !["1", "0"].includes(presentValue)) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Present must be 0 or 1"
+    });
+    return;
+}
 
-            const student_id = rollMap.get(rollnumber);
+if (hasAbsent && !["1", "0"].includes(absentValue)) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Absent must be 0 or 1"
+    });
+    return;
+}
 
-            values.push([
-                student_id,
-                subjectcode,
-                date,
-                normalizedPresent,
-                courcecode,
-                Number(semoryear)
-            ]);
+// only one field is filled -> accept row
+let normalizedPresent;
+
+if (hasPresent) {
+    normalizedPresent = 1;
+} else if (hasAbsent) {
+    normalizedPresent = 0;
+}
+
+const student_id = rollMap.get(rollnumber);
+
+values.push([
+    student_id,
+    subjectcode,
+    date,
+    normalizedPresent,
+    courcecode,
+    Number(semoryear)
+]);
         });
 
         if (!values.length) {
-            return res.status(400).json({
-                message: "No valid rows found in file",
-                totalRows: rows.length,
-                inserted: 0,
-                invalidRows,
-                errors
-            });
-        }
+    return res.status(400).json({
+        message: "No valid rows found in file",
+        totalRows: rows.length,
+        inserted: 0,
+        invalidRows,
+        errors
+    });
+}
+
+
+if (invalidRows > 0) {
+    return res.status(400).json({
+        message: "Some rows are invalid. Please fix them and import again.",
+        totalRows: rows.length,
+        inserted: 0,
+        invalidRows,
+        errors
+    });
+}
 
         await db.query(
             `
