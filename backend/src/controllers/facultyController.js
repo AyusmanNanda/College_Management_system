@@ -927,6 +927,7 @@ exports.updateFacultyProfile = async (req, res) => {
       "qualification",
       "experience",
       "position",
+      
     ];
 
     const sets = [];

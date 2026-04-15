@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
+import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
 
 const hideScrollbarStyle = `
 .hide-scrollbar::-webkit-scrollbar { width: 0px; height: 0px; }
@@ -10,28 +11,38 @@ const FacultyProfile = () => {
   const token = localStorage.getItem("token");
 
   const [faculty, setFaculty] = useState(null);
+  const [assignedSubjects, setAssignedSubjects] = useState([]);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  
  
 
   //  ADDED (cache bust for image refresh)
   const [imgBust, setImgBust] = useState(0);
 
   useEffect(() => {
-    if (!token) return;
+  if (!token) return;
 
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get("/api/faculty/profile", {
+  const fetchProfile = async () => {
+    try {
+      const [profileRes, subjectsRes] = await Promise.all([
+        api.get("/api/faculty/profile", {
           headers: { Authorization: `Bearer ${token}` },
-        });
-        setFaculty(res.data);
-      } catch (error) {
-        console.error("Fetch profile error:", error);
-      }
-    };
+        }),
+        api.get("/api/faculty/assigned-subjects", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-    fetchProfile();
-  }, [token]);
+      setFaculty(profileRes.data);
+      setAssignedSubjects(Array.isArray(subjectsRes.data) ? subjectsRes.data : []);
+    } catch (error) {
+      console.error("Fetch profile error:", error);
+      setAssignedSubjects([]);
+    }
+  };
+
+  fetchProfile();
+}, [token]);
 
 
   //  REPLACED (cache-busting image url)
@@ -86,7 +97,7 @@ const FacultyProfile = () => {
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={() => setShowDetailsModal(true)}
-              className="w-full sm:w-auto px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+              className="w-full sm:w-auto px-5 py-2 bg-gray-800 text-gray-200 text-sm rounded-md hover:bg-gray-700 border border-gray-600 transition"
             >
               Edit Details
             </button>
@@ -124,20 +135,34 @@ const FacultyProfile = () => {
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-              <InfoField
-                label="Qualification"
-                value={faculty.qualification || "-"}
-              />
-              <InfoField label="Experience" value={faculty.experience || "-"} />
-              <InfoField
-                label="Position"
-                value={faculty.position || "NOT ASSIGNED"}
-              />
-              
-              
-              
-              
-            </div>
+  <InfoField
+    label="Qualification"
+    value={faculty.qualification || "-"}
+  />
+  <InfoField label="Experience" value={faculty.experience || "-"} />
+  <InfoField
+    label="Position"
+    value={faculty.position || "NOT ASSIGNED"}
+  />
+
+  <div>
+    <p className="text-gray-500 dark:text-gray-400 text-xs capitalize mb-1">
+      Assigned Subject
+    </p>
+
+    {assignedSubjects.length > 0 ? (
+      <p className="text-gray-900 dark:text-gray-100">
+        {assignedSubjects
+          .map((s) => s.subjectname || s.subjectcode)
+          .join(", ")}
+      </p>
+    ) : (
+      <p className="text-gray-900 dark:text-gray-100">
+        No subjects assigned
+      </p>
+    )}
+  </div>
+</div>
           </div>
 
         </div>
@@ -240,7 +265,7 @@ const EditDetailsModalAll = ({ faculty, token, onClose }) => {
     // professional
     qualification: faculty.qualification || "",
     experience: faculty.experience || "",
-    position: faculty.position || "",
+    
     
     
     
@@ -287,6 +312,7 @@ const EditDetailsModalAll = ({ faculty, token, onClose }) => {
   }, [faculty?.profilepic]);
 
   const [saving, setSaving] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -405,7 +431,7 @@ setSuccessMsg("Details saved successfully");
 
 setTimeout(() => {
   onClose(res.data);
-}, 200);
+}, 500);
     } catch (err) {
       console.error(err);
 
@@ -529,7 +555,7 @@ setTimeout(() => {
           onChange={handleChange}
           placeholder="e.g. 3 years"
         />
-        <StyledInput label="Position" name="position" value={form.position} onChange={handleChange} />
+       
         
 
 
@@ -580,13 +606,22 @@ setTimeout(() => {
 
       <div className="flex justify-end mt-6">
         <button
-          onClick={handleSubmit}
+          onClick={() => setShowConfirmModal(true)}
           disabled={saving}
           className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-60"
         >
           {saving ? "Saving..." : "Update Details"}
         </button>
       </div>
+      <ConfirmSaveModal
+  show={showConfirmModal}
+  title="Confirm Profile Update"
+  message="Are you sure you want to update your profile?"
+  confirmText="Update Details"
+  loading={saving}
+  onCancel={() => setShowConfirmModal(false)}
+  onConfirm={handleSubmit}
+/>
     </ModalWrapper>
   );
 };

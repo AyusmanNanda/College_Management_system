@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const db = require("../config/db");
+const ExcelJS = require("exceljs");
+const XLSX = require("xlsx");
 
 const adminUploadDir = path.resolve(__dirname, "../../uploads/admin");
 
@@ -88,6 +90,264 @@ exports.saveMarks = async (req, res) => {
 
 };
 
+
+// ===== TEMPLATE DOWNLOAD =====
+exports.downloadMarksTemplate = async (req, res) => {
+    try {
+        const { course, sem, subject } = req.query;
+
+        if (!course || !sem || !subject) {
+            return res.status(400).json({ message: "course, sem and subject are required" });
+        }
+
+        const [subjectRows] = await db.query(
+            `SELECT subjectname, theorymarks, practicalmarks
+             FROM subject
+             WHERE subjectcode = ? AND courcecode = ? AND semoryear = ?`,
+            [subject, course, sem]
+        );
+
+        if (!subjectRows.length) {
+            return res.status(404).json({ message: "Subject not found" });
+        }
+
+        const subjectInfo = subjectRows[0];
+
+        const [studentRows] = await db.query(
+            `SELECT rollnumber
+             FROM students
+             WHERE Courcecode = ? AND semoryear = ?
+             LIMIT 1`,
+            [course, sem]
+        );
+
+        const demoRoll = studentRows.length ? String(studentRows[0].rollnumber) : "";
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Marks Template");
+
+        // DB-like structure
+        worksheet.columns = [
+            { header: "courcecode", key: "courcecode", width: 18 },
+            { header: "semoryear", key: "semoryear", width: 15 },
+            { header: "subjectcode", key: "subjectcode", width: 18 },
+            { header: "subjectname", key: "subjectname", width: 28 },
+            { header: "rollnumber", key: "rollnumber", width: 18 },
+            { header: "theorymarks", key: "theorymarks", width: 18 },
+            { header: "practicalmarks", key: "practicalmarks", width: 18 }
+        ];
+
+        worksheet.addRow({
+            courcecode: course,
+            semoryear: sem,
+            subjectcode: subject,
+            subjectname: subjectInfo.subjectname || "",
+            rollnumber: demoRoll,
+            theorymarks: Number(subjectInfo.theorymarks || 0) > 0 ? Math.min(Number(subjectInfo.theorymarks), 50) : 0,
+            practicalmarks: Number(subjectInfo.practicalmarks || 0) > 0 ? Math.min(Number(subjectInfo.practicalmarks), 20) : 0
+        });
+
+        worksheet.getRow(1).font = { bold: true };
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="Marks_Template.xlsx"'
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (err) {
+        console.error("Download marks template error:", err);
+        res.status(500).json({ message: "Failed to download template" });
+    }
+};
+
+// ===== IMPORT MARKS =====
+exports.importMarks = async (req, res) => {
+    try {
+        const { course, sem, subject } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({ message: "Excel file is required" });
+        }
+
+        if (!course || !sem || !subject) {
+            return res.status(400).json({ message: "course, sem and subject are required" });
+        }
+
+        const [subjectRows] = await db.query(
+            `SELECT subjectname, theorymarks, practicalmarks
+             FROM subject
+             WHERE subjectcode = ? AND courcecode = ? AND semoryear = ?`,
+            [subject, course, sem]
+        );
+
+        if (!subjectRows.length) {
+            return res.status(404).json({ message: "Subject not found" });
+        }
+
+        const subjectInfo = subjectRows[0];
+        const maxTheory = Number(subjectInfo.theorymarks || 0);
+        const maxPractical = Number(subjectInfo.practicalmarks || 0);
+
+        const [studentRows] = await db.query(
+            `SELECT rollnumber
+             FROM students
+             WHERE Courcecode = ? AND semoryear = ?`,
+            [course, sem]
+        );
+
+        const validRolls = new Set(
+            studentRows.map((s) => String(s.rollnumber).trim())
+        );
+
+        const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        if (!rows.length) {
+            return res.status(400).json({ message: "Excel file is empty" });
+        }
+
+        const values = [];
+        const errors = [];
+        let invalidRows = 0;
+
+        rows.forEach((row, index) => {
+            const excelRow = index + 2;
+
+            // Accept DB-like column names from template
+            const courcecode = String(row.courcecode || course).trim();
+            const semoryear = String(row.semoryear || sem).trim();
+            const subjectcode = String(row.subjectcode || subject).trim();
+            const subjectname = String(row.subjectname || subjectInfo.subjectname || "").trim();
+            const rollnumber = String(row.rollnumber || "").trim();
+
+            const theoryRaw = row.theorymarks;
+            const practicalRaw = row.practicalmarks;
+
+            if (!rollnumber) {
+                invalidRows++;
+                errors.push({
+                    row: excelRow,
+                    reason: "rollnumber is required"
+                });
+                return;
+            }
+
+            if (!validRolls.has(rollnumber)) {
+                invalidRows++;
+                errors.push({
+                    row: excelRow,
+                    reason: `Student not found for rollnumber ${rollnumber}`
+                });
+                return;
+            }
+
+            if (courcecode !== String(course) || semoryear !== String(sem) || subjectcode !== String(subject)) {
+                invalidRows++;
+                errors.push({
+                    row: excelRow,
+                    reason: "courcecode, semoryear or subjectcode does not match selected subject"
+                });
+                return;
+            }
+
+            const theorymarks =
+                theoryRaw === "" || theoryRaw === null || theoryRaw === undefined
+                    ? 0
+                    : Number(theoryRaw);
+
+            const practicalmarks =
+                practicalRaw === "" || practicalRaw === null || practicalRaw === undefined
+                    ? 0
+                    : Number(practicalRaw);
+
+            if (Number.isNaN(theorymarks) || theorymarks < 0) {
+                invalidRows++;
+                errors.push({
+                    row: excelRow,
+                    reason: "theorymarks must be a valid number"
+                });
+                return;
+            }
+
+            if (Number.isNaN(practicalmarks) || practicalmarks < 0) {
+                invalidRows++;
+                errors.push({
+                    row: excelRow,
+                    reason: "practicalmarks must be a valid number"
+                });
+                return;
+            }
+
+            if (theorymarks > maxTheory) {
+                invalidRows++;
+                errors.push({
+                    row: excelRow,
+                    reason: `theorymarks cannot exceed ${maxTheory}`
+                });
+                return;
+            }
+
+            if (practicalmarks > maxPractical) {
+                invalidRows++;
+                errors.push({
+                    row: excelRow,
+                    reason: `practicalmarks cannot exceed ${maxPractical}`
+                });
+                return;
+            }
+
+            values.push([
+                courcecode,
+                Number(semoryear),
+                subjectcode,
+                subjectname || null,
+                rollnumber,
+                theorymarks,
+                practicalmarks
+            ]);
+        });
+
+        if (!values.length) {
+            return res.status(400).json({
+                message: "No valid rows found in file",
+                totalRows: rows.length,
+                inserted: 0,
+                invalidRows,
+                errors
+            });
+        }
+
+        await db.query(
+            `INSERT INTO marks
+             (courcecode, semoryear, subjectcode, subjectname, rollnumber, theorymarks, practicalmarks)
+             VALUES ?
+             ON DUPLICATE KEY UPDATE
+             theorymarks = VALUES(theorymarks),
+             practicalmarks = VALUES(practicalmarks),
+             subjectname = VALUES(subjectname)`,
+            [values]
+        );
+
+        res.json({
+            message: "Marks imported successfully",
+            totalRows: rows.length,
+            inserted: values.length,
+            invalidRows,
+            errors
+        });
+
+    } catch (err) {
+        console.error("Import marks error:", err);
+        res.status(500).json({ message: "Import failed" });
+    }
+};
 
 // ============================
 // Get Marks For Editing

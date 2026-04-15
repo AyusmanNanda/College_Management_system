@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
+import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
 
 function InfoCard({ label, value }) {
   return (
@@ -28,10 +29,13 @@ export default function FacultyEditAttendance() {
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [warning, setWarning] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [savingAttendance, setSavingAttendance] = useState(false);
   
 
   const todayDate = useMemo(() => {
@@ -206,7 +210,7 @@ useEffect(() => {
 
     const timer = setTimeout(() => {
       setWarning("");
-    }, 1200);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }
@@ -238,41 +242,45 @@ useEffect(() => {
       return;
     }
 
-    try {
-      const records = students.map((student) => ({
-        student_id: student.student_id,
-        present: checkedStudents[student.student_id] ? 1 : 0,
-      }));
+      try {
+    setSavingAttendance(true);
 
-      await api.post(
-        "/api/attendance",
-        {
-          subjectcode: selectedSubject,
-          date: selectedDate,
-          courcecode: selectedCourse,
-          semoryear: Number(selectedSem),
-          records,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    const records = students.map((student) => ({
+      student_id: student.student_id,
+      present: checkedStudents[student.student_id] ? 1 : 0,
+    }));
 
-      setSuccess("Attendance updated successfully.");
-      setError("");
+    await api.post(
+      "/api/attendance",
+      {
+        subjectcode: selectedSubject,
+        date: selectedDate,
+        courcecode: selectedCourse,
+        semoryear: Number(selectedSem),
+        records,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
-      setTimeout(() => {
+    setSuccess("Attendance updated successfully.");
+    setError("");
+
+    setTimeout(() => {
       setSelectedSubject("");
       setSelectedDate("");
       setStudents([]);
       setAttendanceDates([]);
       setCheckedStudents({});
       setSuccess("");
-      }, 1200);
-    } catch (err) {
-      console.error("Update attendance error:", err);
-      setError(err?.response?.data?.message || "Failed to update attendance.");
-    }
+    }, 1500);
+  } catch (err) {
+    console.error("Update attendance error:", err);
+    setError(err?.response?.data?.message || "Failed to update attendance.");
+  } finally {
+    setSavingAttendance(false);
+  }
   };
 
   const isReady = selectedSubject && selectedCourse && selectedSem && selectedDate;
@@ -439,19 +447,29 @@ useEffect(() => {
 
           <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
             <button
-              onClick={updateAttendance}
-              disabled={!isReady || students.length === 0 || !canEdit}
-              className={`w-full sm:w-auto px-4 py-3 sm:py-2 text-sm rounded-md transition ${
-                isReady && students.length > 0 && canEdit
-                  ? "bg-gray-900 text-white hover:bg-black"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
-              }`}
-            >
-              Update Attendance
-            </button>
+  onClick={() => setShowConfirmModal(true)}
+  disabled={!isReady || students.length === 0 || !canEdit || savingAttendance}
+  className={`w-full sm:w-auto px-4 py-3 sm:py-2 text-sm rounded-md transition ${
+    isReady && students.length > 0 && canEdit && !savingAttendance
+      ? "bg-gray-900 text-white hover:bg-black"
+      : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+  }`}
+>
+  {savingAttendance ? "Updating..." : "Update Attendance"}
+</button>
           </div>
         </div>
       )}
+      <ConfirmSaveModal
+  show={showConfirmModal}
+  title="Confirm Attendance Update"
+  message="Are you sure you want to update this attendance?"
+  confirmText="Update Attendance"
+  loading={savingAttendance}
+  onCancel={() => setShowConfirmModal(false)}
+  onConfirm={updateAttendance}
+/>
     </div>
   );
 }
+
