@@ -195,13 +195,13 @@ const FacultyLayout = () => {
 
             {showSidebarText && (
               <div className="min-w-0 pt-0.5">
-                <p className="truncate text-[14px] font-semibold text-gray-900 dark:text-gray-100">
-                  College Faculty
-                </p>
-                <p className="truncate text-[13px] text-gray-500 dark:text-gray-400">
-                  Management System
-                </p>
-              </div>
+  <p className="truncate text-[14px] font-semibold text-gray-900 dark:text-gray-100">
+    {user?.name || user?.fullname || user?.facultyname || "Faculty"}
+  </p>
+  <p className="truncate text-[13px] text-gray-500 dark:text-gray-400">
+    Faculty
+  </p>
+</div>
             )}
 
             <button

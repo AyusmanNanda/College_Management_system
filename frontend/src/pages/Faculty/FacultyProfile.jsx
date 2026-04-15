@@ -95,7 +95,7 @@ const FacultyProfile = () => {
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={() => setShowDetailsModal(true)}
-              className="w-full sm:w-auto px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+              className="w-full sm:w-auto px-5 py-2 bg-gray-800 text-gray-200 text-sm rounded-md hover:bg-gray-700 border border-gray-600 transition"
             >
               Edit Details
             </button>
