@@ -20,9 +20,6 @@ const studentMarksheetRoutes = require("./routes/studentMarksheetRoutes");
 
 const app = express();
 
-app.get("/health", (req, res) => {
-    res.status(200).json({ status: "ok" });
-});
 
 app.use(
     cors({
@@ -47,6 +44,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok" });
+});
 
 // serve uploaded images
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

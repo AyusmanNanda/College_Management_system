@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
 
 const Subjects = () => {
     const token = localStorage.getItem("token");

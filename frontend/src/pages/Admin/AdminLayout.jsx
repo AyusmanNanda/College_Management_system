@@ -14,6 +14,7 @@ import {
     User,
     ChevronRight
 } from "lucide-react";
+import useOfflineDetection from "./useOfflineDetection";
 
 const AdminLayout = () => {
 
@@ -21,6 +22,7 @@ const AdminLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
+    const isOffline = useOfflineDetection();
 
     const [admin, setAdmin] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -28,7 +30,6 @@ const AdminLayout = () => {
         return saved !== null ? JSON.parse(saved) : window.innerWidth >= 1024;
     });
     const [openSections, setOpenSections] = useState({});
-    const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [checking, setChecking] = useState(false);
     const [retryError, setRetryError] = useState("");
 
@@ -201,19 +202,6 @@ const AdminLayout = () => {
             ]
         }
     ];
-
-    useEffect(() => {
-        const handleOffline = () => setIsOffline(true);
-        const handleOnline = () => setIsOffline(false);
-
-        window.addEventListener("offline", handleOffline);
-        window.addEventListener("online", handleOnline);
-
-        return () => {
-            window.removeEventListener("offline", handleOffline);
-            window.removeEventListener("online", handleOnline);
-        };
-    }, []);
 
     const activeSection = menuItems.find((item) =>
         item.children?.some((c) => location.pathname.startsWith(c.path))
