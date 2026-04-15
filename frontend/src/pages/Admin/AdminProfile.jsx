@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
-import Toast from "./modals/Toast.jsx";
+import Toast from "./Toast.jsx";
 
 const AdminProfile = () => {
     const token = localStorage.getItem("token");
