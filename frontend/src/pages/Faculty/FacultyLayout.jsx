@@ -69,7 +69,7 @@ const FacultyLayout = () => {
       : "light";
   });
 
-  const showSidebarText = !collapsed || mobileSidebarOpen;
+  const showSidebarText = true;
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -171,18 +171,17 @@ const FacultyLayout = () => {
       )}
 
       <aside
-        className={`
-          fixed inset-y-0 left-0 z-50 flex h-screen flex-col
-          w-[295px] border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900
-          transition-all duration-300
-          ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0
-          ${collapsed ? "lg:w-[86px]" : "lg:w-[295px]"}
-        `}
-      >
+  className={`
+    fixed inset-y-0 left-0 z-50 flex h-screen flex-col
+    w-[295px] border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900
+    transition-transform duration-300
+    ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+    ${collapsed ? "lg:-translate-x-full" : "lg:translate-x-0"}
+  `}
+>
         <div className="border-b border-gray-200 px-4 py-5 dark:border-gray-700">
           <div className="flex items-start gap-3">
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-gray-300 bg-white dark:border-gray-600">
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-300 bg-white dark:border-gray-600">
               <img
                 src={profileImg}
                 alt="Faculty"
@@ -196,13 +195,13 @@ const FacultyLayout = () => {
 
             {showSidebarText && (
               <div className="min-w-0 pt-0.5">
-                <p className="truncate text-[14px] font-semibold text-gray-900 dark:text-gray-100">
-                  College Faculty
-                </p>
-                <p className="truncate text-[13px] text-gray-500 dark:text-gray-400">
-                  Management System
-                </p>
-              </div>
+  <p className="truncate text-[14px] font-semibold text-gray-900 dark:text-gray-100">
+    {user?.name || user?.fullname || user?.facultyname || "Faculty"}
+  </p>
+  <p className="truncate text-[13px] text-gray-500 dark:text-gray-400">
+    Faculty
+  </p>
+</div>
             )}
 
             <button
@@ -330,10 +329,10 @@ const FacultyLayout = () => {
       </aside>
 
       <div
-        className={`min-h-screen transition-all duration-300 ${
-          collapsed ? "lg:ml-[86px]" : "lg:ml-[295px]"
-        }`}
-      >
+  className={`min-h-screen transition-all duration-300 ${
+    collapsed ? "lg:ml-0" : "lg:ml-[295px]"
+  }`}
+>
         <header className="h-[70px] border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
           <div className="flex h-full items-center justify-between px-4 lg:px-8">
             <div className="flex items-center gap-4">

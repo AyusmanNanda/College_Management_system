@@ -268,7 +268,7 @@ const AdminLayout = () => {
 
                 <aside
                     className={`fixed top-0 left-0 h-screen
-                    w-64
+                    w-72
                     bg-white dark:bg-gray-900
                     border-r border-gray-200 dark:border-gray-700
                     flex flex-col z-40
@@ -429,7 +429,7 @@ const AdminLayout = () => {
 
                 </aside>
 
-                <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${isSidebarOpen ? "lg:ml-64" : "ml-0"}`}>
+                <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${isSidebarOpen ? "lg:ml-72" : "ml-0"}`}>
 
                     <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 lg:px-8">
 
@@ -473,8 +473,8 @@ const AdminLayout = () => {
 
                     </header>
 
-                    <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 lg:p-8 min-h-[80vh]">
+                    <main className="flex-1 p-3 lg:p-4 overflow-y-auto">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 lg:p-5 min-h-full">
                             <Outlet />
                         </div>
                     </main>

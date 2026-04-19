@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
-import ConfirmDeleteModal from "./ConfirmDeleteModal";
-import ConfirmSaveModal from "./ConfirmSaveModal";
+import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
+import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
 
 const EditAttendance = () => {
     const token = localStorage.getItem("token");

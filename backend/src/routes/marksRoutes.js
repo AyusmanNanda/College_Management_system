@@ -1,6 +1,13 @@
 const express = require("express");
 const router = express.Router();
 
+const path = require("path");
+const multer = require("multer");
+
+const storage = multer.memoryStorage();
+
+const upload = multer({ storage });
+
 const marksController = require("../controllers/marksController");
 const protect = require("../middleware/authMiddleware");
 
@@ -9,6 +16,8 @@ router.get("/students", protect, marksController.getStudentsForMarks);
 router.get("/subjects", marksController.getSubjects);
 // Save marks
 router.post("/save", protect, marksController.saveMarks);
+router.get("/template", protect, marksController.downloadMarksTemplate);
+router.post("/import", protect, upload.single("file"), marksController.importMarks);
 
 // Load marks for editing
 router.get("/edit", protect, marksController.getMarksForEdit);

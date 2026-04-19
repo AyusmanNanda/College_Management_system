@@ -1,6 +1,8 @@
 const db = require("../config/db");
 const path = require("path");
 const fs = require("fs");
+const ExcelJS = require("exceljs");
+const XLSX = require("xlsx");
 
 /* ================= PROFILE PIC HELPER ================= */
 
@@ -271,5 +273,252 @@ exports.deleteAttendance = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to delete attendance" });
+    }
+};
+
+
+
+/* ============================================================
+   DOWNLOAD ATTENDANCE TEMPLATE
+============================================================ */
+
+exports.downloadAttendanceTemplate = async (req, res) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Attendance Template");
+
+        worksheet.columns = [
+            { header: "rollnumber", key: "rollnumber", width: 18 },
+            { header: "present", key: "present", width: 12 },
+            { header: "absent", key: "absent", width: 12 }
+        ];
+
+        // one demo row only
+        worksheet.addRow({
+            rollnumber: 23011006,
+            present: 1,
+            absent: 0
+        });
+
+        worksheet.getRow(1).font = { bold: true };
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="attendance_template.xlsx"'
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (err) {
+        console.error("Download attendance template error:", err);
+        res.status(500).json({ message: "Failed to download template" });
+    }
+};
+
+/* ============================================================
+   IMPORT ATTENDANCE FROM EXCEL
+============================================================ */
+
+exports.importAttendance = async (req, res) => {
+    let { subjectcode, date, courcecode, semoryear } = req.body;
+
+    if (!req.file) {
+        return res.status(400).json({ message: "Excel file is required" });
+    }
+
+    if (!subjectcode || !date || !courcecode || !semoryear) {
+        return res.status(400).json({ message: "Missing required fields" });
+    }
+    const [existingAttendance] = await db.query(
+    `
+        SELECT 1
+        FROM attendance
+        WHERE subjectcode = ?
+          AND attendance_date = ?
+          AND courcecode = ?
+          AND semoryear = ?
+        LIMIT 1
+    `,
+    [subjectcode, date, courcecode, Number(semoryear)]
+);
+
+if (existingAttendance.length > 0) {
+    return res.status(400).json({
+        message: "Attendance is already taken for this date, so import is not allowed."
+    });
+}
+
+    date = String(date).slice(0, 10);
+
+    const todayDate = getTodayDate();
+    const userRole = getUserRole(req);
+
+    if (userRole === "faculty" && date !== todayDate) {
+        return res.status(403).json({
+            message: "Faculty can import attendance only for today's date"
+        });
+    }
+
+    try {
+        const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        if (!rows.length) {
+            return res.status(400).json({ message: "Excel file is empty" });
+        }
+
+        const [students] = await db.query(
+            `
+                SELECT sr_no, rollnumber
+                FROM students
+                WHERE Courcecode = ? AND semoryear = ?
+            `,
+            [courcecode, semoryear]
+        );
+
+        const rollMap = new Map(
+            students.map((student) => [String(student.rollnumber).trim(), student.sr_no])
+        );
+
+        const values = [];
+        const errors = [];
+        let invalidRows = 0;
+
+        rows.forEach((row, index) => {
+            const excelRowNumber = index + 2;
+
+            const rollnumber = String(row.rollnumber || "").trim();
+            const presentValue = String(row.present ?? "").trim();
+            const absentValue = String(row.absent ?? "").trim();
+
+            if (!rollnumber) {
+                invalidRows++;
+                errors.push({
+                    row: excelRowNumber,
+                    reason: "rollnumber is required"
+                });
+                return;
+            }
+
+            if (!rollMap.has(rollnumber)) {
+                invalidRows++;
+                errors.push({
+                    row: excelRowNumber,
+                    reason: `Student not found for rollnumber ${rollnumber}`
+                });
+                return;
+            }
+
+            const hasPresent = presentValue !== "";
+const hasAbsent = absentValue !== "";
+
+// both filled -> invalid
+if (hasPresent && hasAbsent) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Both present and absent are filled"
+    });
+    return;
+}
+
+// both empty -> invalid
+if (!hasPresent && !hasAbsent) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Either present or absent must be filled"
+    });
+    return;
+}
+
+// validate the filled field only
+if (hasPresent && !["1", "0"].includes(presentValue)) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Present must be 0 or 1"
+    });
+    return;
+}
+
+if (hasAbsent && !["1", "0"].includes(absentValue)) {
+    invalidRows++;
+    errors.push({
+        row: excelRowNumber,
+        reason: "Absent must be 0 or 1"
+    });
+    return;
+}
+
+// only one field is filled -> accept row
+let normalizedPresent;
+
+if (hasPresent) {
+    normalizedPresent = 1;
+} else if (hasAbsent) {
+    normalizedPresent = 0;
+}
+
+const student_id = rollMap.get(rollnumber);
+
+values.push([
+    student_id,
+    subjectcode,
+    date,
+    normalizedPresent,
+    courcecode,
+    Number(semoryear)
+]);
+        });
+
+        if (!values.length) {
+    return res.status(400).json({
+        message: "No valid rows found in file",
+        totalRows: rows.length,
+        inserted: 0,
+        invalidRows,
+        errors
+    });
+}
+
+
+if (invalidRows > 0) {
+    return res.status(400).json({
+        message: "Some rows are invalid. Please fix them and import again.",
+        totalRows: rows.length,
+        inserted: 0,
+        invalidRows,
+        errors
+    });
+}
+
+        await db.query(
+            `
+                INSERT INTO attendance
+                (student_id, subjectcode, attendance_date, present, courcecode, semoryear)
+                VALUES ?
+                ON DUPLICATE KEY UPDATE present = VALUES(present)
+            `,
+            [values]
+        );
+
+        return res.json({
+            message: "Attendance imported successfully",
+            totalRows: rows.length,
+            inserted: values.length,
+            invalidRows,
+            errors
+        });
+    } catch (err) {
+        console.error("Import attendance error:", err);
+        res.status(500).json({ message: "Failed to import attendance" });
     }
 };
