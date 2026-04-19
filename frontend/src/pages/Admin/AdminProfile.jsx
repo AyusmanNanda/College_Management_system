@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
+import Toast from "./Toast.jsx";
 
 const AdminProfile = () => {
     const token = localStorage.getItem("token");
@@ -9,6 +10,7 @@ const AdminProfile = () => {
     const [admin, setAdmin] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showLinksModal, setShowLinksModal] = useState(false);
+    const [toast, setToast] = useState(null);
 
     useEffect(() => {
         if (!token) return;
@@ -21,6 +23,7 @@ const AdminProfile = () => {
                 setAdmin(res.data);
             } catch (error) {
                 console.error(error);
+                setToast({ type: "error", message: "Failed to load profile." });
             }
         };
 
@@ -144,7 +147,10 @@ const AdminProfile = () => {
                     token={token}
                     onClose={(updatedAdmin) => {
                         setShowDetailsModal(false);
-                        if (updatedAdmin) setAdmin(updatedAdmin);
+                        if (updatedAdmin) {
+                            setAdmin(updatedAdmin);
+                            setToast({ type: "success", message: "Profile details updated successfully!" });
+                        }
                     }}
                 />
             )}
@@ -155,8 +161,20 @@ const AdminProfile = () => {
                     token={token}
                     onClose={(updatedAdmin) => {
                         setShowLinksModal(false);
-                        if (updatedAdmin) setAdmin(updatedAdmin);
+                        if (updatedAdmin) {
+                            setAdmin(updatedAdmin);
+                            setToast({ type: "success", message: "Social links updated successfully!" });
+                        }
                     }}
+                />
+            )}
+
+            {/* TOAST */}
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
                 />
             )}
         </div>
@@ -226,6 +244,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
     );
     const [showPassword, setShowPassword] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
+    const [toast, setToast] = useState(null);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -271,6 +290,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
 
         } catch (error) {
             console.error(error);
+            setToast({ type: "error", message: "Failed to update profile. Please try again." });
         }
     };
 
@@ -357,6 +377,7 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                     Update Details
                 </button>
             </div>
+
             <ConfirmSaveModal
                 show={showSaveModal}
                 title="Confirm Profile Update"
@@ -368,6 +389,15 @@ const EditDetailsModal = ({ admin, token, onClose }) => {
                     setShowSaveModal(false);
                 }}
             />
+
+            {/* Error toast inside modal (for API failures) */}
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </ModalWrapper>
     );
 };
@@ -382,6 +412,7 @@ const EditLinksModal = ({ admin, token, onClose }) => {
         twitter: admin.twitter || "",
         linkedin: admin.linkedin || ""
     });
+    const [toast, setToast] = useState(null);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -403,6 +434,7 @@ const EditLinksModal = ({ admin, token, onClose }) => {
 
         } catch (error) {
             console.error(error);
+            setToast({ type: "error", message: "Failed to update links. Please try again." });
         }
     };
 
@@ -427,6 +459,7 @@ const EditLinksModal = ({ admin, token, onClose }) => {
                     Update Links
                 </button>
             </div>
+
             <ConfirmSaveModal
                 show={showSaveModal}
                 title="Confirm Profile Update"
@@ -438,6 +471,15 @@ const EditLinksModal = ({ admin, token, onClose }) => {
                     setShowSaveModal(false);
                 }}
             />
+
+            {/* Error toast inside modal (for API failures) */}
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </ModalWrapper>
     );
 };
