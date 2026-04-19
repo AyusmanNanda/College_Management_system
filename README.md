@@ -1,5 +1,7 @@
 # ⚡ Axiom — College Management System
 
+![Build](https://github.com/AyusmanNanda/College_Management_system/actions/workflows/build.yml/badge.svg)
+
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Axiom-brightgreen?style=for-the-badge&logo=vercel)](https://college-management-system-gules-three.vercel.app/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
