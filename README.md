@@ -210,7 +210,6 @@ User
 | `attendance` | Date-wise attendance with unique constraint per student/subject/date |
 | `marks` | Theory and practical marks per student per subject |
 | `result` | Result declaration status per course/semester |
-| `rollgenerator` | Auto roll number generation per course/semester |
 
 </details>
 
