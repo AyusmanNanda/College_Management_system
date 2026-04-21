@@ -90,7 +90,7 @@ A **single codebase** that ships to four platforms:
 | Platform | Technology | Status |
 |---|---|---|
 | **Web App** | React + Vite, deployed on Vercel | ✅ Live |
-| **Android App** | Capacitor 6 — native Android wrapper | ✅ Built |
+| **Android App** | Capacitor 8 — native Android wrapper | ✅ Built |
 | **Desktop App** | Electron — Windows / macOS / Linux | ✅ Built |
 | **PWA** | Web App Manifest + Service Worker | ✅ Installable |
 
@@ -210,6 +210,7 @@ User
 | `attendance` | Date-wise attendance with unique constraint per student/subject/date |
 | `marks` | Theory and practical marks per student per subject |
 | `result` | Result declaration status per course/semester |
+| `rollgenerator` | Auto roll number generation per course/semester |
 
 </details>
 
@@ -249,15 +250,15 @@ Scan QR Code
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18, React Router v6, Vite 5, TailwindCSS |
-| **Backend** | Node.js, Express.js |
+| **Frontend** | React 19, React Router v7, Vite 7, TailwindCSS 4 |
+| **Backend** | Node.js, Express 5 |
 | **Database** | MySQL (hosted on Railway) |
 | **Authentication** | JWT + bcrypt, Google OAuth 2.0 |
-| **Android** | Capacitor 6 with Filesystem plugin |
-| **Desktop** | Electron with custom preload and IPC for print |
+| **Android** | Capacitor 8 with Filesystem, Network, Browser plugins |
+| **Desktop** | Electron 41 with electron-builder (Windows NSIS + Linux AppImage) |
 | **PWA** | Vite PWA Plugin, Web App Manifest |
-| **Marksheet** | QRCode.react, SHA-256 via Web Crypto API |
-| **Excel Import/Export** | SheetJS (xlsx) |
+| **Marksheet** | QRCode.react, SHA-256 via Web Crypto API, jsPDF, html2canvas |
+| **Excel Import/Export** | SheetJS (xlsx) + ExcelJS |
 | **CI/CD** | GitHub Actions |
 | **Frontend Hosting** | Vercel |
 | **Backend Hosting** | Render (keep-alive ping to prevent cold starts) |
