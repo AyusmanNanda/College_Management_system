@@ -98,11 +98,13 @@ const EditMarks = () => {
         try {
             const res = await api.get(`/api/marks/edit?course=${selectedCourse}&sem=${selectedSem}&subject=${code}`, { headers: { Authorization: `Bearer ${token}` } });
             setStudents(res.data || []);
+
             const existingMarks = {};
             res.data.forEach(student => {
+                // Ensure we use empty string "" for null/undefined so validator catches it
                 existingMarks[student.rollnumber] = {
-                    theory: student.theorymarks || 0,
-                    practical: student.practicalmarks || 0
+                    theory: (student.theorymarks !== null && student.theorymarks !== undefined) ? student.theorymarks : "",
+                    practical: (student.practicalmarks !== null && student.practicalmarks !== undefined) ? student.practicalmarks : ""
                 };
             });
             setMarks(existingMarks);
@@ -114,7 +116,55 @@ const EditMarks = () => {
         setMarks(prev => ({ ...prev, [roll]: { ...prev[roll], [field]: sanitizedValue } }));
     };
 
-    /* ================= DELETE ACTIONS ================= */
+    /* ================= THE RIGID GATEKEEPER ================= */
+
+    const handleOpenModal = () => {
+        // 1. Initial Check
+        if (!subjectDetails || students.length === 0) return;
+
+        // 2. Loop through every student currently in the list
+        for (const student of students) {
+            const roll = student.rollnumber;
+            const currentMarks = marks[roll];
+
+            // If the student doesn't even have a marks object entry
+            if (!currentMarks) {
+                setToast({ type: "error", message: `Data missing for Roll: ${roll}` });
+                return;
+            }
+
+            const theory = currentMarks.theory;
+            const practical = currentMarks.practical;
+            const needsPractical = Number(subjectDetails.practicalmarks) > 0;
+
+            // STICK CHECK: We block "", null, or undefined. 0 is allowed.
+            if (theory === "" || theory === null || theory === undefined) {
+                setToast({ type: "error", message: `Please enter theory marks for ${student.firstname}.` });
+                return; // KILLS the function - Modal won't open
+            }
+
+            if (needsPractical && (practical === "" || practical === null || practical === undefined)) {
+                setToast({ type: "error", message: `Please enter practical marks for ${student.firstname}.` });
+                return; // KILLS the function - Modal won't open
+            }
+
+            // MAX MARKS CHECK
+            if (Number(theory) > subjectDetails.theorymarks) {
+                setToast({ type: "error", message: `${student.firstname}: Theory exceeds ${subjectDetails.theorymarks}` });
+                return;
+            }
+            if (needsPractical && Number(practical) > subjectDetails.practicalmarks) {
+                setToast({ type: "error", message: `${student.firstname}: Practical exceeds ${subjectDetails.practicalmarks}` });
+                return;
+            }
+        }
+
+        // 3. ONLY if every single student passes the loop above
+        setError("");
+        setShowSaveModal(true);
+    };
+
+    /* ================= ACTIONS ================= */
 
     const deleteMarks = async (rollnumber) => {
         try {
@@ -124,7 +174,7 @@ const EditMarks = () => {
             });
             setStudents(prev => prev.filter(s => s.rollnumber !== rollnumber));
             setToast({ type: "success", message: "Student marks deleted." });
-        } catch { setError("Failed to delete marks."); }
+        } catch { setToast({ type: "error", message: "Failed to delete student marks." }); }
     };
 
     const deleteAllMarks = async () => {
@@ -134,27 +184,11 @@ const EditMarks = () => {
                 data: { course: selectedCourse, sem: selectedSem, subject: selectedSubject }
             });
             handleCancel();
-            setToast({ type: "success", message: "All marks deleted for this subject." });
-        } catch { setError("Failed to delete subject marks."); }
+            setToast({ type: "success", message: "All marks deleted." });
+        } catch { setToast({ type: "error", message: "Failed to delete all marks." }); }
     };
 
-    /* ================= UPDATE MARKS ================= */
-
     const updateMarks = async () => {
-        if (!selectedSubject) return;
-        if (subjectDetails) {
-            for (const roll in marks) {
-                if (Number(marks[roll]?.theory || 0) > subjectDetails.theorymarks) {
-                    const msg = `Theory marks exceed ${subjectDetails.theorymarks}`;
-                    setError(msg); setToast({ type: "error", message: msg }); return;
-                }
-                if (Number(marks[roll]?.practical || 0) > subjectDetails.practicalmarks) {
-                    const msg = `Practical marks exceed ${subjectDetails.practicalmarks}`;
-                    setError(msg); setToast({ type: "error", message: msg }); return;
-                }
-            }
-        }
-
         try {
             const records = students.map(student => ({
                 rollnumber: student.rollnumber,
@@ -163,16 +197,15 @@ const EditMarks = () => {
             }));
             await api.put("/api/marks/update", { course: selectedCourse, sem: Number(selectedSem), subject: selectedSubject, marks: records }, { headers: { Authorization: `Bearer ${token}` } });
             setToast({ type: "success", message: "Marks updated successfully!" });
-            setError("");
             setShowSaveModal(false);
-        } catch { setError("Failed to update marks."); }
+        } catch { setToast({ type: "error", message: "Database error: Update failed." }); }
     };
 
     return (
         <div className="space-y-10">
             <div>
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Edit Marks</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Update or delete student scores.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Update student scores manually.</p>
             </div>
 
             {error && <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">{error}</div>}
@@ -207,15 +240,15 @@ const EditMarks = () => {
                                 <th className="w-1/3 px-2 sm:px-4 py-3">Student</th>
                                 <th className="px-2 sm:px-4 py-3 text-center">Theory</th>
                                 {subjectDetails?.practicalmarks > 0 && <th className="px-2 sm:px-4 py-3 text-center">Pract.</th>}
-                                <th className="hidden md:table-cell px-4 py-3 text-center">Total</th>
+                                <th className="hidden md:table-cell px-4 py-3 text-center font-bold">Total</th>
                                 <th className="px-2 sm:px-4 py-3 text-center">Action</th>
                             </tr>
                             </thead>
                             <tbody>
                             {students.map(student => {
-                                const theoryVal = Number(marks[student.rollnumber]?.theory || 0);
-                                const practicalVal = Number(marks[student.rollnumber]?.practical || 0);
-                                const total = theoryVal + practicalVal;
+                                const theoryVal = marks[student.rollnumber]?.theory;
+                                const practicalVal = marks[student.rollnumber]?.practical;
+                                const total = (Number(theoryVal) || 0) + (Number(practicalVal) || 0);
                                 return (
                                     <tr key={student.rollnumber} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                                         <td className="px-2 sm:px-4 py-3 dark:text-gray-200">
@@ -225,20 +258,20 @@ const EditMarks = () => {
                                             </div>
                                         </td>
                                         <td className="px-1 sm:px-4 py-3 text-center">
-                                            <input type="number" value={marks[student.rollnumber]?.theory ?? ""}
+                                            <input type="number" value={theoryVal ?? ""}
                                                    onChange={(e) => handleMarkChange(student.rollnumber, "theory", e.target.value)}
                                                    onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }} onFocus={handleFocus}
                                                    className={`w-12 sm:w-20 px-1 py-1.5 border rounded-md text-xs sm:text-sm text-center outline-none transition
-                                                        ${theoryVal > subjectDetails?.theorymarks ? "border-red-500 bg-red-50 text-red-700" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-gray-400"}`}
+                                                        ${(theoryVal === "" || Number(theoryVal) > subjectDetails?.theorymarks) ? "border-red-500 bg-red-50 text-red-700" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-gray-400"}`}
                                             />
                                         </td>
                                         {subjectDetails?.practicalmarks > 0 && (
                                             <td className="px-1 sm:px-4 py-3 text-center">
-                                                <input type="number" value={marks[student.rollnumber]?.practical ?? ""}
+                                                <input type="number" value={practicalVal ?? ""}
                                                        onChange={(e) => handleMarkChange(student.rollnumber, "practical", e.target.value)}
                                                        onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }} onFocus={handleFocus}
                                                        className={`w-12 sm:w-20 px-1 py-1.5 border rounded-md text-xs sm:text-sm text-center outline-none transition
-                                                            ${practicalVal > subjectDetails?.practicalmarks ? "border-red-500 bg-red-50 text-red-700" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-gray-400"}`}
+                                                            ${(practicalVal === "" || Number(practicalVal) > subjectDetails?.practicalmarks) ? "border-red-500 bg-red-50 text-red-700" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-gray-400"}`}
                                                 />
                                             </td>
                                         )}
@@ -256,7 +289,7 @@ const EditMarks = () => {
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex flex-col sm:flex-row gap-3 justify-end">
                         <button onClick={handleCancel} className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 transition">Cancel</button>
                         <button onClick={() => setShowDeleteAllModal(true)} className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition">Delete All</button>
-                        <button onClick={() => setShowSaveModal(true)} className="w-full sm:w-auto px-6 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition">Update</button>
+                        <button onClick={handleOpenModal} className="w-full sm:w-auto px-6 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition font-bold">Update</button>
                     </div>
                 </div>
             )}
