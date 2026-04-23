@@ -124,6 +124,8 @@ const Subjects = () => {
                 await api.put(
                     `/api/subjects/${editingCode}`,
                     {
+                        // FIX: Include the new subject code in the update payload
+                        subjectcode: form.subjectcode,
                         subjectname: form.subjectname,
                         subjecttype: form.subjecttype,
                         theorymarks: form.theorymarks,
@@ -205,7 +207,6 @@ const Subjects = () => {
                             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest hidden sm:block">Academic Configuration</p>
                         </div>
                     </div>
-                    {/* ADDED RESET BUTTON HERE */}
                     <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
                         <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Reset Form</span>
                     </button>
@@ -276,15 +277,14 @@ const Subjects = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
+                            {/* FIX: Removed the disabled attribute and cursor-not-allowed classes */}
                             <input
                                 name="subjectcode"
                                 placeholder="Subject Code (e.g. CS101)"
                                 value={form.subjectcode}
                                 onChange={handleFormChange}
                                 required
-                                disabled={editingCode !== null}
-                                className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all
-                                    ${editingCode ? "opacity-60 cursor-not-allowed" : ""}`}
+                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
 
                             <input
