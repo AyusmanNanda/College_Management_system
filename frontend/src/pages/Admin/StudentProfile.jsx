@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, UserCircle, Camera, X } from "lucide-react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
 
@@ -40,6 +40,7 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
         password: ""
     });
 
+    /* ================= Logic Preservation ================= */
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -140,70 +141,61 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             />
 
-            <div className="relative bg-white dark:bg-gray-800 w-full max-w-5xl rounded-2xl shadow-2xl z-10 overflow-hidden transition-colors">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-5xl rounded-[2rem] shadow-2xl z-10 overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-300">
 
-                <div className="px-6 sm:px-8 py-6 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600 flex justify-between items-center transition-colors">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                        {isNew ? "Add Student" : "Edit Student"}
-                    </h3>
+                {/* Header */}
+                <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                            <UserCircle size={22} />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                            {isNew ? "Add Student" : "Edit Student"}
+                        </h3>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white text-sm transition"
+                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
                     >
-                        ✕
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-6 sm:p-8 space-y-8 max-h-[75vh] overflow-y-auto">
+                <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
                     {error && (
-                        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded text-sm">
+                        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm border border-red-100 dark:border-red-800">
                             {error}
                         </div>
                     )}
 
-                    <div className="flex flex-col items-center gap-4 border-b dark:border-gray-600 pb-6">
-
-                        <div className="h-32 w-32 rounded-full border dark:border-gray-600 overflow-hidden bg-gray-100 dark:bg-gray-700 shadow-md">
-                            {selectedFile ? (
-                                <img
-                                    src={URL.createObjectURL(selectedFile)}
-                                    alt="preview"
-                                    className="h-full w-full object-cover"
-                                />
-                            ) : student?.profilepic ? (
-                                <img
-                                    src={`${BASE_URL}/uploads/students/${student.profilepic}`}
-                                    alt="profile"
-                                    className="h-full w-full object-cover"
-                                />
-                            ) : (
-                                <img
-                                    src={`${BASE_URL}/uploads/students/default.png`}
-                                    alt="default"
-                                    className="h-full w-full object-cover"
-                                />
-                            )}
+                    {/* Profile Picture */}
+                    <div className="flex flex-col items-center gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+                        <div className="relative group">
+                            <div className="h-32 w-32 rounded-full border-4 border-white dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-950 shadow-md">
+                                {selectedFile ? (
+                                    <img src={URL.createObjectURL(selectedFile)} alt="preview" className="h-full w-full object-cover" />
+                                ) : student?.profilepic ? (
+                                    <img src={`${BASE_URL}/uploads/students/${student.profilepic}`} alt="profile" className="h-full w-full object-cover" />
+                                ) : (
+                                    <img src={`${BASE_URL}/uploads/students/default.png`} alt="default" className="h-full w-full object-cover" />
+                                )}
+                            </div>
+                            <label className="absolute -bottom-1 -right-1 p-2 bg-indigo-600 text-white rounded-full shadow-lg cursor-pointer hover:bg-indigo-700 transition-all border-2 border-white dark:border-slate-900">
+                                <Camera size={16} />
+                                <input type="file" accept="image/*" onChange={(e) => setSelectedFile(e.target.files[0])} className="hidden" />
+                            </label>
                         </div>
-
-                        <label className="w-full sm:w-auto text-center px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition cursor-pointer">
-                            Choose Profile Picture
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setSelectedFile(e.target.files[0])}
-                                className="hidden"
-                            />
-                        </label>
+                        <span className="text-xs font-medium text-slate-500">Choose Profile Picture</span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* Form Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
                         <Input required label="Full Name" name="fullname" value={form.fullname} onChange={handleChange} />
                         <Input required label="Roll Number" name="rollnumber" value={form.rollnumber} onChange={handleChange} />
@@ -246,27 +238,26 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
 
                         <Input label="Optional Subject" name="optionalsubject" value={form.optionalsubject} onChange={handleChange} />
                         <Input type="date" label="Admission Date" name="admissiondate" value={form.admissiondate} onChange={handleChange} />
+
                         <div className="flex flex-col gap-1">
                             <label className="text-xs text-gray-500 dark:text-gray-400">
                                 Password (Leave blank = DOB)
                             </label>
-
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     name="password"
                                     value={form.password}
                                     onChange={handleChange}
-                                    className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 pr-10 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition w-full"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2 pr-10 rounded-md text-sm outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
                                 />
-
                                 <button
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setShowPassword(!showPassword);
                                     }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300 hover:text-gray-700"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
@@ -275,22 +266,24 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
                     </div>
                 </div>
 
-                <div className="px-6 sm:px-8 py-6 border-t bg-gray-50 dark:bg-gray-700 dark:border-gray-600 flex flex-col sm:flex-row justify-end gap-3 transition-colors">
+                {/* Footer */}
+                <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row justify-end gap-3 transition-colors">
                     <button
                         onClick={onClose}
-                        className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded-md text-sm"
+                        className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md text-sm hover:bg-gray-300 transition-all"
                     >
                         Cancel
                     </button>
 
                     <button
                         onClick={() => setShowSaveModal(true)}
-                        className="w-full sm:w-auto px-6 py-2 bg-gray-900 text-white rounded-md text-sm hover:bg-black transition"
+                        className="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white rounded-md text-sm shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95"
                     >
                         {isNew ? "Create Student" : "Save Changes"}
                     </button>
                 </div>
             </div>
+
             <ConfirmSaveModal
                 show={showSaveModal}
                 title={isNew ? "Confirm Student Creation" : "Confirm Student Update"}
@@ -310,8 +303,6 @@ const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
     );
 };
 
-/* Shared Input Components */
-
 const Input = ({ label, required, ...props }) => (
     <div className="flex flex-col gap-1">
         <label className="text-xs text-gray-500 dark:text-gray-400">
@@ -319,7 +310,7 @@ const Input = ({ label, required, ...props }) => (
         </label>
         <input
             {...props}
-            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
+            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2 rounded-md text-sm outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
         />
     </div>
 );
@@ -331,7 +322,7 @@ const Select = ({ label, options, required, ...props }) => (
         </label>
         <select
             {...props}
-            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 rounded-md text-sm transition"
+            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2 rounded-md text-sm outline-none focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer"
         >
             {options.map((opt, index) => {
                 if (typeof opt === "object") {
@@ -341,7 +332,6 @@ const Select = ({ label, options, required, ...props }) => (
                         </option>
                     );
                 }
-
                 return (
                     <option key={opt || "empty"} value={opt}>
                         {opt === "" ? "Select" : opt}

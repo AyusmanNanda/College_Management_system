@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
+import { FileSpreadsheet, Download, Upload, X, AlertCircle, CheckCircle2 } from "lucide-react";
 import api from "../../../utils/api.js";
 import ConfirmSaveModal from "./ConfirmSaveModal.jsx";
 
@@ -171,110 +172,149 @@ const ImportStudentModal = ({ token, onClose, onImportSuccess }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             />
 
-            <div className="relative bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6 sm:p-8 transition-colors">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2rem] shadow-2xl z-10 overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-300">
+
+                {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-5 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white text-sm transition"
+                    className="absolute top-6 right-6 p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
                 >
-                    ✕
+                    <X size={20} />
                 </button>
 
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
-                    Import Students from Excel
-                </h2>
-
-                <div className="space-y-6">
-
-                    <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            Download template:
-                        </p>
-
-                        <button
-                            onClick={handleDownloadTemplate}
-                            className="w-full sm:w-auto px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                        >
-                            {loading ? "Downloading..." : "Download Template"}
-                        </button>
+                <div className="p-8 sm:p-10">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
+                            <FileSpreadsheet size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800 dark:text-slate-100">
+                                Student Data Import
+                            </h2>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                Bulk Enrollment Utility
+                            </p>
+                        </div>
                     </div>
 
-                    <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upload completed file:
-                        </p>
+                    <div className="space-y-8">
 
-                        <label className="block sm:inline-block">
-                            <span className="block sm:inline-block text-center w-full sm:w-auto px-5 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer dark:text-gray-200">
-                                Choose Excel File
-                            </span>
+                        {/* Step 1: Template Download */}
+                        <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/60">
+                            <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px]">1</span>
+                                Data Structure
+                            </p>
 
-                            <input
-                                type="file"
-                                accept=".xlsx,.xls"
-                                onChange={(e) => {
-                                    const selectedFile = e.target.files?.[0];
-                                    if (!selectedFile) return;
+                            <button
+                                onClick={handleDownloadTemplate}
+                                className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 text-indigo-600 border border-indigo-100 dark:border-indigo-900/50 text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-indigo-500/10 transition-all active:scale-95"
+                            >
+                                <Download size={16} />
+                                {loading ? "Downloading..." : "Download Template"}
+                            </button>
+                        </div>
 
-                                    setFile(selectedFile);
-                                    setError("");
-                                    setResult(null);
+                        {/* Step 2: File Upload */}
+                        <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/60">
+                            <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px]">2</span>
+                                Resource Upload
+                            </p>
 
-                                    e.target.value = null;
-                                }}
-                                className="hidden"
-                            />
-                        </label>
+                            <label className="block">
+                                <span className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest rounded-xl hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 transition-all cursor-pointer dark:text-slate-300">
+                                    <Upload size={18} />
+                                    {file ? "Replace Excel File" : "Select Enrollment File"}
+                                </span>
 
-                        {file && (
-                            <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 break-all">
-                                Selected file: <span className="font-medium">{file.name}</span>
-                            </div>
-                        )}
+                                <input
+                                    type="file"
+                                    accept=".xlsx,.xls"
+                                    onChange={(e) => {
+                                        const selectedFile = e.target.files?.[0];
+                                        if (!selectedFile) return;
+
+                                        setFile(selectedFile);
+                                        setError("");
+                                        setResult(null);
+
+                                        e.target.value = null;
+                                    }}
+                                    className="hidden"
+                                />
+                            </label>
+
+                            {file && (
+                                <div className="mt-4 flex items-center gap-3 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 rounded-xl px-4 py-3 animate-in slide-in-from-left-2">
+                                    <CheckCircle2 size={14} />
+                                    <span className="truncate">Ready: {file.name}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+                            <button
+                                onClick={handleImport}
+                                disabled={!file || loading}
+                                className={`w-full sm:w-auto px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 ${
+                                    !file || loading
+                                        ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+                                        : "bg-indigo-600 text-white shadow-indigo-500/20 hover:bg-indigo-700"
+                                }`}
+                            >
+                                {loading ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : <Upload size={16} />}
+                                {loading ? "Importing..." : "Execute Student Import"}
+                            </button>
+                        </div>
+
+                        {/* Feedback Area */}
+                        <div className="space-y-4">
+                            {error && (
+                                <div className="w-full flex items-start gap-3 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 rounded-xl px-4 py-3 animate-in slide-in-from-top-2">
+                                    <AlertCircle size={16} className="shrink-0" />
+                                    <p>{error}</p>
+                                </div>
+                            )}
+
+                            {result && (
+                                <div className="w-full bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-6 text-[11px] font-bold text-slate-700 dark:text-slate-300 grid grid-cols-2 gap-4 animate-in zoom-in-95">
+                                    <div className="space-y-1">
+                                        <p className="text-slate-400 uppercase text-[9px] tracking-widest">Processed</p>
+                                        <p className="text-lg text-slate-900 dark:text-white">{result.totalRows}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-emerald-500 uppercase text-[9px] tracking-widest">Successful</p>
+                                        <p className="text-lg text-emerald-600">{result.inserted}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-amber-500 uppercase text-[9px] tracking-widest">Duplicates</p>
+                                        <p className="text-lg text-amber-600">{result.duplicates}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-rose-50 uppercase text-[9px] tracking-widest">Invalid</p>
+                                        <p className="text-lg text-rose-600">{result.invalidRows}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                     </div>
-
-                    <div className="flex flex-col sm:flex-row justify-end gap-3">
-                        <button
-                            onClick={handleImport}
-                            disabled={!file || loading}
-                            className={`w-full sm:w-auto px-5 py-2 text-sm rounded-md transition ${
-                                !file || loading
-                                    ? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                                    : "bg-gray-900 text-white hover:bg-black"
-                            }`}
-                        >
-                            {loading ? "Importing..." : "Import Students"}
-                        </button>
-                    </div>
-
-                    <div className="space-y-3">
-                        {error && (
-                            <div className="w-full text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2">
-                                {error}
-                            </div>
-                        )}
-
-                        {result && (
-                            <div className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-sm text-gray-700 dark:text-gray-200">
-                                <p><strong>Total Rows:</strong> {result.totalRows}</p>
-                                <p><strong>Inserted:</strong> {result.inserted}</p>
-                                <p><strong>Duplicates:</strong> {result.duplicates}</p>
-                                <p><strong>Invalid Rows:</strong> {result.invalidRows}</p>
-                            </div>
-                        )}
-                    </div>
-
                 </div>
             </div>
 
             <ConfirmSaveModal
                 show={showConfirm}
-                title="File Already Exists"
-                message="A file with the same name already exists. Do you want to replace it?"
-                confirmText="Replace"
+                title="Overwrite Template?"
+                message="A student import template already exists in your local documents. Do you want to replace it?"
+                confirmText="Overwrite"
                 onCancel={() => {
                     setShowConfirm(false);
                     setLoading(false);
