@@ -167,9 +167,9 @@ const AdminLayout = () => {
 
     return (
         <>
-            {/* MODERN OFFLINE MODAL */}
+            {/* ENTERPRISE OFFLINE MODAL */}
             {isOffline && createPortal(
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-md px-4">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-md px-4 transition-all">
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full animate-in zoom-in-95 duration-300">
                         <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
                             <WifiOff className="w-8 h-8" />
@@ -193,7 +193,7 @@ const AdminLayout = () => {
                                     setRetryError("Server is still unreachable.");
                                 }
                             }}
-                            className="mt-8 w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-500/30"
+                            className="mt-8 w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-500/30 active:scale-95"
                         >
                             {checking ? "Verifying Connection..." : "Retry Connection"}
                         </button>
@@ -202,7 +202,8 @@ const AdminLayout = () => {
                 document.body
             )}
 
-            <div className="h-screen flex bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
+            {/* MAIN APPLICATION SHELL - Configured for 100dvh (Mobile Safey) */}
+            <div className="h-[100dvh] flex bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
 
                 {/* MOBILE SIDEBAR OVERLAY */}
                 {isSidebarOpen && (
@@ -210,43 +211,45 @@ const AdminLayout = () => {
                          onClick={() => setIsSidebarOpen(false)} />
                 )}
 
-                {/* ENTERPRISE SIDEBAR */}
-                <aside className={`fixed top-0 left-0 h-screen w-[280px] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                {/* SLATE THEMED SIDEBAR */}
+                <aside className={`fixed top-0 left-0 h-[100dvh] w-[280px] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
-                    {/* IDENTITY BLOCK */}
-                    <div className="px-6 py-8 border-b border-slate-100 dark:border-slate-800/60">
-                        <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm flex-shrink-0">
-                                <img
-                                    src={admin?.logo ? `${BASE_URL}${admin.logo}` : `${BASE_URL}/uploads/admin/default.png`}
-                                    onError={(e) => { e.target.onerror = null; e.target.src = `${BASE_URL}/uploads/admin/default.png`; }}
-                                    alt="Logo"
-                                    className="h-full w-full object-cover"
-                                />
+                    {/* IDENTITY BLOCK - Includes Capacitor Safe-Area Top Padding */}
+                    <div className="pt-[env(safe-area-inset-top)] border-b border-slate-100 dark:border-slate-800/60">
+                        <div className="px-6 py-6">
+                            <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm flex-shrink-0">
+                                    <img
+                                        src={admin?.logo ? `${BASE_URL}${admin.logo}` : `${BASE_URL}/uploads/admin/default.png`}
+                                        onError={(e) => { e.target.onerror = null; e.target.src = `${BASE_URL}/uploads/admin/default.png`; }}
+                                        alt="Logo"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">Administrator</h2>
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold truncate">Academic Portal</p>
+                                </div>
                             </div>
-                            <div className="flex flex-col min-w-0">
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">Administrator</h2>
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold truncate">Core Control</p>
-                            </div>
-                        </div>
 
-                        {admin && (
-                            <div className="mt-5 bg-slate-50 dark:bg-slate-950/50 rounded-lg p-3 text-[11px] font-medium border border-slate-100 dark:border-slate-800/60 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">System Status</span>
-                                    <div className="flex items-center gap-1.5">
-                                        <span className={`h-1.5 w-1.5 rounded-full ${admin.activestatus ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
-                                        <span className="text-slate-700 dark:text-slate-300">{admin.activestatus ? "Online" : "Offline"}</span>
+                            {admin && (
+                                <div className="mt-5 bg-slate-50 dark:bg-slate-950/50 rounded-lg p-3 text-[11px] font-medium border border-slate-100 dark:border-slate-800/60 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 dark:text-slate-400">System Node</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className={`h-1.5 w-1.5 rounded-full ${admin.activestatus ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-red-500"}`} />
+                                            <span className="text-slate-700 dark:text-slate-300 font-bold">{admin.activestatus ? "Online" : "Offline"}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 dark:text-slate-400">Last Auth</span>
+                                        <span className="text-slate-700 dark:text-slate-300 truncate pl-2 font-mono">
+                                            {admin.lastlogin ? new Date(admin.lastlogin).toLocaleDateString() : "N/A"}
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">Last Sync</span>
-                                    <span className="text-slate-700 dark:text-slate-300 truncate pl-2">
-                                        {admin.lastlogin ? new Date(admin.lastlogin).toLocaleDateString() : "N/A"}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     {/* NAVIGATION MENU */}
@@ -267,20 +270,20 @@ const AdminLayout = () => {
                                             <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-90 text-slate-900 dark:text-white" : ""}`} />
                                         </button>
 
-                                        {isOpen && (
-                                            <div className="ml-5 mt-1 pl-3 border-l border-slate-200 dark:border-slate-800 space-y-1">
+                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-48 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                                            <div className="ml-5 pl-3 border-l border-slate-200 dark:border-slate-800 space-y-1 py-1">
                                                 {item.children.map((sub) => {
                                                     const active = location.pathname.startsWith(sub.path);
                                                     return (
                                                         <Link key={sub.path} to={sub.path}
                                                               onClick={() => { if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
-                                                              className={`block px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${active ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+                                                              className={`block px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${active ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
                                                             {sub.name}
                                                         </Link>
                                                     );
                                                 })}
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 );
                             }
@@ -298,41 +301,42 @@ const AdminLayout = () => {
                     </nav>
                 </aside>
 
-                {/* MAIN CANVAS */}
+                {/* THE "CANVAS" - Allows pages to stretch full-bleed */}
                 <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? "lg:ml-[280px]" : "ml-0"}`}>
 
-                    {/* GLASSMORPHISM GLOBAL HEADER */}
-                    <header className="h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(prev => !prev)}
-                                    className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors focus:outline-none">
-                                <Menu className="w-5 h-5" />
-                            </button>
-                            <h1 className="text-sm font-bold text-slate-800 dark:text-slate-200 hidden sm:block">
-                                Academic Management ERP
-                            </h1>
-                        </div>
+                    {/* GLASSMORPHISM HEADER - Includes Capacitor Safe-Area Top Padding */}
+                    <header className="pt-[env(safe-area-inset-top)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+                        <div className="flex items-center justify-between px-4 sm:px-8 h-16">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setIsSidebarOpen(prev => !prev)}
+                                        className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors focus:outline-none">
+                                    <Menu className="w-5 h-5" />
+                                </button>
+                                <h1 className="text-sm font-bold text-slate-800 dark:text-slate-200 hidden sm:block">
+                                    Academic Management ERP
+                                </h1>
+                            </div>
 
-                        <div className="flex items-center gap-2 sm:gap-4">
-                            <button onClick={toggleTheme}
-                                    className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors focus:outline-none"
-                                    title="Toggle Theme">
-                                {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                            </button>
+                            <div className="flex items-center gap-2 sm:gap-4">
+                                <button onClick={toggleTheme}
+                                        className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-lg transition-colors focus:outline-none"
+                                        title="Toggle Theme">
+                                    {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                                </button>
 
-                            <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
+                                <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
 
-                            <button onClick={handleLogout}
-                                    className="flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors focus:outline-none">
-                                <LogOut className="w-4 h-4" />
-                                <span className="hidden sm:inline">Terminate Session</span>
-                            </button>
+                                <button onClick={handleLogout}
+                                        className="flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors focus:outline-none group">
+                                    <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                                    <span className="hidden sm:inline">Sign Out</span>
+                                </button>
+                            </div>
                         </div>
                     </header>
 
-                    {/* UNBOXED OUTLET RENDER AREA */}
-                    {/* Note: By removing the card wrapper here, child pages can render full-bleed and control their own layouts */}
-                    <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth">
+                    {/* UNBOXED RENDER AREA - No forced padding or white boxes here! */}
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-950 relative scroll-smooth">
                         <Outlet />
                     </main>
 
