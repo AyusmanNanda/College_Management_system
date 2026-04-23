@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
+import Toast from "./Toast.jsx";
 
 const TakeAttendance = () => {
     const token = localStorage.getItem("token");
@@ -19,7 +20,7 @@ const TakeAttendance = () => {
     const [checkedStudents, setCheckedStudents] = useState({});
 
     const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    const [toast, setToast] = useState(null);
 
     const [showSaveModal, setShowSaveModal] = useState(false);
 
@@ -33,7 +34,7 @@ const TakeAttendance = () => {
                 });
                 setCourses(res.data || []);
             } catch {
-                setCourses([]);
+                setError("Failed to load courses.");
             }
         };
         fetchCourses();
@@ -82,8 +83,6 @@ const TakeAttendance = () => {
                 setCheckedStudents({});
                 setExistingDates([]);
                 setError("");
-                setSuccess("");
-
             } catch {
                 setError("Failed to load subjects or students.");
             }
@@ -159,14 +158,17 @@ const TakeAttendance = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setSuccess("Attendance saved successfully.");
+            setToast({ type: "success", message: "Attendance saved successfully!" });
             setError("");
             setCheckedStudents({});
 
-        } catch {
-            setError("Failed to save attendance.");
+        } catch (err) {
+            const apiError = err.response?.data?.message || "Failed to save attendance.";
+            setError(apiError);
+            setToast({ type: "error", message: apiError });
         }
     };
+
     const isFormReady =
         selectedCourse &&
         selectedSem &&
@@ -192,16 +194,17 @@ const TakeAttendance = () => {
                 </div>
             )}
 
-            {success && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm rounded-md">
-                    {success}
-                </div>
-            )}
-
             {/* FILTER SECTION */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-5 gap-4">
-                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+                <select
+                    value={selectedCourse}
+                    onChange={(e) => {
+                        setSelectedCourse(e.target.value);
+                        setSelectedSem("");
+                        setError("");
+                    }}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
+                >
                     <option value="">Select Course</option>
                     {courses.map(course => (
                         <option key={course.id} value={course.course_code}>
@@ -210,8 +213,15 @@ const TakeAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+                <select
+                    value={selectedSem}
+                    onChange={(e) => {
+                        setSelectedSem(e.target.value);
+                        setError("");
+                    }}
+                    disabled={!selectedCourse}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition disabled:opacity-60"
+                >
                     <option value="">Select {semLabel}</option>
                     {semesterOptions.map(num => (
                         <option key={num} value={num}>
@@ -220,8 +230,15 @@ const TakeAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+                <select
+                    value={selectedSubject}
+                    onChange={(e) => {
+                        setSelectedSubject(e.target.value);
+                        setError("");
+                    }}
+                    disabled={!selectedSem}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition disabled:opacity-60"
+                >
                     <option value="">Select Subject</option>
                     {subjects.map(sub => (
                         <option key={sub.subjectcode} value={sub.subjectcode}>
@@ -230,12 +247,21 @@ const TakeAttendance = () => {
                     ))}
                 </select>
 
-                <input type="date" value={selectedDate}
-                       onChange={(e) => setSelectedDate(e.target.value)}
-                       className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm" />
+                <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => {
+                        setSelectedDate(e.target.value);
+                        setError("");
+                    }}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
+                />
 
-                <select value={markMode} onChange={(e) => setMarkMode(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+                <select
+                    value={markMode}
+                    onChange={(e) => setMarkMode(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
+                >
                     <option value="present">Mark Present</option>
                     <option value="absent">Mark Absent</option>
                 </select>
@@ -243,77 +269,80 @@ const TakeAttendance = () => {
 
             {/* TABLE */}
             {isFormReady && (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                <div className="w-full overflow-x-auto">
-                    <table className="w-full text-xs sm:text-sm text-left">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
-                        <tr>
-                            <th className="px-4 py-3">Roll No</th>
-                            <th className="px-4 py-3">Name</th>
-                            <th className="px-4 py-3 text-center">
-                                {markMode === "present" ? "Present" : "Absent"}
-                            </th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {students.length === 0 ? (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors">
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full text-xs sm:text-sm text-left">
+                            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
                             <tr>
-                                <td colSpan="3"
-                                    className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                    No students loaded.
-                                </td>
+                                <th className="px-4 py-3">Roll No</th>
+                                <th className="px-4 py-3">Name</th>
+                                <th className="px-4 py-3 text-center">
+                                    {markMode === "present" ? "Present" : "Absent"}
+                                </th>
                             </tr>
-                        ) : (
-                            students.map(student => (
-                                <tr key={student.student_id}
-                                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                                    <td className="px-4 py-3 dark:text-gray-200">
-                                        {student.rollnumber}
-                                    </td>
-                                    <td className="px-4 py-3 dark:text-gray-200 font-medium">
-                                        {student.firstname} {student.lastname}
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <input type="checkbox"
-                                               checked={!!checkedStudents[student.student_id]}
-                                               onChange={() => toggleStudent(student.student_id)}
-                                               className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500" />
+                            </thead>
+                            <tbody>
+                            {students.length === 0 ? (
+                                <tr>
+                                    <td colSpan="3" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                        No students loaded.
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                        </tbody>
-                    </table>
-                </div>
+                            ) : (
+                                students.map(student => (
+                                    <tr key={student.student_id} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                                        <td className="px-4 py-3 dark:text-gray-200">
+                                            {student.rollnumber}
+                                        </td>
+                                        <td className="px-4 py-3 dark:text-gray-200 font-medium">
+                                            {student.firstname} {student.lastname}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!checkedStudents[student.student_id]}
+                                                onChange={() => toggleStudent(student.student_id)}
+                                                className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500 cursor-pointer"
+                                            />
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
 
                     {/* FOOTER BUTTON */}
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
                         <button
                             onClick={() => setShowSaveModal(true)}
                             disabled={!isFormReady}
-                            className={`w-full sm:w-auto px-4 py-3 sm:py-2 text-sm rounded-md transition
-                            ${isFormReady
-                                ? "bg-gray-900 text-white hover:bg-black"
-                                : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
-                            }`}
+                            className={`w-full sm:w-auto px-6 py-2 bg-gray-900 text-white text-sm rounded-md transition hover:bg-black disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400`}
                         >
                             Save Attendance
                         </button>
                     </div>
-
-            </div>
+                </div>
             )}
 
             <ConfirmSaveModal
                 show={showSaveModal}
                 title="Confirm Attendance Save"
-                message="Are you sure you want to save attendance for this date?"
+                message={`Are you sure you want to save attendance for ${selectedDate}?`}
                 onCancel={() => setShowSaveModal(false)}
                 onConfirm={() => {
                     setShowSaveModal(false);
                     saveAttendance();
                 }}
             />
+
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };
