@@ -14,14 +14,12 @@ import {
   ChevronRight,
   Menu,
   X,
+  LogOut,
+  WifiOff
 } from "lucide-react";
 
 const menuItems = [
-  {
-    name: "Dashboard",
-    icon: LayoutDashboard,
-    path: "/faculty/dashboard",
-  },
+  { name: "Dashboard", icon: LayoutDashboard, path: "/faculty/dashboard" },
   {
     name: "Attendance",
     icon: ClipboardCheck,
@@ -58,8 +56,8 @@ const FacultyLayout = () => {
 
   const [user, setUser] = useState(null);
   const isOffline = useOfflineDetection();
-const [checking, setChecking] = useState(false);
-const [retryError, setRetryError] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [retryError, setRetryError] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [openSections, setOpenSections] = useState([]);
@@ -68,13 +66,8 @@ const [retryError, setRetryError] = useState("");
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme) return savedTheme;
-
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
-
-  const showSidebarText = true;
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -86,7 +79,6 @@ const [retryError, setRetryError] = useState("");
       navigate("/", { replace: true });
       return;
     }
-
     const fetchFacultyProfile = async () => {
       try {
         const res = await api.get("/api/faculty/profile", {
@@ -98,364 +90,218 @@ const [retryError, setRetryError] = useState("");
         console.error("Failed to fetch faculty profile:", error);
       }
     };
-
     fetchFacultyProfile();
     window.addEventListener("facultyUserUpdated", fetchFacultyProfile);
-
-    return () => {
-      window.removeEventListener("facultyUserUpdated", fetchFacultyProfile);
-    };
+    return () => window.removeEventListener("facultyUserUpdated", fetchFacultyProfile);
   }, [token, navigate]);
 
-  useEffect(() => {
-    setMobileSidebarOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-  if (!isOffline) {
-    setRetryError("");
-  }
-}, [isOffline]);
+  useEffect(() => { setMobileSidebarOpen(false); }, [location.pathname]);
+  useEffect(() => { if (!isOffline) setRetryError(""); }, [isOffline]);
 
   useEffect(() => {
     const activeSection = menuItems.find((item) =>
       item.children?.some((child) => location.pathname === child.path)
     );
-
-    if (activeSection) {
-      setOpenSections([activeSection.name]);
-    } else {
-      setOpenSections([]);
-    }
+    if (activeSection) setOpenSections([activeSection.name]);
+    else setOpenSections([]);
   }, [location.pathname]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/", { replace: true });
-  };
+  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  const handleLogout = () => { localStorage.clear(); navigate("/", { replace: true }); };
 
   const toggleSection = (sectionName) => {
     setOpenSections((prev) =>
-      prev.includes(sectionName)
-        ? prev.filter((name) => name !== sectionName)
-        : [...prev, sectionName]
+      prev.includes(sectionName) ? prev.filter((name) => name !== sectionName) : [...prev, sectionName]
     );
   };
 
-  const hasActiveChild = (children = []) =>
-    children.some((child) => location.pathname === child.path);
+  const hasActiveChild = (children = []) => children.some((child) => location.pathname === child.path);
 
   const lastLoginRaw = user?.lastlogin ?? user?.lastLogin ?? "";
-
   const lastLogin = (() => {
-    if (!lastLoginRaw) return "Not available";
+    if (!lastLoginRaw) return "N/A";
     const d = new Date(lastLoginRaw);
-    if (Number.isNaN(d.getTime())) return String(lastLoginRaw);
-    return d.toLocaleString();
+    return Number.isNaN(d.getTime()) ? String(lastLoginRaw) : d.toLocaleDateString();
   })();
 
   const profileImg = useMemo(() => {
     let url = "/uploads/faculties/default.png";
-
     if (user?.profilepic) {
-      if (String(user.profilepic).startsWith("/uploads/")) {
-        url = user.profilepic;
-      } else {
-        url = `/uploads/faculties/${user.profilepic}`;
-      }
+      url = String(user.profilepic).startsWith("/uploads/") ? user.profilepic : `/uploads/faculties/${user.profilepic}`;
     }
-
     return `${BASE_URL}${url}?v=${imgBust}`;
   }, [BASE_URL, user, imgBust]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+    <div className="h-[100dvh] flex bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
+      
+      {/* MOBILE OVERLAY */}
       {mobileSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+             onClick={() => setMobileSidebarOpen(false)} />
       )}
 
+      {/* SIDEBAR (Matches Admin Style) */}
       <aside
-  className={`
-    fixed inset-y-0 left-0 z-50 flex h-screen flex-col
-    w-[295px] border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900
-    transition-transform duration-300
-    ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-    ${collapsed ? "lg:-translate-x-full" : "lg:translate-x-0"}
-  `}
->
-        <div className="border-b border-gray-200 px-4 py-5 dark:border-gray-700">
-          <div className="flex items-start gap-3">
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-300 bg-white dark:border-gray-600">
-              <img
-                src={profileImg}
-                alt="Faculty"
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = `${BASE_URL}/uploads/faculties/default.png?v=${imgBust}`;
-                }}
-              />
+        className={`fixed top-0 left-0 h-[100dvh] w-[280px] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transform transition-transform duration-300 ease-in-out 
+        ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+        ${collapsed ? "lg:-translate-x-full" : "lg:translate-x-0"}`}
+      >
+        {/* IDENTITY BLOCK */}
+        <div className="border-b border-slate-100 dark:border-slate-800/60">
+          <div className="px-6 py-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm flex-shrink-0">
+                <img
+                  src={profileImg}
+                  alt="Faculty"
+                  className="h-full w-full object-cover"
+                  onError={(e) => { e.target.onerror = null; e.target.src = `${BASE_URL}/uploads/faculties/default.png`; }}
+                />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {user?.name || user?.fullname || "Faculty Member"}
+                </h2>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold truncate">Faculty Portal</p>
+              </div>
+              <button onClick={() => setMobileSidebarOpen(false)} className="ml-auto lg:hidden text-slate-400">
+                <X size={18} />
+              </button>
             </div>
 
-            {showSidebarText && (
-              <div className="min-w-0 pt-0.5">
-  <p className="truncate text-[14px] font-semibold text-gray-900 dark:text-gray-100">
-    {user?.name || user?.fullname || user?.facultyname || "Faculty"}
-  </p>
-  <p className="truncate text-[13px] text-gray-500 dark:text-gray-400">
-    Faculty
-  </p>
-</div>
-            )}
-
-            <button
-              onClick={() => setMobileSidebarOpen(false)}
-              className="ml-auto rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden"
-            >
-              <X size={18} />
-            </button>
+            <div className="mt-5 bg-slate-50 dark:bg-slate-950/50 rounded-lg p-3 text-[11px] font-medium border border-slate-100 dark:border-slate-800/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Status</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                  <span className="text-slate-700 dark:text-slate-300 font-bold">Online</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Last Auth</span>
+                <span className="text-slate-700 dark:text-slate-300 font-mono font-bold">{lastLogin}</span>
+              </div>
+            </div>
           </div>
-
-          {showSidebarText && (
-            <div className="mt-4 space-y-2 text-[13px]">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 dark:text-gray-400">Status:</span>
-                <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  Active
-                </span>
-              </div>
-
-              <div className="leading-5 text-gray-500 dark:text-gray-400">
-                <span>Last login: </span>
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  {lastLogin}
-                </span>
-              </div>
-            </div>
-          )}
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* NAVIGATION */}
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {menuItems.map((item) => {
             const Icon = item.icon;
-
             if (item.children) {
               const isOpen = openSections.includes(item.name);
-              const sectionHasActiveChild = hasActiveChild(item.children);
-
+              const sectionActive = hasActiveChild(item.children);
               return (
-                <div key={item.name}>
-                  <button
-                    type="button"
-                    onClick={() => toggleSection(item.name)}
-                    className={`
-                      flex w-full items-center rounded-lg px-4 py-2.5 text-[14px] font-medium transition-all duration-200
-                      ${
-                        sectionHasActiveChild
-                          ? "text-gray-900 dark:text-white"
-                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                      }
-                      ${showSidebarText ? "justify-between" : "lg:justify-center"}
-                    `}
-                  >
-                    <div className={`flex items-center ${showSidebarText ? "gap-3" : ""}`}>
-                      <Icon size={18} className="shrink-0" />
-                      {showSidebarText && <span>{item.name}</span>}
+                <div key={item.name} className="mb-1">
+                  <button onClick={() => toggleSection(item.name)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-xl transition-all ${isOpen || sectionActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-5 h-5 ${(isOpen || sectionActive) ? 'text-blue-600 dark:text-blue-500' : ''}`} />
+                      {item.name}
                     </div>
-
-                    {showSidebarText && (
-                      <ChevronRight
-                        size={16}
-                        className={`shrink-0 transition-transform duration-200 ${
-                          isOpen ? "rotate-90" : ""
-                        }`}
-                      />
-                    )}
+                    <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                   </button>
-
-                  {showSidebarText && (
-                    <div
-                      className={`overflow-hidden transition-all duration-200 ${
-                        isOpen ? "max-h-40 opacity-100 mt-1" : "max-h-0 opacity-0"
-                      }`}
-                    >
-                      <div className="ml-8 space-y-1">
-                        {item.children.map((sub) => {
-                          const subActive = location.pathname === sub.path;
-
-                          return (
-                            <Link
-                              key={sub.path}
-                              to={sub.path}
-                              className={`
-                                block rounded-lg px-3 py-2 text-[14px] transition-all duration-200
-                                ${
-                                  subActive
-                                    ? "bg-black text-white dark:bg-slate-600"
-                                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-                                }
-                              `}
-                            >
-                              {sub.name}
-                            </Link>
-                          );
-                        })}
-                      </div>
+                  <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-48 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                    <div className="ml-5 pl-3 border-l border-slate-200 dark:border-slate-800 space-y-1 py-1">
+                      {item.children.map((sub) => {
+                        const active = location.pathname === sub.path;
+                        return (
+                          <Link key={sub.path} to={sub.path}
+                            className={`block px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${active ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+                            {sub.name}
+                          </Link>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             }
-
             const active = location.pathname === item.path;
-
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`
-                  flex items-center rounded-lg px-4 py-2.5 text-[14px] font-medium transition-all duration-200
-                  ${
-                    active
-                      ? "bg-black text-white dark:bg-slate-600"
-                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                  }
-                  ${showSidebarText ? "gap-3" : "lg:justify-center"}
-                `}
-              >
-                <Icon size={18} className="shrink-0" />
-                {showSidebarText && <span>{item.name}</span>}
+              <Link key={item.path} to={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${active ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+                <Icon className="w-5 h-5" />
+                {item.name}
               </Link>
             );
           })}
         </nav>
       </aside>
 
-      <div
-  className={`min-h-screen transition-all duration-300 ${
-    collapsed ? "lg:ml-0" : "lg:ml-[295px]"
-  }`}
->
-        <header className="h-[70px] border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex h-full items-center justify-between px-4 lg:px-8">
+      {/* MAIN CONTENT AREA */}
+      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${collapsed ? "ml-0" : "lg:ml-[280px]"}`}>
+        
+        {/* GLASSMORPHISM HEADER */}
+        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+          <div className="flex items-center justify-between px-4 sm:px-8 h-16">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 lg:hidden"
-              >
-                <Menu size={20} />
+              <button onClick={() => { setMobileSidebarOpen(true); setCollapsed(false); }} className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg lg:hidden">
+                <Menu className="w-5 h-5" />
               </button>
-
-              <button
-                onClick={() => setCollapsed((prev) => !prev)}
-                className="hidden rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 lg:inline-flex"
-              >
-                <Menu size={20} />
+              <button onClick={() => setCollapsed(!collapsed)} className="hidden lg:block p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                <Menu className="w-5 h-5" />
               </button>
-
-              <h1 className="text-[18px] font-semibold text-gray-900 dark:text-gray-100 lg:text-[20px]">
-                Faculty Panel
+              <h1 className="text-sm font-bold text-slate-800 dark:text-slate-200 hidden sm:block uppercase tracking-wider">
+                Faculty Management System
               </h1>
             </div>
 
-            <div className="flex items-center gap-4 lg:gap-6">
-              <button
-                onClick={toggleTheme}
-                className="rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                title="Toggle theme"
-              >
-                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button onClick={toggleTheme} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
-
-              <button
-                onClick={handleLogout}
-                className="text-[14px] font-semibold text-red-600 hover:text-red-700 lg:text-[15px]"
-              >
-                Logout
+              <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
+              <button onClick={handleLogout} className="flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors group">
+                <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             </div>
           </div>
         </header>
 
-        <main className="p-3 sm:p-4 lg:p-6">
-          <div className="w-full overflow-x-auto">
-            <div className="min-w-0">
-              <Outlet />
-            </div>
-          </div>
-               </main>
+        {/* RENDER AREA */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-950 relative scroll-smooth p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </main>
       </div>
 
-      {/* 🔥 ADD OFFLINE UI HERE */}
-      {isOffline &&
-        createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm bg-black/30">
-
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg text-center max-w-sm w-full">
-
-              <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                You're offline
-              </p>
-
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Please check your internet connection to continue.
-              </p>
-
-              {retryError && (
-                <p className="mt-2 text-sm text-red-500">
-                  {retryError}
-                </p>
-              )}
-
-              <button
-  type="button"
-  disabled={checking}
-  onClick={async () => {
-    if (checking) return;
-
-    setRetryError("");
-    setChecking(true);
-
-    
-    await new Promise((r) => setTimeout(r, 300));
-
-    try {
-      if (!navigator.onLine) {
-        throw new Error("No internet");
-      }
-
-      await fetch(`${api.defaults.baseURL}/health`, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      window.location.reload();
-
-    } catch {
-      setRetryError("Still offline or server unreachable.");
-    } finally {
-      setChecking(false);
-    }
-  }}
-  className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-md text-sm disabled:opacity-50"
->
-  {checking ? "Checking..." : "Try Again"}
-</button>
-
+      {/* OFFLINE MODAL (Matches Admin Style) */}
+      {isOffline && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-md px-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <WifiOff className="w-8 h-8" />
             </div>
-          </div>,
-          document.body
-        )
-      }
-
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Connection Lost</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+              Please verify your network connection to resume academic operations.
+            </p>
+            {retryError && <p className="text-xs font-semibold text-red-500 mt-3">{retryError}</p>}
+            <button
+              disabled={checking}
+              onClick={async () => {
+                if (checking) return;
+                setRetryError("");
+                setChecking(true);
+                try {
+                  if (!navigator.onLine) throw new Error();
+                  await fetch(`${api.defaults.baseURL}/health`, { method: "GET", cache: "no-store" });
+                  window.location.reload();
+                } catch {
+                  setRetryError("Server unreachable. Retrying...");
+                } finally { setChecking(false); }
+              }}
+              className="mt-8 w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50"
+            >
+              {checking ? "Verifying..." : "Retry Connection"}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

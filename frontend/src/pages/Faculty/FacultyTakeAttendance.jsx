@@ -1,448 +1,259 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
-import ImportAttendanceModal from "./ImportAttendanceModal";
 import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
+import ImportMarksModal from "./ImportMarksModal";
+import { 
+  ListChecks, 
+  Save, 
+  RotateCcw, 
+  CheckCircle2, 
+  AlertCircle, 
+  FileUp, 
+  BookOpen,
+  ClipboardCheck,
+  Calendar,
+  Layers
+} from "lucide-react";
 
-function InfoCard({ label, value }) {
-  return (
-    <div className="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-        {label}
-      </p>
-      <p className="text-base font-semibold text-gray-800 dark:text-gray-100 mt-1">
-        {value || "-"}
-      </p>
-    </div>
-  );
-}
+export default function FacultyEnterMarks() {
+  const token = localStorage.getItem("token");
 
-export default function FacultyTakeAttendance() {
-  const token = localStorage.getItem("token");
+  const [assignedSubjects, setAssignedSubjects] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [marks, setMarks] = useState({});
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
-  const [assignedSubjects, setAssignedSubjects] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [existingDates, setExistingDates] = useState([]);
+  useEffect(() => {
+    const fetchAssignedSubjects = async () => {
+      try {
+        setLoadingSubjects(true);
+        const res = await api.get("/api/faculty/assigned-subjects", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAssignedSubjects(res.data || []);
+      } catch (err) {
+        setError("Failed to load assigned subjects.");
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    if (token) fetchAssignedSubjects();
+  }, [token]);
 
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [markMode, setMarkMode] = useState("present");
-  const [checkedStudents, setCheckedStudents] = useState({});
+  const selectedSubjectObj = useMemo(() => {
+    return assignedSubjects.find(
+      (item) => String(item.subjectcode) === String(selectedSubject)
+    );
+  }, [assignedSubjects, selectedSubject]);
 
-  const [loadingSubjects, setLoadingSubjects] = useState(true);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [savingAttendance, setSavingAttendance] = useState(false);
+  const selectedCourse = selectedSubjectObj?.courcecode || "";
+  const selectedSem = selectedSubjectObj?.semoryear || "";
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  useEffect(() => {
+    if (!selectedCourse || !selectedSem) {
+      setStudents([]);
+      setMarks({});
+      return;
+    }
+    const fetchStudents = async () => {
+      try {
+        setLoadingStudents(true);
+        const res = await api.get(
+          `/api/marks/students?course=${selectedCourse}&sem=${selectedSem}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setStudents(res.data || []);
+        const initialMarks = {};
+        (res.data || []).forEach((student) => {
+          initialMarks[student.rollnumber] = { theory: "", practical: "" };
+        });
+        setMarks(initialMarks);
+      } catch (err) {
+        setError("Failed to load students.");
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+    fetchStudents();
+  }, [selectedCourse, selectedSem, token]);
 
-  const todayDate = useMemo(() => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, "0");
-    const d = String(today.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }, []);
+  const handleMarkChange = (rollnumber, field, value) => {
+    setMarks((prev) => ({
+      ...prev,
+      [rollnumber]: { ...prev[rollnumber], [field]: value },
+    }));
+  };
 
-  useEffect(() => {
-    const fetchAssignedSubjects = async () => {
-      try {
-        setLoadingSubjects(true);
-        setError("");
+  const handleReset = () => {
+    setSelectedSubject("");
+    setStudents([]);
+    setMarks({});
+    setError("");
+  };
 
-        const res = await api.get("/api/faculty/assigned-subjects", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  const isReady = selectedSubject && selectedCourse && selectedSem;
 
-        setAssignedSubjects(res.data || []);
-      } catch (err) {
-        console.error("Assigned subjects fetch error:", err);
-        setAssignedSubjects([]);
-        setError("Failed to load assigned subjects.");
-      } finally {
-        setLoadingSubjects(false);
-      }
-    };
+  return (
+    <div className="min-h-screen flex flex-col bg-[#05070a] text-slate-100 font-sans">
+      
+      {/* HEADER */}
+      <header className="bg-[#0f111a] border border-slate-800 rounded-xl m-4 sm:m-6 p-4 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 bg-indigo-600 text-white rounded-lg shadow-lg">
+            <ClipboardCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Log Marks</h1>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest leading-none">Faculty Portal</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setShowImportModal(true)}
+            disabled={!isReady}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold transition-all rounded-md ${
+              isReady ? "text-indigo-400 hover:text-indigo-300" : "text-slate-600 cursor-not-allowed"
+            }`}
+          >
+            <FileUp className="w-4 h-4" /> Import Data
+          </button>
+          <div className="h-4 w-[1px] bg-slate-800"></div>
+          <button onClick={handleReset} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-white transition-colors">
+            <RotateCcw className="w-4 h-4" /> Reset Form
+          </button>
+        </div>
+      </header>
 
-    if (token) fetchAssignedSubjects();
-  }, [token]);
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 space-y-4 pb-24">
+        
+        {/* DROPDOWN CARD */}
+        <section className="bg-[#0f111a] border border-slate-800 rounded-2xl shadow-xl p-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subject Configuration</label>
+            <select
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              className="w-full bg-[#05070a] border border-slate-700 rounded-lg px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all"
+            >
+              <option value="">{loadingSubjects ? "Fetching..." : "Select Subject"}</option>
+              {assignedSubjects.map((sub, index) => (
+                <option key={index} value={sub.subjectcode}>{sub.subjectname}</option>
+              ))}
+            </select>
+          </div>
+        </section>
 
-  const selectedSubjectObj = useMemo(() => {
-    return assignedSubjects.find(
-      (item) => String(item.subjectcode) === String(selectedSubject)
-    );
-  }, [assignedSubjects, selectedSubject]);
+        {/* DETAILS INFO CARD (At the bottom of dropdown) */}
+        {selectedSubjectObj && (
+          <section className="bg-[#0f111a] border border-slate-800 rounded-2xl p-6 grid grid-cols-2 md:grid-cols-5 gap-6 animate-in fade-in zoom-in-95">
+            <div className="space-y-1">
+              <span className="flex items-center gap-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                <BookOpen className="w-3 h-3 text-indigo-500" /> Course
+              </span>
+              <p className="text-sm font-bold text-white uppercase">{selectedCourse}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="flex items-center gap-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                <Layers className="w-3 h-3 text-indigo-500" /> Semester
+              </span>
+              <p className="text-sm font-bold text-white">{selectedSem}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="flex items-center gap-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                <Calendar className="w-3 h-3 text-indigo-500" /> Logging Date
+              </span>
+              <p className="text-sm font-bold text-white">{new Date().toLocaleDateString()}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Max Theory</span>
+              <p className="text-sm font-bold text-white">{selectedSubjectObj?.theorymarks ?? 100}</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Max Practical</span>
+              <p className="text-sm font-bold text-white">{selectedSubjectObj?.practicalmarks ?? 0}</p>
+            </div>
+          </section>
+        )}
 
-  const selectedCourse = selectedSubjectObj?.courcecode || "";
-  const selectedSem = selectedSubjectObj?.semoryear || "";
+        {/* TABLE SECTION */}
+        {isReady && (
+          <div className="bg-[#0f111a] border border-slate-800 rounded-2xl shadow-xl overflow-hidden mt-6">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/30">
+              <h2 className="text-[11px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                <ListChecks className="w-4 h-4 text-indigo-500" /> Student Profile
+              </h2>
+              <div className="flex gap-12 text-[11px] font-bold uppercase text-slate-500 tracking-widest pr-10">
+                <span>Theory</span>
+                {Number(selectedSubjectObj?.practicalmarks || 0) > 0 && <span>Practical</span>}
+              </div>
+            </div>
+            
+            <div className="divide-y divide-slate-800/50">
+              {students.map((student) => (
+                <div key={student.rollnumber} className="px-6 py-4 flex items-center justify-between hover:bg-slate-800/20 transition-colors">
+                  <div>
+                    <div className="text-[11px] font-mono font-bold text-indigo-400">{student.rollnumber}</div>
+                    <div className="text-sm font-bold text-white">{student.firstname} {student.lastname}</div>
+                  </div>
+                  <div className="flex gap-6 items-center">
+                    <input
+                      type="number"
+                      value={marks[student.rollnumber]?.theory || ""}
+                      onChange={(e) => handleMarkChange(student.rollnumber, "theory", e.target.value)}
+                      className="w-20 px-2 py-2 bg-[#05070a] border border-slate-700 rounded-lg text-sm text-center font-bold text-white outline-none focus:border-indigo-500"
+                    />
+                    {Number(selectedSubjectObj?.practicalmarks || 0) > 0 && (
+                      <input
+                        type="number"
+                        value={marks[student.rollnumber]?.practical || ""}
+                        onChange={(e) => handleMarkChange(student.rollnumber, "practical", e.target.value)}
+                        className="w-20 px-2 py-2 bg-[#05070a] border border-slate-700 rounded-lg text-sm text-center font-bold text-white outline-none focus:border-indigo-500"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
 
-  useEffect(() => {
-    if (!selectedCourse || !selectedSem) {
-      setStudents([]);
-      setCheckedStudents({});
-      return;
-    }
+      {/* FOOTER BAR */}
+      {isReady && students.length > 0 && (
+        <div className="fixed bottom-0 w-full bg-[#0f111a]/95 backdrop-blur-md border-t border-slate-800 p-4 z-40">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
+              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+              Roster: {students.length} Students
+            </div>
+            <button 
+              onClick={() => setShowSaveModal(true)}
+              className="px-10 py-3 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl transition-all active:scale-95 flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" /> Save Marks
+            </button>
+          </div>
+        </div>
+      )}
 
-    const fetchStudents = async () => {
-      try {
-        setLoadingStudents(true);
-        setError("");
-        setSuccess("");
-
-        const res = await api.get(
-          `/api/attendance/students?course=${selectedCourse}&sem=${selectedSem}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        setStudents(res.data || []);
-        setCheckedStudents({});
-      } catch (err) {
-        console.error("Students fetch error:", err);
-        setStudents([]);
-        setError("Failed to load students.");
-      } finally {
-        setLoadingStudents(false);
-      }
-    };
-
-    fetchStudents();
-  }, [selectedCourse, selectedSem, token]);
-
-  useEffect(() => {
-    if (!selectedSubject || !selectedCourse || !selectedSem) {
-      setExistingDates([]);
-      return;
-    }
-
-    const fetchDates = async () => {
-      try {
-        const res = await api.get(
-          `/api/attendance/dates?subjectcode=${selectedSubject}&courcecode=${selectedCourse}&semoryear=${selectedSem}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        setExistingDates((res.data || []).map((item) => item.date));
-      } catch (err) {
-        console.error("Existing dates fetch error:", err);
-        setExistingDates([]);
-      }
-    };
-
-    fetchDates();
-  }, [selectedSubject, selectedCourse, selectedSem, token]);
-
-  const toggleStudent = (id) => {
-    setCheckedStudents((prev) => ({
-  ...prev,
-  [id]: !prev[id],
-}));
-  };
-
-  const saveAttendance = async () => {
-  if (!selectedSubject || !selectedCourse || !selectedSem) {
-    setError("Please select a subject.");
-    return;
-  }
-
-  if (existingDates.includes(todayDate)) {
-    setError("Today's attendance has already been taken for this subject.");
-
-    setTimeout(() => {
-      setSelectedSubject("");
-      setMarkMode("present");
-      setCheckedStudents({});
-      setStudents([]);
-      setExistingDates([]);
-      setError("");
-    }, 1500);
-
-    return;
-  }
-
-  try {
-    setSavingAttendance(true);
-    setShowConfirmModal(false);
-
-    const records = students.map((student) => {
-      const isChecked = !!checkedStudents[student.student_id];
-
-      return {
-        student_id: student.student_id,
-        present:
-          markMode === "present"
-            ? isChecked
-              ? 1
-              : 0
-            : isChecked
-            ? 0
-            : 1,
-      };
-    });
-
-    await api.post(
-      "/api/attendance",
-      {
-        subjectcode: selectedSubject,
-        date: todayDate,
-        courcecode: selectedCourse,
-        semoryear: Number(selectedSem),
-        records,
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    setSuccess("Attendance saved successfully for today.");
-    setError("");
-
-    setTimeout(() => {
-      setSelectedSubject("");
-      setMarkMode("present");
-      setCheckedStudents({});
-      setStudents([]);
-      setExistingDates([]);
-      setSuccess("");
-    }, 1200);
-  } catch (err) {
-    console.error("Save attendance error:", err);
-    setError(err?.response?.data?.message || "Failed to save attendance.");
-  } finally {
-    setSavingAttendance(false);
-  }
-};
-
-  const isReady = selectedSubject && selectedCourse && selectedSem;
-
-  return (
-    <div className="w-[94vw] sm:w-full min-h-[90vh] sm:min-h-[600px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 transition-colors mx-auto">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
-          Take Attendance
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          Mark today&apos;s attendance for your subject.
-        </p>
-      </div>
-
-      {error && (
-        <div className="p-3 rounded-md text-sm bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="p-3 rounded-md text-sm bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-          {success}
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-  {/* LEFT SIDE → DROPDOWNS */}
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-    
-    <select
-      value={selectedSubject}
-      onChange={(e) => {
-        setSelectedSubject(e.target.value);
-        setCheckedStudents({});
-        setError("");
-        setSuccess("");
-      }}
-      disabled={loadingSubjects}
-      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-    >
-      <option value="">
-        {loadingSubjects ? "Loading Subjects..." : "Select Subject"}
-      </option>
-
-      {assignedSubjects.map((sub, index) => (
-        <option key={`${sub.subjectcode}-${index}`} value={sub.subjectcode}>
-          {sub.subjectname}
-        </option>
-      ))}
-    </select>
-
-    <select
-      value={markMode}
-      onChange={(e) => setMarkMode(e.target.value)}
-      disabled={!selectedSubject}
-      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-    >
-      <option value="present">Mark Present</option>
-      <option value="absent">Mark Absent</option>
-    </select>
-
-  </div>
-
-  {/* RIGHT SIDE → IMPORT BUTTON */}
-  <div className="flex justify-end">
-    <button
-      onClick={() => {
-        setError("");
-        setSuccess("");
-        setShowImportModal(true);
-      }}
-      disabled={!selectedSubject || !selectedCourse || !selectedSem}
-      className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-        selectedSubject && selectedCourse && selectedSem
-          ? "bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100"
-          : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
-      }`}
-    >
-      Import From File
-    </button>
-  </div>
-
-</div>
-
-      {selectedSubjectObj && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <InfoCard label="Course" value={selectedCourse} />
-          <InfoCard label="Semester / Year" value={selectedSem} />
-          <InfoCard label="Date" value={todayDate} />
-        </div>
-      )}
-
-      {isReady && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-xs sm:text-sm text-left">
-              <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-[10px] sm:text-xs tracking-wide">
-  <tr>
-    <th className="px-2 py-2 sm:hidden">Student</th>
-
-    <th className="hidden sm:table-cell px-4 py-3">Roll No</th>
-    <th className="hidden sm:table-cell px-4 py-3">Name</th>
-
-    <th className="px-2 py-2 sm:px-4 sm:py-3 text-center">
-      {markMode === "present" ? "Present" : "Absent"}
-    </th>
-  </tr>
-</thead>
-              <tbody>
-                {loadingStudents ? (
-                  <tr>
-                    <td
-  colSpan="3"
-  className="px-2 py-6 text-center text-gray-500 dark:text-gray-400"
->
-                      Loading students...
-                    </td>
-                  </tr>
-                ) : students.length === 0 ? (
-                  <tr>
-                    <td
-  colSpan="3"
-  className="px-2 py-6 text-center text-gray-500 dark:text-gray-400"
->
-                      No students found.
-                    </td>
-                  </tr>
-                ) : (
-                  students.map((student) => (
-                    <tr
-  key={student.student_id}
-  className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
->
-  {/* Mobile student column */}
-  <td className="px-2 py-2 dark:text-gray-200 sm:hidden">
-  <div className="flex flex-col leading-tight">
-    <span className="font-medium text-xs truncate">
-      {student.rollnumber}
-    </span>
-    <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-      {student.firstname} {student.lastname}
-    </span>
-  </div>
-</td>
-
-  {/* Desktop roll column */}
-  <td className="hidden sm:table-cell px-4 py-3 dark:text-gray-200">
-    {student.rollnumber}
-  </td>
-
-  {/* Desktop name column */}
-  <td className="hidden sm:table-cell px-4 py-3 dark:text-gray-200 font-medium">
-    {student.firstname} {student.lastname}
-  </td>
-
-  {/* Common checkbox column */}
-  <td className="px-2 py-2 sm:px-4 sm:py-3 text-center">
-    <input
-      type="checkbox"
-      checked={!!checkedStudents[student.student_id]}
-      onChange={() => toggleStudent(student.student_id)}
-      className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500"
-    />
-  </td>
-</tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
-           <button
-  onClick={() => setShowConfirmModal(true)}
-  disabled={!isReady || students.length === 0 || savingAttendance}
-  className={`w-full sm:w-auto px-4 py-3 sm:py-2 text-sm rounded-md transition ${
-    isReady && students.length > 0
-      ? "bg-gray-900 text-white hover:bg-black"
-      : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
-  }`}
->
-  {savingAttendance ? "Saving..." : "Save Attendance"}
-</button>
-          </div>
-        </div>
-      )}
-{/* IMPORT MODAL */}
-      {showImportModal && (
-        <ImportAttendanceModal
-          onClose={() => setShowImportModal(false)}
-          token={token}
-          subjectcode={selectedSubject}
-          courcecode={selectedCourse}
-          semoryear={selectedSem}
-          date={todayDate}
-          onImportSuccess={() => {
-            setSuccess("Attendance imported successfully.");
-            setError("");
-
-            setTimeout(() => {
-              setSelectedSubject("");
-              setMarkMode("present");
-              setCheckedStudents({});
-              setStudents([]);
-              setExistingDates([]);
-              setSuccess("");
-              setShowImportModal(false);
-            }, 1500);
-          }}
-        />
-      )}
-
-
-      <ConfirmSaveModal
-  show={showConfirmModal}
-  title="Confirm Attendance Save"
-  message="Are you sure you want to save today's attendance for this subject?"
-  confirmText="Save Attendance"
-  loading={savingAttendance}
-  onCancel={() => setShowConfirmModal(false)}
-  onConfirm={saveAttendance}
-/>
-
-    </div>
-
-
-  );
+      {/* MODALS */}
+      <ConfirmSaveModal show={showSaveModal} onCancel={() => setShowSaveModal(false)} onConfirm={() => setShowSaveModal(false)} />
+      {showImportModal && (
+        <ImportMarksModal 
+          token={token} 
+          course={selectedCourse} 
+          sem={selectedSem} 
+          subject={selectedSubject} 
+          onClose={() => setShowImportModal(false)} 
+        />
+      )}
+    </div>
+  );
 }
