@@ -1,651 +1,359 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Settings,
+    ShieldCheck,
+    Briefcase,
+    Calendar,
+    Award,
+    BookOpen,
+    Eye,
+    EyeOff,
+    X,
+    Lock
+} from "lucide-react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
 
-const hideScrollbarStyle = `
-.hide-scrollbar::-webkit-scrollbar { width: 0px; height: 0px; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-`;
-
 const FacultyProfile = () => {
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  const [faculty, setFaculty] = useState(null);
-  const [assignedSubjects, setAssignedSubjects] = useState([]);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  
- 
+    const [faculty, setFaculty] = useState(null);
+    const [assignedSubjects, setAssignedSubjects] = useState([]);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [imgBust, setImgBust] = useState(0);
 
-  //  ADDED (cache bust for image refresh)
-  const [imgBust, setImgBust] = useState(0);
+    /* ================= DATA FETCHING ================= */
+    useEffect(() => {
+        if (!token) return;
 
-  useEffect(() => {
-  if (!token) return;
+        const fetchProfile = async () => {
+            try {
+                const [profileRes, subjectsRes] = await Promise.all([
+                    api.get("/api/faculty/profile", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    api.get("/api/faculty/assigned-subjects", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                ]);
 
-  const fetchProfile = async () => {
-    try {
-      const [profileRes, subjectsRes] = await Promise.all([
-        api.get("/api/faculty/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        api.get("/api/faculty/assigned-subjects", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+                setFaculty(profileRes.data);
+                setAssignedSubjects(Array.isArray(subjectsRes.data) ? subjectsRes.data : []);
+            } catch (error) {
+                console.error("Fetch profile error:", error);
+            }
+        };
 
-      setFaculty(profileRes.data);
-      setAssignedSubjects(Array.isArray(subjectsRes.data) ? subjectsRes.data : []);
-    } catch (error) {
-      console.error("Fetch profile error:", error);
-      setAssignedSubjects([]);
-    }
-  };
+        fetchProfile();
+    }, [token]);
 
-  fetchProfile();
-}, [token]);
+    const profileImg = useMemo(() => {
+        let url = "";
+        if (!faculty?.profilepic) {
+            url = `${api.defaults.baseURL}/uploads/faculties/default.png`;
+        } else if (String(faculty.profilepic).startsWith("/uploads/")) {
+            url = `${api.defaults.baseURL}${faculty.profilepic}`;
+        } else {
+            url = `${api.defaults.baseURL}/uploads/faculties/${faculty.profilepic}`;
+        }
+        return `${url}?v=${imgBust}`;
+    }, [faculty, imgBust]);
 
-
-  //  REPLACED (cache-busting image url)
-  const profileImg = useMemo(() => {
-    let url = "";
-    if (!faculty?.profilepic) {
-      url = `${api.defaults.baseURL}/uploads/faculties/default.png`;
-    } else if (String(faculty.profilepic).startsWith("/uploads/")) {
-      url = `${api.defaults.baseURL}${faculty.profilepic}`;
-    } else {
-      url = `${api.defaults.baseURL}/uploads/faculties/${faculty.profilepic}`;
-    }
-    return `${url}?v=${imgBust}`; 
-  }, [faculty, imgBust]);
-
-  if (!faculty) {
-    return (
-      <p className="text-sm text-gray-500 dark:text-gray-400">
-        Loading profile...
-      </p>
-    );
-  }
-
-  return (
-    <>
-      <style>{hideScrollbarStyle}</style>
-
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/5 dark:bg-gray-800/40 shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-            <img
-              src={profileImg}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = `${api.defaults.baseURL}/uploads/faculties/default.png`;
-              }}
-              alt="Profile"
-              className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
-            />
-
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                {faculty.facultyname || "Faculty"}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Faculty Profile
-              </p>
+    if (!faculty) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-600 rounded-full animate-spin"></div>
             </div>
-          </div>
+        );
+    }
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <button
-              onClick={() => setShowDetailsModal(true)}
-              className="w-full sm:w-auto px-5 py-2 bg-gray-800 text-gray-200 text-sm rounded-md hover:bg-gray-700 border border-gray-600 transition"
-            >
-              Edit Details
+    return (
+        <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
+
+            {/* PLATFORM HEADER */}
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-md shadow-indigo-500/20">
+                            <ShieldCheck className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold tracking-tight leading-tight">Faculty Profile</h1>
+                            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest hidden sm:block">Academic Personnel</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setShowDetailsModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 rounded-md transition-all active:scale-95">
+                            <Settings className="w-3.5 h-3.5" /> Edit Profile
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+                {/* HERO CARD */}
+                <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <div className="relative">
+                            <img src={profileImg} alt="Profile" className="h-24 w-24 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm" />
+                        </div>
+                        <div className="text-center sm:text-left">
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+                                {faculty.facultyname || "Faculty Member"}
+                            </h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{faculty.position || "Member of Faculty"}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* BASIC INFO */}
+                    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                            <User className="w-4 h-4 text-indigo-500" />
+                            <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider">Identity & Contact</h3>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-4">
+                            <InfoField label="Faculty ID" value={faculty.facultyid} icon={<ShieldCheck className="w-3.5 h-3.5" />} />
+                            <InfoField label="Gender" value={faculty.gender} icon={<User className="w-3.5 h-3.5" />} />
+                            <InfoField label="Email Address" value={faculty.emailid} icon={<Mail className="w-3.5 h-3.5" />} />
+                            <InfoField label="Contact Number" value={faculty.contactnumber} icon={<Phone className="w-3.5 h-3.5" />} />
+                            <InfoField label="Location" value={`${faculty.city || ""}, ${faculty.state || ""}`} icon={<MapPin className="w-3.5 h-3.5" />} />
+                            <InfoField label="Birthdate" value={faculty.birthdate} icon={<Calendar className="w-3.5 h-3.5" />} />
+                        </div>
+                    </section>
+
+                    {/* PROFESSIONAL INFO */}
+                    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                            <Briefcase className="w-4 h-4 text-indigo-500" />
+                            <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider">Professional Profile</h3>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            <InfoField label="Highest Qualification" value={faculty.qualification} icon={<Award className="w-3.5 h-3.5" />} />
+                            <InfoField label="Teaching Experience" value={faculty.experience} icon={<Briefcase className="w-3.5 h-3.5" />} />
+                            
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1.5 text-slate-400">
+                                    <BookOpen className="w-3.5 h-3.5" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Assigned Subjects</span>
+                                </div>
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                    {assignedSubjects.length > 0 
+                                        ? assignedSubjects.map(s => s.subjectname || s.subjectcode).join(", ") 
+                                        : "No subjects assigned"}
+                                </p>
+                            </div>
+
+                            <InfoField label="Joining Date" value={faculty.joineddate} icon={<Calendar className="w-3.5 h-3.5" />} />
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            {/* MODAL */}
+            {showDetailsModal && (
+                <EditDetailsModal 
+                    faculty={faculty} 
+                    token={token} 
+                    onClose={(upd) => { 
+                        setShowDetailsModal(false); 
+                        if(upd) { 
+                            setFaculty(upd); 
+                            setImgBust(prev => prev + 1);
+                        } 
+                    }} 
+                />
+            )}
+        </div>
+    );
+};
+
+/* ---------------- Internal Components ---------------- */
+
+const InfoField = ({ label, value, icon }) => (
+    <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5 text-slate-400">
+            {icon}
+            <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+        </div>
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{value || "-"}</p>
+    </div>
+);
+
+const ModalWrapper = ({ children, onClose, title }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => onClose(null)} />
+        <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                <h2 className="text-sm font-bold uppercase text-slate-800 dark:text-slate-200">{title}</h2>
+                <button onClick={() => onClose(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><X size={18} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto">{children}</div>
+        </div>
+    </div>
+);
+
+const StyledInput = ({ label, name, value, onChange, type = "text", ...props }) => (
+    <div className="space-y-1">
+        <label className="block text-[10px] font-bold uppercase text-slate-500">{label}</label>
+        <input
+            type={type} name={name} value={value} onChange={onChange} {...props}
+            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm font-medium outline-none focus:ring-1 focus:ring-indigo-500"
+        />
+    </div>
+);
+
+/* ---------------- Edit Modal ---------------- */
+
+const EditDetailsModal = ({ faculty, token, onClose }) => {
+    const [form, setForm] = useState({
+        facultyname: faculty.facultyname || "",
+        contactnumber: faculty.contactnumber || "",
+        gender: faculty.gender || "",
+        birthdate: faculty.birthdate || "",
+        state: faculty.state || "",
+        city: faculty.city || "",
+        qualification: faculty.qualification || "",
+        experience: faculty.experience || "",
+        currentEmailForEmail: "",
+        newEmail: "",
+        currentPasswordForPassword: "",
+        newPassword: "",
+    });
+
+    const [profileFile, setProfileFile] = useState(null);
+    const [preview, setPreview] = useState(`${api.defaults.baseURL}/uploads/faculties/${faculty.profilepic || 'default.png'}`);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [showPass, setShowPass] = useState(false);
+
+    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileFile(file);
+            setPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSubmit = async () => {
+        setSaving(true);
+        try {
+            let authToken = token;
+            const fd = new FormData();
+            const blockedKeys = new Set(["currentEmailForEmail", "newEmail", "currentPasswordForPassword", "newPassword"]);
+            
+            Object.keys(form).forEach(key => {
+                if (!blockedKeys.has(key) && form[key]) fd.append(key, form[key]);
+            });
+            if (profileFile) fd.append("profilepic", profileFile);
+
+            // 1. Update Profile
+            await api.put("/api/faculty/profile", fd, { 
+                headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "multipart/form-data" } 
+            });
+
+            // 2. Email Logic
+            if (form.newEmail && form.newEmail !== faculty.emailid) {
+                const emailRes = await api.put("/api/faculty/change-email", 
+                    { currentEmail: form.currentEmailForEmail, newEmail: form.newEmail },
+                    { headers: { Authorization: `Bearer ${authToken}` } }
+                );
+                localStorage.setItem("token", emailRes.data.token);
+                authToken = emailRes.data.token;
+            }
+
+            // 3. Password Logic
+            if (form.newPassword) {
+                await api.put("/api/faculty/change-password",
+                    { currentPassword: form.currentPasswordForPassword, newPassword: form.newPassword },
+                    { headers: { Authorization: `Bearer ${authToken}` } }
+                );
+            }
+
+            const res = await api.get("/api/faculty/profile", { headers: { Authorization: `Bearer ${authToken}` } });
+            window.dispatchEvent(new Event("facultyUserUpdated"));
+            onClose(res.data);
+        } catch (err) {
+            alert(err.response?.data?.message || "Update failed");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <ModalWrapper onClose={onClose} title="Edit Faculty Profile">
+            <div className="mb-6 flex flex-col items-center gap-3">
+                <img src={preview} alt="Preview" className="h-20 w-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm" />
+                <label className="cursor-pointer px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase rounded-md hover:bg-slate-200 transition-colors">
+                    Update Photo
+                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                </label>
+            </div>
+
+            <div className="space-y-6">
+                <div>
+                    <h4 className="text-[10px] font-black uppercase text-indigo-500 mb-3 tracking-widest">Personal Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <StyledInput label="Full Name" name="facultyname" value={form.facultyname} onChange={handleChange} />
+                        <StyledInput label="Contact Number" name="contactnumber" value={form.contactnumber} onChange={handleChange} />
+                        <div className="space-y-1">
+                            <label className="block text-[10px] font-bold uppercase text-slate-500">Gender</label>
+                            <select name="gender" value={form.gender} onChange={handleChange} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <StyledInput label="Birth Date" type="date" name="birthdate" value={form.birthdate} onChange={handleChange} />
+                        <StyledInput label="State" name="state" value={form.state} onChange={handleChange} />
+                        <StyledInput label="City" name="city" value={form.city} onChange={handleChange} />
+                    </div>
+                </div>
+
+                <div>
+                    <h4 className="text-[10px] font-black uppercase text-indigo-500 mb-3 tracking-widest">Professional & Account</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <StyledInput label="Qualification" name="qualification" value={form.qualification} onChange={handleChange} />
+                        <StyledInput label="Experience" name="experience" value={form.experience} onChange={handleChange} />
+                        <StyledInput label="Current Email" name="currentEmailForEmail" value={form.currentEmailForEmail} onChange={handleChange} />
+                        <StyledInput label="New Email" name="newEmail" value={form.newEmail} onChange={handleChange} />
+                        
+                        <div className="relative">
+                            <StyledInput label="Current Password" type={showPass ? "text" : "password"} name="currentPasswordForPassword" value={form.currentPasswordForPassword} onChange={handleChange} />
+                        </div>
+                        <div className="relative">
+                            <StyledInput label="New Password" type={showPass ? "text" : "password"} name="newPassword" value={form.newPassword} onChange={handleChange} />
+                            <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-7 text-slate-400">
+                                {showPass ? <EyeOff size={14}/> : <Eye size={14}/>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onClick={() => setShowConfirmModal(true)} disabled={saving} className="w-full mt-8 bg-indigo-600 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors uppercase tracking-wider disabled:opacity-50">
+                {saving ? "Processing..." : "Save All Changes"}
             </button>
 
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-          {/* Basic */}
-          <div className="bg-white/10 dark:bg-gray-800 border border-gray-200/40 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm transition-colors">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-6">
-              Basic Information
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-              <InfoField label="Faculty ID" value={faculty.facultyid ?? "-"} />
-              <InfoField label="Email" value={faculty.emailid || "-"} />
-              <InfoField
-                label="Contact Number"
-                value={faculty.contactnumber || "-"}
-              />
-              <InfoField label="Gender" value={faculty.gender || "-"} />
-              <InfoField label="Birthdate" value={faculty.birthdate || "-"} />
-              <InfoField label="State" value={faculty.state || "-"} />
-              <InfoField label="City" value={faculty.city || "-"} />
-              <InfoField label="Joined Date" value={faculty.joineddate || "-"} />
-            </div>
-          </div>
-
-          {/* Professional */}
-          <div className="bg-white/10 dark:bg-gray-800 border border-gray-200/40 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-6">
-              Professional Details
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-  <InfoField
-    label="Qualification"
-    value={faculty.qualification || "-"}
-  />
-  <InfoField label="Experience" value={faculty.experience || "-"} />
-  <InfoField
-    label="Position"
-    value={faculty.position || "NOT ASSIGNED"}
-  />
-
-  <div>
-    <p className="text-gray-500 dark:text-gray-400 text-xs capitalize mb-1">
-      Assigned Subject
-    </p>
-
-    {assignedSubjects.length > 0 ? (
-      <p className="text-gray-900 dark:text-gray-100">
-        {assignedSubjects
-          .map((s) => s.subjectname || s.subjectcode)
-          .join(", ")}
-      </p>
-    ) : (
-      <p className="text-gray-900 dark:text-gray-100">
-        No subjects assigned
-      </p>
-    )}
-  </div>
-</div>
-          </div>
-
-        </div>
-
-        {/* Modals */}
-        {showDetailsModal && (
-          <EditDetailsModalAll
-            faculty={faculty}
-            token={token}
-            onClose={(updatedFaculty) => {
-              setShowDetailsModal(false);
-
-              if (updatedFaculty) {
-                setFaculty(updatedFaculty);
-
-                
-                setImgBust((prev) => prev + 1);
-              }
-            }}
-          />
-        )}
-
-       
-      </div>
-    </>
-  );
+            <ConfirmSaveModal 
+                show={showConfirmModal} 
+                title="Confirm Update" 
+                message="Apply these changes to your profile?" 
+                onCancel={() => setShowConfirmModal(false)} 
+                onConfirm={() => { setShowConfirmModal(false); handleSubmit(); }} 
+            />
+        </ModalWrapper>
+    );
 };
-
-const InfoField = ({ label, value }) => (
-  <div>
-    <p className="text-gray-500 dark:text-gray-400 text-xs capitalize mb-1">
-      {label}
-    </p>
-    <p className="text-gray-900 dark:text-gray-100 break-words">{value}</p>
-  </div>
-);
-
-
-
-
-const ModalWrapper = ({ title, children, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-    <div
-      className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-      onClick={() => onClose(null)}
-    />
-    <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto hide-scrollbar rounded-xl sm:rounded-2xl shadow-2xl z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-5 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {title}
-        </h2>
-        <button
-          onClick={() => onClose(null)}
-          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl leading-none"
-        >
-          ×
-        </button>
-      </div>
-      <div className="p-4 sm:p-6">{children}</div>
-    </div>
-  </div>
-);
-
-const StyledInput = ({
-  label,
-  name,
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-  ...props   
-}) => (
-  <div>
-    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-      {label}
-    </label>
-    <input
-  type={type}
-  name={name}
-  value={value}
-  placeholder={placeholder}
-  onChange={onChange}
-  {...props}   
-      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition dark:[color-scheme:dark]"
-    />
-  </div>
-);
-
-/**
- *  ONE FORM: Basic + Professional 
- */
-const EditDetailsModalAll = ({ faculty, token, onClose }) => {
-  const [form, setForm] = useState({
-    // basic
-    facultyname: faculty.facultyname || "",
-    contactnumber: faculty.contactnumber || "",
-    gender: faculty.gender || "",
-    birthdate: faculty.birthdate || "",
-    state: faculty.state || "",
-    city: faculty.city || "",
-
-    // professional
-    qualification: faculty.qualification || "",
-    experience: faculty.experience || "",
-    
-    
-    
-    
-
-    //  Change Email (2 inputs like password)
-    currentEmailForEmail: "",
-    newEmail: "",
-
-    //  Change Password (2 inputs like you already have)
-    currentPasswordForPassword: "",
-    newPassword: "",
-  });
-
-  const [profileFile, setProfileFile] = useState(null);
-
-  const [preview, setPreview] = useState(() => {
-    const bust = Date.now();
-
-    if (!faculty.profilepic)
-      return `${api.defaults.baseURL}/uploads/faculties/default.png?v=${bust}`;
-
-    if (String(faculty.profilepic).startsWith("/uploads/")) {
-      return `${api.defaults.baseURL}${faculty.profilepic}?v=${bust}`;
-    }
-
-    return `${api.defaults.baseURL}/uploads/faculties/${faculty.profilepic}?v=${bust}`;
-  });
-
-  useEffect(() => {
-    const bust = Date.now();
-
-    let next = `${api.defaults.baseURL}/uploads/faculties/default.png?v=${bust}`;
-
-    if (faculty?.profilepic) {
-      if (String(faculty.profilepic).startsWith("/uploads/")) {
-        next = `${api.defaults.baseURL}${faculty.profilepic}?v=${bust}`;
-      } else {
-        next = `${api.defaults.baseURL}/uploads/faculties/${faculty.profilepic}?v=${bust}`;
-      }
-    }
-
-    setPreview(next);
-    setProfileFile(null);
-  }, [faculty?.profilepic]);
-
-  const [saving, setSaving] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-
-  const handleChange = (e) => {
-    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 1024 * 1024) {
-      setErrorMsg("Image must be less than 1MB");
-      return;
-    }
-    setErrorMsg("");
-    setProfileFile(file);
-    setPreview(URL.createObjectURL(file));
-  };
-
-  const handleSubmit = async () => {
-    setSaving(true);
-    setErrorMsg("");
-    
-if (!/^\d{10,12}$/.test(form.contactnumber)) {
-  setErrorMsg("Contact number must be 10 to 12 digits.");
-  setSaving(false); 
-  return;
-}
-
-    try {
-      let authToken = localStorage.getItem("token");
-
-      //  1) Update normal profile fields ONLY
-      const fd = new FormData();
-
-      // Do NOT send email/password fields to /profile
-      const blockedKeys = new Set([
-        "currentEmailForEmail",
-        "newEmail",
-        "currentPasswordForPassword",
-        "newPassword",
-      ]);
-
-      Object.keys(form).forEach((key) => {
-        if (blockedKeys.has(key)) return;
-
-        const val = form[key];
-        if (val !== undefined && val !== null && String(val).trim() !== "") {
-          fd.append(key, val);
-        }
-      });
-
-      if (profileFile) fd.append("profilepic", profileFile);
-
-      //  IMPORTANT: paste extra code ONLY AFTER THIS WHOLE STATEMENT FINISHES (after }); )
-      await api.put("/api/faculty/profile", fd, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      //  2) Change Email (current email check + new email replace)
-      const oldEmail = (faculty.emailid || "").trim();
-      const newEmail = (form.newEmail || "").trim();
-
-      if (newEmail && newEmail !== oldEmail) {
-        if (!form.currentEmailForEmail.trim()) {
-          throw new Error("Please enter current email.");
-        }
-
-        if (form.currentEmailForEmail.trim() !== oldEmail) {
-          throw new Error("Current email is incorrect.");
-        }
-
-        const emailRes = await api.put(
-          "/api/faculty/change-email",
-          {
-            currentEmail: form.currentEmailForEmail.trim(),
-            newEmail,
-          },
-          { headers: { Authorization: `Bearer ${authToken}` } }
-        );
-
-        //  store NEW token after email change
-        localStorage.setItem("token", emailRes.data.token);
-        authToken = emailRes.data.token;
-      }
-
-      //  3) Change Password
-      const wantsPasswordChange =
-        (form.currentPasswordForPassword || "").trim() !== "" ||
-        (form.newPassword || "").trim() !== "";
-
-      if (wantsPasswordChange) {
-        if (!form.currentPasswordForPassword || !form.newPassword) {
-          throw new Error("To change password, fill both current and new password.");
-        }
-
-        await api.put(
-          "/api/faculty/change-password",
-          {
-            currentPassword: form.currentPasswordForPassword,
-            newPassword: form.newPassword,
-          },
-          { headers: { Authorization: `Bearer ${authToken}` } }
-        );
-      }
-
-      //  4) Fetch updated profile using latest token
-      const res = await api.get("/api/faculty/profile", {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-
-      
-      window.dispatchEvent(new Event("facultyUserUpdated"));
-      setSuccessMsg("Details saved successfully");
-
-
-setSuccessMsg("Details saved successfully");
-
-
-setTimeout(() => {
-  onClose(res.data);
-}, 500);
-    } catch (err) {
-      console.error(err);
-
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        (err?.response?.status === 501
-          ? "Backend not implemented yet."
-          : "Failed to update profile.");
-
-      setErrorMsg(msg);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <ModalWrapper title="Edit Details" onClose={onClose}>
-      {/* Picture */}
-      <div className="mb-5 sm:mb-6 flex flex-col items-center gap-3">
-        <img
-          src={preview}
-          alt="Preview"
-          className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-md border border-gray-200 dark:border-gray-700 shadow-sm"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = `${api.defaults.baseURL}/uploads/faculties/default.png`;
-          }}
-        />
-
-        <label className="cursor-pointer">
-          <span className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition text-gray-900 dark:text-gray-100">
-            Change Profile Picture
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </label>
-      </div>
-
-      {errorMsg && (
-        <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-          {errorMsg}
-        </div>
-      )}
-
-      {successMsg && (
-  <div className="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-    {successMsg}
-  </div>
-)}
-
-      {/* Basic Section */}
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
-        Basic Information
-      </h3>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <StyledInput
-          label="Full Name"
-          name="facultyname"
-          value={form.facultyname}
-          onChange={handleChange}
-        />
-
-        <StyledInput
-  label="Contact Number"
-  name="contactnumber"
-  value={form.contactnumber}
-  inputMode="numeric"
-  placeholder="Enter mobile number"
-  onChange={(e) => {
-    const value = e.target.value;
-
-    
-    if (/^\d{0,12}$/.test(value)) {
-      setForm((prev) => ({
-        ...prev,
-        contactnumber: value,
-      }));
-    }
-  }}
-/>
-
-        <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-            Gender
-          </label>
-          <select
-            name="gender"
-            value={form.gender}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-gray-400"
-          >
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <StyledInput
-          type="date"
-          label="Birthdate"
-          name="birthdate"
-          value={form.birthdate}
-          onChange={handleChange}
-        />
-
-        <StyledInput label="State" name="state" value={form.state} onChange={handleChange} />
-        <StyledInput label="City" name="city" value={form.city} onChange={handleChange} />
-      </div>
-
-      {/* Professional Section */}
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
-        Professional Details
-      </h3>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StyledInput
-          label="Qualification"
-          name="qualification"
-          value={form.qualification}
-          onChange={handleChange}
-        />
-        <StyledInput
-          label="Experience"
-          name="experience"
-          value={form.experience}
-          onChange={handleChange}
-          placeholder="e.g. 3 years"
-        />
-       
-        
-
-
-        
-      </div>
-
-      {/*  Change Email Section (2 inputs like password) */}
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mt-8 mb-3">
-        Change Email
-      </h3>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <StyledInput
-          label="Current Email"
-          name="currentEmailForEmail"
-          value={form.currentEmailForEmail}
-          onChange={handleChange}
-        />
-        <StyledInput
-          label="New Email"
-          name="newEmail"
-          value={form.newEmail}
-          onChange={handleChange}
-        />
-      </div>
-
-      {/*  Change Password Section */}
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mt-6 mb-3">
-        Change Password
-      </h3>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <StyledInput
-          type="password"
-          label="Current Password"
-          name="currentPasswordForPassword"
-          value={form.currentPasswordForPassword}
-          onChange={handleChange}
-        />
-        <StyledInput
-          type="password"
-          label="New Password"
-          name="newPassword"
-          value={form.newPassword}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="flex justify-end mt-6">
-        <button
-          onClick={() => setShowConfirmModal(true)}
-          disabled={saving}
-          className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition disabled:opacity-60"
-        >
-          {saving ? "Saving..." : "Update Details"}
-        </button>
-      </div>
-      <ConfirmSaveModal
-  show={showConfirmModal}
-  title="Confirm Profile Update"
-  message="Are you sure you want to update your profile?"
-  confirmText="Update Details"
-  loading={saving}
-  onCancel={() => setShowConfirmModal(false)}
-  onConfirm={handleSubmit}
-/>
-    </ModalWrapper>
-  );
-};
-
-
 
 export default FacultyProfile;
