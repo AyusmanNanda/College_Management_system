@@ -150,7 +150,13 @@ const PrintMarksheet = () => {
     };
 
     const marksheetCode = `MS-${selectedCourse}-${selectedSem}-${selectedRoll}`;
-    const verificationUrl = `${window.location.origin}/verify/marksheet/${marksheetCode}`;
+
+    // ==========================================
+    // FIX: Inject the public Verification URL
+    // ==========================================
+    const BASE_VERIFY_URL = import.meta.env.VITE_VERIFICATION_URL || window.location.origin;
+    const verificationUrl = `${BASE_VERIFY_URL}/#/verify/marksheet/${marksheetCode}`;
+
     const summary = marksheet?.summary;
 
     useEffect(() => {
