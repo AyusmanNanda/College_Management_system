@@ -29,6 +29,16 @@ export default function FacultyEnterMarks() {
   const [loadingStudents, setLoadingStudents] = useState(false);
 
   const [error, setError] = useState("");
+
+  useEffect(() => {
+  if (error) {
+    const timer = setTimeout(() => {
+      setError("");
+    }, 1500); 
+
+    return () => clearTimeout(timer);
+  }
+}, [error]);
   const [success, setSuccess] = useState("");
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -143,19 +153,31 @@ export default function FacultyEnterMarks() {
 }
 
       for (const student of students) {
-        const theory = Number(marks[student.rollnumber]?.theory || 0);
-        const practical = Number(marks[student.rollnumber]?.practical || 0);
+  const theory = Number(marks[student.rollnumber]?.theory || 0);
+  const practical = Number(marks[student.rollnumber]?.practical || 0);
 
-        if (maxTheory > 0 && theory > maxTheory) {
-          setError(`Theory marks cannot exceed ${maxTheory}.`);
-          return;
-        }
+  // NEGATIVE CHECK
+  if (theory < 0) {
+    setError("Theory marks cannot be negative.");
+    return;
+  }
 
-        if (maxPractical > 0 && practical > maxPractical) {
-          setError(`Practical marks cannot exceed ${maxPractical}.`);
-          return;
-        }
-      }
+  if (practical < 0) {
+    setError("Practical marks cannot be negative.");
+    return;
+  }
+
+  // MAX LIMIT CHECK
+  if (maxTheory > 0 && theory > maxTheory) {
+    setError(`Theory marks cannot exceed ${maxTheory}.`);
+    return;
+  }
+
+  if (maxPractical > 0 && practical > maxPractical) {
+    setError(`Practical marks cannot exceed ${maxPractical}.`);
+    return;
+  }
+}
 
       const records = students.map((student) => ({
         rollnumber: student.rollnumber,

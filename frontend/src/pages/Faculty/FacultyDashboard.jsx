@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 
+
+
+
 function StatCard({ title, value }) {
   return (
     <div className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
@@ -15,6 +18,10 @@ function StatCard({ title, value }) {
 }
 
 export default function FacultyDashboard() {
+  
+
+
+
  const token = localStorage.getItem("token");
  const [stats, setStats] = useState({
   totalStudents: 0,
@@ -46,8 +53,19 @@ export default function FacultyDashboard() {
   if (token) fetchStats();
 }, [token]);
 
-  return (
-    <div className="w-[94vw] sm:w-full min-h-[90vh] sm:min-h-[550px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 transition-colors mx-auto">
+
+
+
+
+
+ return (
+  <div className="relative">
+
+    
+
+<div>
+
+      <div className="w-[94vw] sm:w-full min-h-[90vh] sm:min-h-[550px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 transition-colors mx-auto">
       <div>
         <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
           Faculty Dashboard
@@ -86,5 +104,8 @@ export default function FacultyDashboard() {
 
       </div>
     </div>
+    </div>
+    </div>
   );
+  
 }
