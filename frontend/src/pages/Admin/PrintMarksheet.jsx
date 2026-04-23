@@ -26,7 +26,7 @@ const PrintMarksheet = () => {
         return { Authorization: `Bearer ${token}` };
     };
 
-    /* ================= FETCH DATA ================= */
+    /* ================= CORE LOGIC (ELECTRON/ANDROID PRESERVED) ================= */
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -63,7 +63,6 @@ const PrintMarksheet = () => {
         fetchStudents();
     }, [selectedCourse, selectedSem]);
 
-    /* ================= LOAD LOGIC ================= */
     const loadMarksheet = async () => {
         try {
             const res = await api.get(
@@ -75,7 +74,6 @@ const PrintMarksheet = () => {
         } catch { setError("Failed to load marksheet."); }
     };
 
-    /* ================= PRINT / PDF LOGIC ================= */
     const downloadPDF = async () => {
         if (window.electronAPI) {
             window.electronAPI.printMarksheet();
@@ -100,7 +98,6 @@ const PrintMarksheet = () => {
         }
     }, [marksheet]);
 
-    /* ================= MISC ================= */
     useEffect(() => {
         const generateHash = async () => {
             if (!marksheet?.marks) return;
@@ -132,7 +129,7 @@ const PrintMarksheet = () => {
                         Student Marksheet
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto sm:mx-0">
-                        Generate and download official digital grade sheets.
+                        Generate official grade sheets with digital verification.
                     </p>
                 </div>
             )}
@@ -142,29 +139,29 @@ const PrintMarksheet = () => {
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm mx-2 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         <select value={selectedCourse} onChange={(e) => { setSelectedCourse(e.target.value); setSelectedRoll(""); }}
-                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400">
+                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400 transition">
                             <option value="">Select Course</option>
                             {courses.map(c => <option key={c.id} value={c.course_code}>{c.course_name}</option>)}
                         </select>
 
                         <select value={selectedSem} onChange={(e) => { setSelectedSem(e.target.value); setSelectedRoll(""); }}
-                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400">
+                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400 transition">
                             <option value="">Select {semLabel}</option>
                             {semesterOptions.map(num => <option key={num} value={num}>{semLabel} {num}</option>)}
                         </select>
 
                         <select value={selectedRoll} onChange={(e) => setSelectedRoll(e.target.value)}
-                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400">
+                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400 transition">
                             <option value="">Select Student</option>
                             {students.map(s => <option key={s.rollnumber} value={s.rollnumber}>{s.rollnumber} - {s.firstname}</option>)}
                         </select>
                     </div>
 
-                    {/* Show Load button ONLY if fields are complete */}
+                    {/* LOAD BUTTON: Right-aligned on PC, Full-width on Mobile */}
                     {isSelectionComplete && (
-                        <div className="flex justify-center sm:justify-end border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <div className="flex justify-center md:justify-end border-t border-gray-100 dark:border-gray-700 pt-4">
                             <button onClick={loadMarksheet}
-                                    className="w-full sm:w-auto px-8 py-2.5 bg-gray-900 text-white text-sm rounded-lg hover:bg-black transition font-bold shadow-sm">
+                                    className="w-full md:w-auto px-10 py-2.5 bg-gray-900 text-white text-sm rounded-lg hover:bg-black transition font-bold shadow-sm">
                                 Load Marksheet
                             </button>
                         </div>
@@ -173,7 +170,7 @@ const PrintMarksheet = () => {
             )}
 
             {!isPrintMode && error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md mx-2 text-center">{error}</div>
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md mx-2 text-center font-medium">{error}</div>
             )}
 
             {/* MARKSHEET DISPLAY */}
@@ -182,11 +179,12 @@ const PrintMarksheet = () => {
                     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
 
                         {!isPrintMode && (
-                            <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-transparent">
+                            /* DOWNLOAD BUTTON: Right-aligned on PC, Full-width on Mobile */
+                            <div className="flex justify-center md:justify-end p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-transparent">
                                 <button onClick={downloadPDF}
-                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition font-bold">
+                                        className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition font-bold">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                    Download Marksheet PDF
+                                    Download PDF
                                 </button>
                             </div>
                         )}
@@ -203,12 +201,8 @@ const PrintMarksheet = () => {
                                     hash={hash}
                                     courseDisplay={marksheet.marks[0]?.courcecode}
                                     getGrade={(p) => {
-                                        if (p >= 90) return "O";
-                                        if (p >= 80) return "A+";
-                                        if (p >= 70) return "A";
-                                        if (p >= 60) return "B+";
-                                        if (p >= 50) return "B";
-                                        if (p >= 40) return "C";
+                                        if (p >= 90) return "O"; if (p >= 80) return "A+"; if (p >= 70) return "A";
+                                        if (p >= 60) return "B+"; if (p >= 50) return "B"; if (p >= 40) return "C";
                                         return "F";
                                     }}
                                 />
@@ -225,7 +219,7 @@ const PrintMarksheet = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
-                        <h3 className="text-gray-900 dark:text-gray-100 font-semibold text-sm">Marksheet Viewer</h3>
+                        <h3 className="text-gray-900 dark:text-gray-100 font-semibold text-sm">Marksheet Preview</h3>
                         <p className="text-gray-400 text-xs mt-1 text-center max-w-[200px]">
                             Please select course and student details to generate a grade sheet.
                         </p>
