@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+// Use the project custom api instance to sync baseURL with the layout
+import api from "../utils/api";
 import MarksheetLayout from "./Admin/MarksheetLayout";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
@@ -10,13 +11,11 @@ const VerifyMarksheet = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // Get Backend URL from env
-    const BACKEND_URL = import.meta.env.VITE_BACKEND || window.location.origin;
-
     useEffect(() => {
         const verifyDocument = async () => {
             try {
-                const res = await axios.get(`${BACKEND_URL}/api/verify/marksheet/${marksheetId}`);
+                // Using the api utility instead of raw axios handles the baseURL automatically
+                const res = await api.get(`/api/verify/marksheet/${marksheetId}`);
                 setData(res.data);
             } catch (err) {
                 setError(err.response?.data?.message || "Invalid or tampered Marksheet ID.");
@@ -26,7 +25,7 @@ const VerifyMarksheet = () => {
         };
 
         if (marksheetId) verifyDocument();
-    }, [marksheetId, BACKEND_URL]);
+    }, [marksheetId]);
 
     const getGrade = (percentage) => {
         if (percentage >= 90) return "O";
@@ -60,10 +59,11 @@ const VerifyMarksheet = () => {
         );
     }
 
+    /* ================= FIXED DATA MAPPING ================= */
     const adaptedMarksheet = {
         collegeName: data.collegeName,
-        // Using full absolute URL to bypass layout path logic
-        collegeLogo: `${BACKEND_URL}/uploads/admin/admin.jpg`,
+        // We use a relative path. MarksheetLayout will add the baseURL automatically.
+        collegeLogo: "/uploads/admin/admin.jpg",
         marks: data.performance.marks.map(m => ({
             courcecode: data.academic.courseCode,
             subjectcode: m.subjectcode,
@@ -76,8 +76,8 @@ const VerifyMarksheet = () => {
             firstname: data.student.name.split(' ')[0],
             lastname: data.student.name.split(' ').slice(1).join(' ') || "",
             rollnumber: data.student.rollnumber,
-            // Providing full path for student picture
-            profilepic: `${BACKEND_URL}/uploads/students/${data.student.profilepic}`
+            // Pass ONLY the filename. MarksheetLayout adds '/uploads/students/' prefix.
+            profilepic: data.student.profilepic
         }))
     };
 
