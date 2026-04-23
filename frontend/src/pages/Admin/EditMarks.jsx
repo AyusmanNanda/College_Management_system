@@ -100,10 +100,19 @@ const EditMarks = () => {
     }, [selectedCourse, selectedSem, token]);
 
     const handleSubjectChange = async (code) => {
-        if (!code) { setSelectedSubject(""); setStudents([]); return; }
+        if (!code) {
+            setSelectedSubject("");
+            setStudents([]);
+            setMarks({}); // Also clear marks here if set to empty
+            return;
+        }
+
         setSelectedSubject(code);
         const subject = subjects.find(s => s.subjectcode === code);
         setSubjectDetails(subject);
+
+        // FIX 1: Explicitly clear state to prevent ghost data from showing while API loads
+        setMarks({});
 
         try {
             const res = await api.get(`/api/marks/edit?course=${selectedCourse}&sem=${selectedSem}&subject=${code}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -125,7 +134,7 @@ const EditMarks = () => {
         setMarks(prev => ({ ...prev, [roll]: { ...prev[roll], [field]: sanitizedValue } }));
     };
 
-    /* ================= ACTIONS (PRESERVED) ================= */
+    /* ================= ACTIONS ================= */
     const handleOpenModal = () => {
         if (!subjectDetails || students.length === 0) return;
         for (const student of students) {
@@ -163,11 +172,16 @@ const EditMarks = () => {
 
     const updateMarks = async () => {
         try {
+            // FIX 2: Check if the current subject actually supports practicals
+            const subjectHasPractical = subjectDetails?.practicalmarks > 0;
+
             const records = students.map(student => ({
                 rollnumber: student.rollnumber,
                 theorymarks: marks[student.rollnumber]?.theory || 0,
-                practicalmarks: marks[student.rollnumber]?.practical || 0
+                // FIX 3: Force practicalmarks to 0 if the subject doesn't have them
+                practicalmarks: subjectHasPractical ? (marks[student.rollnumber]?.practical || 0) : 0
             }));
+
             await api.put("/api/marks/update", { course: selectedCourse, sem: Number(selectedSem), subject: selectedSubject, marks: records }, { headers: { Authorization: `Bearer ${token}` } });
             setToast({ type: "success", message: "Marks updated successfully!" });
             setShowSaveModal(false);

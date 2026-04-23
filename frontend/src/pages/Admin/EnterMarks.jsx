@@ -82,6 +82,10 @@ const EnterMarks = () => {
         setSelectedSubject(code);
         const subject = subjects.find(s => s.subjectcode === code);
         setSubjectDetails(subject);
+
+        // FIX 1: Explicitly clear the marks state when switching subjects
+        setMarks({});
+
         try {
             const res = await api.get(`/api/marks/students?course=${selectedCourse}&sem=${selectedSem}`, { headers: { Authorization: `Bearer ${token}` } });
             setStudents(res.data || []);
@@ -106,16 +110,22 @@ const EnterMarks = () => {
 
     const saveMarks = async () => {
         try {
+            // FIX 2: Check if the current subject actually supports practicals
+            const subjectHasPractical = subjectDetails?.practicalmarks > 0;
+
             const records = students.map(student => ({
                 rollnumber: student.rollnumber,
                 theorymarks: marks[student.rollnumber]?.theory || 0,
-                practicalmarks: marks[student.rollnumber]?.practical || 0
+                // FIX 3: Force practicalmarks to 0 if the subject doesn't have them
+                practicalmarks: subjectHasPractical ? (marks[student.rollnumber]?.practical || 0) : 0
             }));
+
             await api.post("/api/marks/save", {
                 course: selectedCourse, sem: Number(selectedSem),
                 subject: selectedSubject, subjectname: subjectDetails?.subjectname,
                 marks: records
             }, { headers: { Authorization: `Bearer ${token}` } });
+
             setToast({ type: "success", message: "Student marks successfully recorded." });
             setShowSaveModal(false);
         } catch { setToast({ type: "error", message: "Failed to synchronize with server." }); }
