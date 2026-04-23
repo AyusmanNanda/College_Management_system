@@ -1,18 +1,39 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../utils/api";
+import {
+  LayoutDashboard,
+  User,
+  GraduationCap,
+  BookOpen,
+  Activity
+} from "lucide-react";
 
-function StatCard({ title, value }) {
+/* ================= CARD ================= */
+const DashboardCard = ({ title, value, icon: Icon, loading }) => {
   return (
-    <div className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
-      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-        {title}
-      </p>
-      <p className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
-        {value}
-      </p>
+    <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-slate-400">
+            {title}
+          </p>
+
+          {loading ? (
+            <div className="h-6 w-24 bg-slate-200 dark:bg-slate-800 rounded mt-2 animate-pulse"></div>
+          ) : (
+            <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2">
+              {value || "-"}
+            </p>
+          )}
+        </div>
+
+        <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800">
+          <Icon className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default function StudentDashboard() {
 
@@ -21,6 +42,7 @@ export default function StudentDashboard() {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /* ================= FETCH ================= */
   useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -40,64 +62,96 @@ export default function StudentDashboard() {
   }, [token]);
 
   return (
-    <div className="w-[94vw] sm:w-full min-h-[90vh] sm:min-h-[550px]
-      bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
-      rounded-xl shadow-sm p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 mx-auto">
+    <div className="pb-12">
 
-      {/* Header */}
-      <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
-          Student Dashboard
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          Overview of your academic details.
-        </p>
-      </div>
+      {/* HEADER (same style as admin) */}
+      <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 
-      {/* Cards (same as faculty style) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-md">
+              <LayoutDashboard className="w-5 h-5" />
+            </div>
 
-        <StatCard
-          title="Name"
-          value={
-            loading
-              ? "--"
-              : `${student?.firstname || ""} ${student?.lastname || ""}`
-          }
-        />
+            <div>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">
+                Student Dashboard
+              </h1>
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest hidden sm:block">
+                Academic Overview
+              </p>
+            </div>
+          </div>
 
-        <StatCard
-          title="Roll Number"
-          value={loading ? "--" : student?.rollnumber}
-        />
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-md">
+            <span className="h-2 w-2 bg-emerald-500 rounded-full"></span>
+            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+              Active
+            </span>
+          </div>
 
-        <StatCard
-          title="Course"
-          value={loading ? "--" : student?.courcecode}
-        />
+        </div>
+      </header>
 
-        <StatCard
-          title="Semester"
-          value={loading ? "--" : student?.semoryear || "N/A"}
-        />
+      {/* MAIN */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
-      </div>
+        {/* CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-      {/* Info Section (same style as faculty) */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm col-span-full">
+          <DashboardCard
+            title="Student Name"
+            value={
+              loading
+                ? ""
+                : `${student?.firstname || ""} ${student?.lastname || ""}`
+            }
+            icon={User}
+            loading={loading}
+          />
 
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide mb-6">
-          Student Portal
-        </h3>
+          <DashboardCard
+            title="Roll Number"
+            value={student?.rollnumber}
+            icon={BookOpen}
+            loading={loading}
+          />
 
-        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-          <p>View your attendance records.</p>
-          <p>Check your marks and performance.</p>
-          <p>Update your profile anytime.</p>
+          <DashboardCard
+            title="Course"
+            value={student?.courcecode}
+            icon={GraduationCap}
+            loading={loading}
+          />
+
+          <DashboardCard
+            title="Semester"
+            value={student?.semoryear || "N/A"}
+            icon={Activity}
+            loading={loading}
+          />
+
         </div>
 
-      </div>
+        {/* INFO PANEL (same feature, better UI) */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
 
+          <div className="flex items-center gap-3 mb-4">
+            <Activity className="w-5 h-5 text-slate-500" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Student Portal
+            </h3>
+          </div>
+
+          <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <p>• View your attendance records</p>
+            <p>• Check your marks and performance</p>
+            <p>• Update your profile anytime</p>
+          </div>
+
+        </div>
+
+      </main>
     </div>
   );
 }
