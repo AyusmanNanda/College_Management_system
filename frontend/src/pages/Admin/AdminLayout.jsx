@@ -214,8 +214,8 @@ const AdminLayout = () => {
                 {/* SLATE THEMED SIDEBAR */}
                 <aside className={`fixed top-0 left-0 h-[100dvh] w-[280px] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
-                    {/* IDENTITY BLOCK - Includes Capacitor Safe-Area Top Padding */}
-                    <div className="pt-[env(safe-area-inset-top)] border-b border-slate-100 dark:border-slate-800/60">
+                    {/* IDENTITY BLOCK - pt-[env(safe-area-inset-top)] removed to fix space on Android APK */}
+                    <div className="border-b border-slate-100 dark:border-slate-800/60">
                         <div className="px-6 py-6">
                             <div className="flex items-center gap-4">
                                 <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm flex-shrink-0">
@@ -304,8 +304,8 @@ const AdminLayout = () => {
                 {/* THE "CANVAS" - Allows pages to stretch full-bleed */}
                 <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? "lg:ml-[280px]" : "ml-0"}`}>
 
-                    {/* GLASSMORPHISM HEADER - Includes Capacitor Safe-Area Top Padding */}
-                    <header className="pt-[env(safe-area-inset-top)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+                    {/* GLASSMORPHISM HEADER - pt-[env(safe-area-inset-top)] removed to fix space on Android APK */}
+                    <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
                         <div className="flex items-center justify-between px-4 sm:px-8 h-16">
                             <div className="flex items-center gap-4">
                                 <button onClick={() => setIsSidebarOpen(prev => !prev)}

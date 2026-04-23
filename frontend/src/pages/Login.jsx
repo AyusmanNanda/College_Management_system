@@ -12,12 +12,17 @@ const Login = () => {
     const from = location.state?.from;
     const lastPage = localStorage.getItem("lastPage");
 
+    const BASE_URL = api.defaults.baseURL;
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+
+    // Logic for dynamic logo handling
+    const [useFallback, setUseFallback] = useState(false);
 
     const isElectron =
         typeof navigator !== "undefined" &&
@@ -42,12 +47,18 @@ const Login = () => {
     }, [theme]);
 
     useEffect(() => {
-        const hidePassword = () => setShowPassword(false);
+        const hidePassword = () => {
+            setShowPassword(false);
+        };
         document.addEventListener("click", hidePassword);
-        return () => document.removeEventListener("click", hidePassword);
+        return () => {
+            document.removeEventListener("click", hidePassword);
+        };
     }, []);
 
-    const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    };
 
     const loginWithGoogleNative = async () => {
         const platform = isElectron ? "electron" : "android";
@@ -76,12 +87,19 @@ const Login = () => {
                 navigate(lastPage, { replace: true });
                 return;
             }
-            if (role === "admin") navigate("/admin/dashboard", { replace: true });
-            else if (role === "faculty") navigate("/faculty/dashboard", { replace: true });
-            else if (role === "student") navigate("/student/dashboard", { replace: true });
+            if (role === "admin") {
+                navigate("/admin/dashboard", { replace: true });
+            } else if (role === "faculty") {
+                navigate("/faculty/dashboard", { replace: true });
+            } else if (role === "student") {
+                navigate("/student/dashboard", { replace: true });
+            }
         } catch (err) {
-            if (!err.response) setError("Server unreachable. Check your connection.");
-            else setError("Invalid email or password");
+            if (!err.response) {
+                setError("Server unreachable. Check your connection.");
+            } else {
+                setError("Invalid email or password");
+            }
         } finally {
             setLoading(false);
         }
@@ -103,9 +121,13 @@ const Login = () => {
                 navigate(lastPage, { replace: true });
                 return;
             }
-            if (role === "admin") navigate("/admin/dashboard", { replace: true });
-            else if (role === "faculty") navigate("/faculty/dashboard", { replace: true });
-            else if (role === "student") navigate("/student/dashboard", { replace: true });
+            if (role === "admin") {
+                navigate("/admin/dashboard", { replace: true });
+            } else if (role === "faculty") {
+                navigate("/faculty/dashboard", { replace: true });
+            } else if (role === "student") {
+                navigate("/student/dashboard", { replace: true });
+            }
         } catch (err) {
             setError(err.response ? "Google login failed" : "Server unreachable.");
         }
@@ -127,8 +149,18 @@ const Login = () => {
 
                 {/* Institutional Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex p-4 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-500/20 mb-4 animate-bounce-slow">
-                        <GraduationCap size={32} />
+                    {/* Fixed Size Container (w-20 h-20) */}
+                    <div className={`inline-flex w-20 h-20 rounded-2xl shadow-lg shadow-indigo-500/20 mb-4 overflow-hidden border border-slate-200 dark:border-slate-800 ${useFallback ? "bg-indigo-600 p-5 items-center justify-center" : "bg-white"}`}>
+                        {!useFallback ? (
+                            <img
+                                src={`${BASE_URL}/uploads/admin/admin.jpg`}
+                                alt="College Logo"
+                                className="w-full h-full object-cover"
+                                onError={() => setUseFallback(true)}
+                            />
+                        ) : (
+                            <GraduationCap size={40} className="text-white" />
+                        )}
                     </div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                         College Management System
@@ -251,17 +283,6 @@ const Login = () => {
                     © 2026 College Administration System
                 </p>
             </div>
-
-            {/* Custom slow bounce animation */}
-            <style>{`
-                @keyframes bounce-slow {
-                    0%, 100% { transform: translateY(-5%); }
-                    50% { transform: translateY(0); }
-                }
-                .animate-bounce-slow {
-                    animation: bounce-slow 3s infinite ease-in-out;
-                }
-            `}</style>
         </div>
     );
 };
