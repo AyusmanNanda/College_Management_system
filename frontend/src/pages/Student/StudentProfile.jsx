@@ -15,8 +15,8 @@ import {
     Save
 } from "lucide-react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal.jsx";
-import Toast from "../Admin/Toast.jsx";
+import ConfirmSaveModal from "./modals/ConfirmSaveModal";
+import Toast from "./Toast";
 
 const StudentProfile = () => {
     const token = localStorage.getItem("token");

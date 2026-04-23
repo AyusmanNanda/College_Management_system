@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
-import useOfflineDetection from "../admin/useOfflineDetection";
+import useOfflineDetection from "./useOfflineDetection";
 
 import {
   Sun,
