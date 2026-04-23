@@ -286,7 +286,6 @@ const Subjects = () => {
                             className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                         />
 
-                        {/* UPDATED: Buttons now stack and span full width on mobile, right-aligned on desktop */}
                         <div className="sm:col-span-2 md:col-span-5 flex flex-col sm:flex-row sm:justify-end gap-3 mt-2 w-full">
                             {editingCode && (
                                 <button
@@ -309,78 +308,79 @@ const Subjects = () => {
                 </div>
             )}
 
-            {/* SUBJECT LIST TABLE */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                <div className="w-full overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
-                        <tr>
-                            <th className="p-4">Code</th>
-                            <th className="p-4">Name</th>
-
-                            {/* Hidden on mobile */}
-                            <th className="hidden sm:table-cell p-4">Type</th>
-                            <th className="hidden sm:table-cell p-4">Theory</th>
-                            <th className="hidden sm:table-cell p-4">Practical</th>
-
-                            <th className="p-4">Actions</th>
-                        </tr>
-                        </thead>
-
-                        <tbody>
-                        {subjects.map((sub) => (
-                            <tr
-                                key={sub.subjectcode}
-                                className="border-t dark:border-gray-700"
-                            >
-                                <td className="p-4 dark:text-gray-200">
-                                    {sub.subjectcode}
-                                </td>
-
-                                <td className="p-4 dark:text-gray-200">
-                                    {sub.subjectname}
-                                </td>
+            {/* SUBJECT LIST TABLE - NOW HIDDEN UNTIL SELECTIONS ARE MADE */}
+            {selectedCourse && selectedSem && (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs">
+                            <tr>
+                                <th className="p-4">Code</th>
+                                <th className="p-4">Name</th>
 
                                 {/* Hidden on mobile */}
-                                <td className="hidden sm:table-cell p-4 capitalize dark:text-gray-200">
-                                    {sub.subjecttype}
-                                </td>
+                                <th className="hidden sm:table-cell p-4">Type</th>
+                                <th className="hidden sm:table-cell p-4">Theory</th>
+                                <th className="hidden sm:table-cell p-4">Practical</th>
 
-                                <td className="hidden sm:table-cell p-4 dark:text-gray-200">
-                                    {sub.theorymarks}
-                                </td>
-
-                                <td className="hidden sm:table-cell p-4 dark:text-gray-200">
-                                    {sub.practicalmarks}
-                                </td>
-
-                                <td className="p-4 dark:text-gray-200">
-                                    {/* UPDATED: Table buttons span full width on mobile */}
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                        <button
-                                            onClick={() => handleEdit(sub)}
-                                            className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                                        >
-                                            Edit
-                                        </button>
-
-                                        <button
-                                            onClick={() => {
-                                                setSubjectToDelete(sub.subjectcode);
-                                                setShowDeleteModal(true);
-                                            }}
-                                            className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </td>
+                                <th className="p-4">Actions</th>
                             </tr>
-                        ))}
-                        </tbody>
-                    </table>
+                            </thead>
+
+                            <tbody>
+                            {subjects.map((sub) => (
+                                <tr
+                                    key={sub.subjectcode}
+                                    className="border-t dark:border-gray-700"
+                                >
+                                    <td className="p-4 dark:text-gray-200">
+                                        {sub.subjectcode}
+                                    </td>
+
+                                    <td className="p-4 dark:text-gray-200">
+                                        {sub.subjectname}
+                                    </td>
+
+                                    {/* Hidden on mobile */}
+                                    <td className="hidden sm:table-cell p-4 capitalize dark:text-gray-200">
+                                        {sub.subjecttype}
+                                    </td>
+
+                                    <td className="hidden sm:table-cell p-4 dark:text-gray-200">
+                                        {sub.theorymarks}
+                                    </td>
+
+                                    <td className="hidden sm:table-cell p-4 dark:text-gray-200">
+                                        {sub.practicalmarks}
+                                    </td>
+
+                                    <td className="p-4 dark:text-gray-200">
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <button
+                                                onClick={() => handleEdit(sub)}
+                                                className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    setSubjectToDelete(sub.subjectcode);
+                                                    setShowDeleteModal(true);
+                                                }}
+                                                className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <ConfirmDeleteModal
                 show={showDeleteModal}
