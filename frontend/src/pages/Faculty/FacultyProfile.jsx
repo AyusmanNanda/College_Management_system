@@ -233,17 +233,19 @@ const StyledInput = ({
   onChange,
   type = "text",
   placeholder,
+  ...props   
 }) => (
   <div>
     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
       {label}
     </label>
     <input
-      type={type}
-      name={name}
-      value={value}
-      placeholder={placeholder}
-      onChange={onChange}
+  type={type}
+  name={name}
+  value={value}
+  placeholder={placeholder}
+  onChange={onChange}
+  {...props}   
       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition dark:[color-scheme:dark]"
     />
   </div>
@@ -335,6 +337,12 @@ const EditDetailsModalAll = ({ faculty, token, onClose }) => {
   const handleSubmit = async () => {
     setSaving(true);
     setErrorMsg("");
+    
+if (!/^\d{10,12}$/.test(form.contactnumber)) {
+  setErrorMsg("Contact number must be 10 to 12 digits.");
+  setSaving(false); 
+  return;
+}
 
     try {
       let authToken = localStorage.getItem("token");
@@ -501,11 +509,23 @@ setTimeout(() => {
         />
 
         <StyledInput
-          label="Contact Number"
-          name="contactnumber"
-          value={form.contactnumber}
-          onChange={handleChange}
-        />
+  label="Contact Number"
+  name="contactnumber"
+  value={form.contactnumber}
+  inputMode="numeric"
+  placeholder="Enter mobile number"
+  onChange={(e) => {
+    const value = e.target.value;
+
+    
+    if (/^\d{0,12}$/.test(value)) {
+      setForm((prev) => ({
+        ...prev,
+        contactnumber: value,
+      }));
+    }
+  }}
+/>
 
         <div>
           <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
-import useOfflineDetection from "../Admin/useOfflineDetection";
-import { createPortal } from "react-dom";
+
 
 
 
@@ -19,15 +18,9 @@ function StatCard({ title, value }) {
 }
 
 export default function FacultyDashboard() {
-  const isOffline = useOfflineDetection();
-  const [checking, setChecking] = useState(false);
-  const [retryError, setRetryError] = useState("");
+  
 
-useEffect(() => {
-  if (isOffline) {
-    setRetryError(""); 
-  }
-}, [isOffline]);
+
 
  const token = localStorage.getItem("token");
  const [stats, setStats] = useState({
@@ -68,66 +61,7 @@ useEffect(() => {
  return (
   <div className="relative">
 
-    {isOffline &&
-  createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm bg-black/30">
-
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg text-center max-w-sm w-full">
-
-        <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          You're offline
-        </p>
-
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          Please check your internet connection to continue.
-        </p>
-
-        {retryError && (
-          <p className="mt-2 text-sm text-red-500 text-center">
-            {retryError}
-          </p>
-        )}
-
-        <button
-  type="button"
-  disabled={checking}
-  onClick={async () => {
-    if (checking) return;
-
-    setRetryError("");   
-    setChecking(true);  
-
-    await new Promise((r) => setTimeout(r, 300)); 
-
-    try {
-      if (!navigator.onLine) {
-        throw new Error("No internet");
-      }
-
-      await fetch(`${api.defaults.baseURL}/health`, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      window.location.reload();
-
-    } catch (err) {
-      setRetryError("Still offline or server unreachable.");
-    } finally {
-      setChecking(false);
-    }
-  }}
-  className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-md text-sm disabled:opacity-50"
->
-  {checking ? "Checking..." : "Try Again"}
-</button>
-
-      </div>
-
-    </div>,
-    document.body
-  )
-}
+    
 
 <div>
 
