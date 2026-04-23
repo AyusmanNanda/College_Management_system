@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
 import Toast from "./Toast.jsx";
-import { ClipboardList, Layers, BookOpen, Edit3 } from "lucide-react";
+import { GraduationCap, Filter, ListChecks, Save, RotateCcw, CheckCircle2 } from "lucide-react";
 
 const EnterMarks = () => {
     const token = localStorage.getItem("token");
@@ -22,8 +22,13 @@ const EnterMarks = () => {
     const [toast, setToast] = useState(null);
     const [showSaveModal, setShowSaveModal] = useState(false);
 
-    /* ================= UX HELPERS ================= */
+    /* ================= ACTION: RESET ================= */
+    const handleReset = () => {
+        setSelectedCourse(""); setSelectedSem(""); setSelectedSubject("");
+        setStudents([]); setMarks({}); setSubjectDetails(null); setError("");
+    };
 
+    /* ================= UX HELPERS ================= */
     const preventSymbols = (e) => {
         if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 || (e.keyCode >= 35 && e.keyCode <= 39)) return;
         if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) e.preventDefault();
@@ -43,8 +48,7 @@ const EnterMarks = () => {
 
     const handleFocus = (e) => e.target.select();
 
-    /* ================= DATA FETCHING ================= */
-
+    /* ================= DATA ENGINE ================= */
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -68,11 +72,7 @@ const EnterMarks = () => {
             try {
                 const res = await api.get(`/api/subjects?course_code=${selectedCourse}&sem=${selectedSem}`, { headers: { Authorization: `Bearer ${token}` } });
                 setSubjects(res.data || []);
-                setStudents([]);
-                setMarks({});
-                setSelectedSubject("");
-                setSubjectDetails(null);
-                setError("");
+                setStudents([]); setMarks({}); setSelectedSubject(""); setSubjectDetails(null);
             } catch { setError("Failed to load subjects."); }
         };
         loadSubjects();
@@ -93,36 +93,14 @@ const EnterMarks = () => {
         setMarks(prev => ({ ...prev, [roll]: { ...prev[roll], [field]: sanitizedValue } }));
     };
 
-    /* ================= VALIDATION & SAVE ================= */
-
     const handleOpenModal = () => {
         if (!subjectDetails) return;
-        const maxTheory = subjectDetails.theorymarks;
-        const maxPractical = subjectDetails.practicalmarks;
-
         for (const student of students) {
-            const roll = student.rollnumber;
-            const theory = marks[roll]?.theory;
-            const practical = marks[roll]?.practical;
-
-            if (theory === "" || theory === undefined) {
-                setToast({ type: "error", message: `Theory marks missing for ${student.firstname}` });
-                return;
-            }
-            if (maxPractical > 0 && (practical === "" || practical === undefined)) {
-                setToast({ type: "error", message: `Practical marks missing for ${student.firstname}` });
-                return;
-            }
-            if (Number(theory) > maxTheory) {
-                setToast({ type: "error", message: `${student.firstname}'s Theory exceeds max (${maxTheory})` });
-                return;
-            }
-            if (maxPractical > 0 && Number(practical) > maxPractical) {
-                setToast({ type: "error", message: `${student.firstname}'s Practical exceeds max (${maxPractical})` });
+            if ((marks[student.rollnumber]?.theory ?? "") === "") {
+                setToast({ type: "error", message: `Missing theory score for ${student.firstname}` });
                 return;
             }
         }
-        setError("");
         setShowSaveModal(true);
     };
 
@@ -134,113 +112,130 @@ const EnterMarks = () => {
                 practicalmarks: marks[student.rollnumber]?.practical || 0
             }));
             await api.post("/api/marks/save", {
-                course: selectedCourse,
-                sem: Number(selectedSem),
-                subject: selectedSubject,
-                subjectname: subjectDetails?.subjectname,
+                course: selectedCourse, sem: Number(selectedSem),
+                subject: selectedSubject, subjectname: subjectDetails?.subjectname,
                 marks: records
             }, { headers: { Authorization: `Bearer ${token}` } });
-            setToast({ type: "success", message: "Marks saved successfully!" });
+            setToast({ type: "success", message: "Student marks successfully recorded." });
             setShowSaveModal(false);
-        } catch { setToast({ type: "error", message: "Database error: Failed to save marks." }); }
+        } catch { setToast({ type: "error", message: "Failed to synchronize with server." }); }
     };
 
     const isFormComplete = selectedCourse && selectedSem && selectedSubject && students.length > 0;
+    const hasPractical = subjectDetails?.practicalmarks > 0;
 
     return (
-        <div className="space-y-8 sm:space-y-10 pb-10 transition-colors duration-300">
-            {/* HEADER */}
-            <div className="text-center sm:text-left px-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center justify-center sm:justify-start gap-3">
-                    <ClipboardList className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 dark:text-blue-400" />
-                    Enter Marks
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto sm:mx-0">
-                    Input student examination scores with integrated max-limit verification.
-                </p>
-            </div>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
 
-            {error && <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-sm rounded-md mx-2 text-center border border-red-100 dark:border-red-900/50">{error}</div>}
-
-            {/* FILTER CARD */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/50 rounded-xl p-5 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-5 mx-2">
-                <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest px-1">Course</label>
-                    <select value={selectedCourse} onChange={(e) => { setSelectedCourse(e.target.value); setSelectedSem(""); }}
-                            className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/10 transition-all">
-                        <option value="">Select Course</option>
-                        {courses.map(course => <option key={course.id} value={course.course_code}>{course.course_name}</option>)}
-                    </select>
+            {/* PLATFORM HEADER - GLASSMORPHISM */}
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-600 text-white rounded-lg shadow-md shadow-blue-500/20">
+                            <GraduationCap className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold tracking-tight leading-tight">Marks Entry</h1>
+                            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest hidden sm:block">Faculty Dashboard</p>
+                        </div>
+                    </div>
+                    <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
+                        <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Reset Form</span>
+                    </button>
                 </div>
+            </header>
 
-                <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest px-1">{semLabel}</label>
-                    <select value={selectedSem} onChange={(e) => { setSelectedSem(e.target.value); setSelectedSubject(""); }}
-                            disabled={!selectedCourse} className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition disabled:opacity-40">
-                        <option value="">Select {semLabel}</option>
-                        {semesterOptions.map(num => <option key={num} value={num}>{semLabel} {num}</option>)}
-                    </select>
-                </div>
+            <main className="max-w-7xl mx-auto px-3 sm:px-4 py-6 pb-32">
 
-                <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest px-1">Subject</label>
-                    <select value={selectedSubject} onChange={(e) => handleSubjectChange(e.target.value)}
-                            disabled={!selectedSem} className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition disabled:opacity-40">
-                        <option value="">Select Subject</option>
-                        {subjects.map(sub => <option key={sub.subjectcode} value={sub.subjectcode}>{sub.subjectname}</option>)}
-                    </select>
-                </div>
-            </div>
+                {/* FILTER CARD */}
+                <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Filter className="w-4 h-4 text-blue-500" />
+                        <h2 className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Class Settings</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <select value={selectedCourse} onChange={(e) => { setSelectedCourse(e.target.value); setSelectedSem(""); }}
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                            <option value="">Select Course...</option>
+                            {courses.map(course => <option key={course.id} value={course.course_code}>{course.course_name}</option>)}
+                        </select>
+                        <select value={selectedSem} disabled={!selectedCourse} onChange={(e) => { setSelectedSem(e.target.value); setSelectedSubject(""); }}
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm disabled:opacity-50 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                            <option value="">Select {semLabel}...</option>
+                            {semesterOptions.map(num => <option key={num} value={num}>{num}</option>)}
+                        </select>
+                        <select value={selectedSubject} disabled={!selectedSem} onChange={(e) => handleSubjectChange(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm disabled:opacity-50 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                            <option value="">Select Subject...</option>
+                            {subjects.map(sub => <option key={sub.subjectcode} value={sub.subjectcode}>{sub.subjectname}</option>)}
+                        </select>
+                    </div>
+                </section>
 
-            {selectedSubject && students.length > 0 ? (
-                /* DATA TABLE VIEW */
-                <div className="px-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
-                        <div className="w-full overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-gray-50 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700">
+                {selectedSubject && students.length > 0 ? (
+                    /* MOBILE-FIRST ZERO-SLIDE TABLE */
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                        {/* Table Header Wrapper to ensure alignment */}
+                        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                            <table className="w-full table-fixed">
+                                <thead>
                                 <tr>
-                                    <th className="px-4 sm:px-6 py-4 text-[10px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-widest">Student</th>
-                                    <th className="px-2 sm:px-4 py-4 text-[10px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-widest text-center">Theory</th>
-                                    {subjectDetails?.practicalmarks > 0 && <th className="px-2 sm:px-4 py-4 text-[10px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-widest text-center">Pract.</th>}
-                                    <th className="px-4 py-4 text-[10px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-widest text-center hidden sm:table-cell">Total</th>
+                                    <th className={`${hasPractical ? 'w-[40%]' : 'w-[50%]'} px-3 sm:px-6 py-3 text-left text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider`}>Student</th>
+                                    <th className={`${hasPractical ? 'w-[25%]' : 'w-[30%]'} px-1 sm:px-4 py-3 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider`}>Theory</th>
+                                    {hasPractical && <th className="w-[25%] px-1 sm:px-4 py-3 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pract.</th>}
+                                    <th className="hidden sm:table-cell w-[10%] px-4 py-3 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Total</th>
                                 </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 dark:bg-gray-800">
-                                {students.map(student => {
+                            </table>
+                        </div>
+
+                        {/* Table Body */}
+                        <div className="w-full">
+                            <table className="w-full table-fixed">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                {students.map((student, idx) => {
                                     const theoryVal = marks[student.rollnumber]?.theory;
                                     const practicalVal = marks[student.rollnumber]?.practical;
                                     const total = (Number(theoryVal) || 0) + (Number(practicalVal) || 0);
+
+                                    const isTheoryErr = Number(theoryVal) > subjectDetails?.theorymarks;
+                                    const isPractErr = Number(practicalVal) > subjectDetails?.practicalmarks;
+
                                     return (
-                                        <tr key={student.rollnumber} className="hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors group">
-                                            <td className="px-4 sm:px-6 py-4">
-                                                <div className="font-semibold text-gray-900 dark:text-gray-100 text-[13px] sm:text-sm truncate max-w-[120px] sm:max-w-none">{student.firstname} {student.lastname}</div>
-                                                <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5 tracking-tight">{student.rollnumber}</div>
+                                        <tr key={student.rollnumber} className={`${idx % 2 === 0 ? 'bg-transparent' : 'bg-slate-50/50 dark:bg-slate-800/20'} hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors`}>
+                                            <td className={`${hasPractical ? 'w-[40%]' : 'w-[50%]'} px-3 sm:px-6 py-3`}>
+                                                <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{student.firstname} {student.lastname}</div>
+                                                <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{student.rollnumber}</div>
                                             </td>
-                                            <td className="px-2 sm:px-4 py-4 text-center">
-                                                <input type="number" placeholder="0" value={theoryVal ?? ""}
-                                                       onChange={(e) => handleMarkChange(student.rollnumber, "theory", e.target.value)}
-                                                       onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }} onFocus={handleFocus}
-                                                       className={`w-14 sm:w-20 px-2 py-2 border rounded-lg text-xs sm:text-sm text-center outline-none transition-all font-bold
-                                                            ${(theoryVal === "" || Number(theoryVal) > subjectDetails?.theorymarks)
-                                                           ? "border-red-500 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 ring-2 ring-red-200 dark:ring-red-900/30"
-                                                           : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/10"}`}
+                                            <td className={`${hasPractical ? 'w-[25%]' : 'w-[30%]'} px-1 sm:px-4 py-3 text-center align-middle`}>
+                                                <input
+                                                    type="number"
+                                                    value={theoryVal ?? ""}
+                                                    onChange={(e) => handleMarkChange(student.rollnumber, "theory", e.target.value)}
+                                                    onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }}
+                                                    onFocus={handleFocus}
+                                                    className={`w-full max-w-[70px] sm:max-w-[90px] mx-auto px-1 py-1.5 sm:py-2 bg-white dark:bg-slate-950 border rounded-md text-xs sm:text-sm text-center font-semibold outline-none transition-all
+                                                        ${isTheoryErr ? 'border-red-500 ring-1 ring-red-500/50 text-red-600' : 'border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`}
                                                 />
                                             </td>
-                                            {subjectDetails?.practicalmarks > 0 && (
-                                                <td className="px-2 sm:px-4 py-4 text-center">
-                                                    <input type="number" placeholder="0" value={practicalVal ?? ""}
-                                                           onChange={(e) => handleMarkChange(student.rollnumber, "practical", e.target.value)}
-                                                           onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }} onFocus={handleFocus}
-                                                           className={`w-14 sm:w-20 px-2 py-2 border rounded-lg text-xs sm:text-sm text-center outline-none transition-all font-bold
-                                                                ${(practicalVal === "" || Number(practicalVal) > subjectDetails?.practicalmarks)
-                                                               ? "border-red-500 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 ring-2 ring-red-200 dark:ring-red-900/30"
-                                                               : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/10"}`}
+                                            {hasPractical && (
+                                                <td className="w-[25%] px-1 sm:px-4 py-3 text-center align-middle">
+                                                    <input
+                                                        type="number"
+                                                        value={practicalVal ?? ""}
+                                                        onChange={(e) => handleMarkChange(student.rollnumber, "practical", e.target.value)}
+                                                        onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }}
+                                                        onFocus={handleFocus}
+                                                        className={`w-full max-w-[70px] sm:max-w-[90px] mx-auto px-1 py-1.5 sm:py-2 bg-white dark:bg-slate-950 border rounded-md text-xs sm:text-sm text-center font-semibold outline-none transition-all
+                                                            ${isPractErr ? 'border-red-500 ring-1 ring-red-500/50 text-red-600' : 'border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`}
                                                     />
                                                 </td>
                                             )}
-                                            <td className="hidden sm:table-cell px-4 py-4 text-center">
-                                                <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-black text-gray-900 dark:text-gray-200">{total}</span>
+                                            <td className="hidden sm:table-cell w-[10%] px-4 py-3 text-center align-middle">
+                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                                                    {total}
+                                                </span>
                                             </td>
                                         </tr>
                                     );
@@ -248,35 +243,38 @@ const EnterMarks = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="border-t border-gray-100 dark:border-gray-700 p-4 flex justify-center md:justify-end bg-gray-50/40 dark:bg-gray-900/20">
-                            <button onClick={handleOpenModal} disabled={!isFormComplete}
-                                    className={`w-full md:w-auto px-10 py-3 text-sm rounded-xl transition-all font-black shadow-lg active:scale-95
-                                    ${isFormComplete ? "bg-gray-900 dark:bg-blue-600 text-white hover:bg-black dark:hover:bg-blue-700 shadow-gray-200 dark:shadow-blue-900/20" : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"}
-                                `}>SAVE MARKS</button>
+                    </div>
+                ) : (
+                    /* MODERN EMPTY STATE */
+                    <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center px-4 shadow-sm">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl mb-4 border border-slate-100 dark:border-slate-800">
+                            <ListChecks className="w-8 h-8 text-blue-500" />
                         </div>
+                        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Awaiting Configuration</h2>
+                        <p className="text-sm text-slate-500 mt-1 max-w-xs">Select your course, semester, and subject above to load the grading ledger.</p>
                     </div>
-                </div>
-            ) : (
-                /* INSTRUCTIONAL EMPTY STATE */
-                <div className="mx-2 flex flex-col items-center justify-center py-24 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl bg-gray-50/30 dark:bg-gray-800/20">
-                    <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 dark:border-gray-700">
-                        {!selectedCourse ? <Layers className="text-blue-500 w-8 h-8" /> : !selectedSem ? <BookOpen className="text-orange-500 w-8 h-8" /> : <Edit3 className="text-green-500 w-8 h-8" />}
-                    </div>
-                    <h3 className="text-gray-900 dark:text-white font-black text-lg tracking-tight">
-                        {!selectedCourse ? "Step 1: Select a Course" : !selectedSem ? "Step 2: Choose Semester" : "Step 3: Pick a Subject"}
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 text-center max-w-[280px] leading-relaxed">
-                        Refine your search to generate the score entry sheet for your specific classroom.
-                    </p>
-                    <div className="flex items-center gap-3 mt-10">
-                        <div className={`h-1.5 w-10 rounded-full transition-all duration-500 ${selectedCourse ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                        <div className={`h-1.5 w-10 rounded-full transition-all duration-500 ${selectedSem ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                        <div className={`h-1.5 w-10 rounded-full transition-all duration-500 ${selectedSubject ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                )}
+            </main>
+
+            {/* STICKY BOTTOM ACTION BAR (Native App Feel) */}
+            {selectedSubject && students.length > 0 && (
+                <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                    <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                        <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-500">
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            Ready to save {students.length} records
+                        </div>
+                        <button onClick={handleOpenModal} disabled={!isFormComplete}
+                                className={`w-full sm:w-auto px-8 py-3 rounded-lg text-sm font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2
+                                ${isFormComplete ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}
+                            `}>
+                            <Save className="w-4 h-4" /> Save Marks
+                        </button>
                     </div>
                 </div>
             )}
 
-            <ConfirmSaveModal show={showSaveModal} title="Confirm Marks Entry" message={`Commit scores for ${subjectDetails?.subjectname} to the official database? This action is tracked.`} confirmText="Sync Data" onCancel={() => setShowSaveModal(false)} onConfirm={saveMarks} />
+            <ConfirmSaveModal show={showSaveModal} title="Confirm Grade Submission" message={`Are you sure you want to save scores for ${subjectDetails?.subjectname}?`} confirmText="Save Marks" onCancel={() => setShowSaveModal(false)} onConfirm={saveMarks} />
             {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
         </div>
     );
