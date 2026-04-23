@@ -10,6 +10,8 @@ import { useEffect } from "react";
 import Login from "./pages/Login";
 import OAuthSuccess from "./pages/OAuthSuccess";
 
+import VerifyMarksheet from "./pages/VerifyMarksheet";
+
 import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminProfile from "./pages/Admin/AdminProfile";
@@ -112,6 +114,9 @@ function App() {
 
                 {/* OAuth Redirect Handler */}
                 <Route path="/oauth-success" element={<OAuthSuccess />} />
+
+                {/* Public marksheet verification */}
+                <Route path="/verify/marksheet/:marksheetId" element={<VerifyMarksheet />} />
 
                 {/* ===================== Admin Section ===================== */}
                 <Route
