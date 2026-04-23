@@ -4,7 +4,6 @@ import api from "../../utils/api";
 import MarksheetLayout from "./MarksheetLayout";
 
 const PrintMarksheet = () => {
-
     const token = localStorage.getItem("token");
     const params = new URLSearchParams(window.location.search);
     const isPrintMode = params.get("print") === "true";
@@ -18,24 +17,22 @@ const PrintMarksheet = () => {
 
     const [marksheet, setMarksheet] = useState(null);
     const [error, setError] = useState("");
-
     const [hash, setHash] = useState("");
+
+    const isSelectionComplete = selectedCourse && selectedSem && selectedRoll;
 
     const getAuthHeader = () => {
         if (isPrintMode) return {};
         return { Authorization: `Bearer ${token}` };
     };
 
+    /* ================= FETCH DATA ================= */
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                const res = await api.get("/api/courses", {
-                    headers: getAuthHeader()
-                });
+                const res = await api.get("/api/courses", { headers: getAuthHeader() });
                 setCourses(res.data || []);
-            } catch {
-                setCourses([]);
-            }
+            } catch { setCourses([]); }
         };
         fetchCourses();
     }, []);
@@ -44,10 +41,7 @@ const PrintMarksheet = () => {
         return courses.find(c => c.course_code === selectedCourse);
     }, [courses, selectedCourse]);
 
-    const semLabel =
-        selectedCourseObj?.sem_or_year?.toLowerCase() === "year"
-            ? "Year"
-            : "Semester";
+    const semLabel = selectedCourseObj?.sem_or_year?.toLowerCase() === "year" ? "Year" : "Semester";
 
     const semesterOptions = useMemo(() => {
         if (!selectedCourseObj) return [];
@@ -57,7 +51,6 @@ const PrintMarksheet = () => {
 
     useEffect(() => {
         if (!selectedCourse || !selectedSem) return;
-
         const fetchStudents = async () => {
             try {
                 const res = await api.get(
@@ -65,287 +58,180 @@ const PrintMarksheet = () => {
                     { headers: getAuthHeader() }
                 );
                 setStudents(res.data || []);
-            } catch {
-                setStudents([]);
-            }
+            } catch { setStudents([]); }
         };
-
         fetchStudents();
     }, [selectedCourse, selectedSem]);
 
-    useEffect(() => {
-        const shouldPrint = params.get("print");
-
-        if (shouldPrint === "true") {
-            const course = params.get("course");
-            const sem = params.get("sem");
-            const roll = params.get("roll");
-
-            if (course && sem && roll) {
-                setSelectedCourse(course);
-                setSelectedSem(sem);
-                setSelectedRoll(roll);
-
-                (async () => {
-                    try {
-                        const res = await api.get(
-                            `/api/marks/student-marks?course=${course}&sem=${sem}&roll=${roll}`,
-                            { headers: getAuthHeader() }
-                        );
-                        setMarksheet(res.data);
-                    } catch (e) {
-                        console.error("Restore fetch failed:", e);
-                    }
-                })();
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        if (isPrintMode && marksheet) {
-            setTimeout(() => {
-                window.print();
-            }, 500);
-        }
-    }, [marksheet]);
-
+    /* ================= LOAD LOGIC ================= */
     const loadMarksheet = async () => {
-        if (!selectedCourse || !selectedSem || !selectedRoll) {
-            setError("Please select course, semester and student.");
-            return;
-        }
-
         try {
             const res = await api.get(
                 `/api/marks/student-marks?course=${selectedCourse}&sem=${selectedSem}&roll=${selectedRoll}`,
                 { headers: getAuthHeader() }
             );
-
             setMarksheet(res.data);
             setError("");
-        } catch {
-            setError("Failed to load marksheet.");
-        }
+        } catch { setError("Failed to load marksheet."); }
     };
 
-    const getGrade = (percentage) => {
-        if (percentage >= 90) return "O";
-        if (percentage >= 80) return "A+";
-        if (percentage >= 70) return "A";
-        if (percentage >= 60) return "B+";
-        if (percentage >= 50) return "B";
-        if (percentage >= 40) return "C";
-        return "F";
-    };
-
+    /* ================= PRINT / PDF LOGIC ================= */
     const downloadPDF = async () => {
-        try {
-            if (!marksheet) {
-                setError("Load marksheet first.");
-                return;
-            }
-
-            if (window.electronAPI) {
-                window.electronAPI.printMarksheet();
-                return;
-            }
-
-            if (Capacitor.isNativePlatform()) {
-                try {
-                    const FRONTEND_URL = import.meta.env.VITE_FRONTEND;
-
-                    const url = new URL(`${FRONTEND_URL}/#/print-marksheet`);
-
-                    url.searchParams.set("print", "true");
-                    url.searchParams.set("course", selectedCourse);
-                    url.searchParams.set("sem", selectedSem);
-                    url.searchParams.set("roll", selectedRoll);
-
-                    window.open(url.toString(), "_system");
-
-                } catch (e) {
-                    console.error("Browser open failed:", e);
-                    setError("Failed to open print view.");
-                }
-
-                return;
-            }
-
-            window.print();
-
-        } catch (e) {
-            console.error("Print error:", e);
-            setError("Something went wrong while printing.");
+        if (window.electronAPI) {
+            window.electronAPI.printMarksheet();
+            return;
         }
+        if (Capacitor.isNativePlatform()) {
+            const FRONTEND_URL = import.meta.env.VITE_FRONTEND;
+            const url = new URL(`${FRONTEND_URL}/#/print-marksheet`);
+            url.searchParams.set("print", "true");
+            url.searchParams.set("course", selectedCourse);
+            url.searchParams.set("sem", selectedSem);
+            url.searchParams.set("roll", selectedRoll);
+            window.open(url.toString(), "_system");
+            return;
+        }
+        window.print();
     };
 
-    const marksheetCode = `MS-${selectedCourse}-${selectedSem}-${selectedRoll}`;
+    useEffect(() => {
+        if (isPrintMode && marksheet) {
+            setTimeout(() => { window.print(); }, 500);
+        }
+    }, [marksheet]);
 
-    const verificationUrl =
-        `${window.location.origin}/verify/marksheet/${marksheetCode}`;
-
-    const summary = marksheet?.summary;
-
+    /* ================= MISC ================= */
     useEffect(() => {
         const generateHash = async () => {
             if (!marksheet?.marks) return;
-
             const dataString = JSON.stringify({
                 course: selectedCourse,
                 semester: selectedSem,
                 roll: selectedRoll,
                 marks: marksheet.marks
             });
-
             const encoder = new TextEncoder();
             const data = encoder.encode(dataString);
-
             const hashBuffer = await crypto.subtle.digest("SHA-256", data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-            const hashHex = hashArray
-                .map(b => b.toString(16).padStart(2, "0"))
-                .join("");
-
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
             setHash(hashHex);
         };
-
         generateHash();
     }, [marksheet]);
 
-    const courseDisplay = useMemo(() => {
-        if (!marksheet?.marks?.length) return "";
-
-        const code = marksheet.marks[0].courcecode;
-        const course = courses.find(c => c.course_code === code);
-
-        if (!course) return code;
-
-        return `${course.course_name} (${code})`;
-    }, [marksheet, courses]);
+    const marksheetCode = `MS-${selectedCourse}-${selectedSem}-${selectedRoll}`;
+    const verificationUrl = `${window.location.origin}/verify/marksheet/${marksheetCode}`;
 
     return (
-        <div className="space-y-6 md:space-y-10 px-2 md:px-0">
-
-            {/* HEADER */}
+        <div className="space-y-8 sm:space-y-10 pb-10">
+            {/* HEADER - Centered for Mobile */}
             {!isPrintMode && (
-                <div>
-                    <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                <div className="text-center sm:text-left px-2">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">
                         Student Marksheet
                     </h2>
-
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        Generate and download semester marksheets.
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto sm:mx-0">
+                        Generate and download official digital grade sheets.
                     </p>
                 </div>
             )}
 
             {/* FILTER PANEL */}
             {!isPrintMode && (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm mx-2 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <select value={selectedCourse} onChange={(e) => { setSelectedCourse(e.target.value); setSelectedRoll(""); }}
+                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400">
+                            <option value="">Select Course</option>
+                            {courses.map(c => <option key={c.id} value={c.course_code}>{c.course_name}</option>)}
+                        </select>
 
-                    <select
-                        value={selectedCourse}
-                        onChange={(e) => setSelectedCourse(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-                    >
-                        <option value="">Select Course</option>
+                        <select value={selectedSem} onChange={(e) => { setSelectedSem(e.target.value); setSelectedRoll(""); }}
+                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400">
+                            <option value="">Select {semLabel}</option>
+                            {semesterOptions.map(num => <option key={num} value={num}>{semLabel} {num}</option>)}
+                        </select>
 
-                        {courses.map(course => (
-                            <option key={course.id} value={course.course_code}>
-                                {course.course_name}
-                            </option>
-                        ))}
-                    </select>
+                        <select value={selectedRoll} onChange={(e) => setSelectedRoll(e.target.value)}
+                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:ring-1 focus:ring-gray-400">
+                            <option value="">Select Student</option>
+                            {students.map(s => <option key={s.rollnumber} value={s.rollnumber}>{s.rollnumber} - {s.firstname}</option>)}
+                        </select>
+                    </div>
 
-                    <select
-                        value={selectedSem}
-                        onChange={(e) => setSelectedSem(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-                    >
-                        <option value="">Select {semLabel}</option>
-
-                        {semesterOptions.map(num => (
-                            <option key={num} value={num}>
-                                {semLabel} {num}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={selectedRoll}
-                        onChange={(e) => setSelectedRoll(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-                    >
-                        <option value="">Select Student</option>
-
-                        {students.map(s => (
-                            <option key={s.rollnumber} value={s.rollnumber}>
-                                {s.rollnumber} - {s.firstname} {s.lastname}
-                            </option>
-                        ))}
-                    </select>
-
-                    <button
-                        onClick={loadMarksheet}
-                        className="w-full md:w-auto px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                    >
-                        Load Marksheet
-                    </button>
-
-                </div>
-            )}
-
-            {/* ERROR */}
-            {!isPrintMode && error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
-                    {error}
-                </div>
-            )}
-
-            {/* MARKSHEET */}
-            {marksheet && (
-
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
-
-                    {/* Download button (hide in print mode) */}
-                    {!isPrintMode && (
-                        <div className="flex justify-center md:justify-end mb-4">
-                            <button
-                                onClick={downloadPDF}
-                                className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                            >
-                                Download PDF
+                    {/* Show Load button ONLY if fields are complete */}
+                    {isSelectionComplete && (
+                        <div className="flex justify-center sm:justify-end border-t border-gray-100 dark:border-gray-700 pt-4">
+                            <button onClick={loadMarksheet}
+                                    className="w-full sm:w-auto px-8 py-2.5 bg-gray-900 text-white text-sm rounded-lg hover:bg-black transition font-bold shadow-sm">
+                                Load Marksheet
                             </button>
                         </div>
                     )}
-
-                    {/* Scroll container so mobile doesn't break layout */}
-                    <div className="w-full overflow-x-auto">
-
-                        {/* Marksheet container */}
-                        <div className="min-w-[900px] md:min-w-[900px] mx-auto">
-
-                            <MarksheetLayout
-                                marksheet={marksheet}
-                                semLabel={semLabel}
-                                selectedSem={selectedSem}
-                                marksheetCode={marksheetCode}
-                                verificationUrl={verificationUrl}
-                                summary={summary}
-                                hash={hash}
-                                courseDisplay={courseDisplay}
-                                getGrade={getGrade}
-                            />
-
-                        </div>
-
-                    </div>
-
                 </div>
-
             )}
 
+            {!isPrintMode && error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md mx-2 text-center">{error}</div>
+            )}
+
+            {/* MARKSHEET DISPLAY */}
+            {marksheet ? (
+                <div className="px-2">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+
+                        {!isPrintMode && (
+                            <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-transparent">
+                                <button onClick={downloadPDF}
+                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition font-bold">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    Download Marksheet PDF
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="w-full overflow-x-auto p-2 sm:p-8 bg-gray-50 dark:bg-gray-900/50">
+                            <div className="min-w-[850px] mx-auto bg-white shadow-2xl">
+                                <MarksheetLayout
+                                    marksheet={marksheet}
+                                    semLabel={semLabel}
+                                    selectedSem={selectedSem}
+                                    marksheetCode={marksheetCode}
+                                    verificationUrl={verificationUrl}
+                                    summary={marksheet.summary}
+                                    hash={hash}
+                                    courseDisplay={marksheet.marks[0]?.courcecode}
+                                    getGrade={(p) => {
+                                        if (p >= 90) return "O";
+                                        if (p >= 80) return "A+";
+                                        if (p >= 70) return "A";
+                                        if (p >= 60) return "B+";
+                                        if (p >= 50) return "B";
+                                        if (p >= 40) return "C";
+                                        return "F";
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                /* PROFESSIONAL EMPTY STATE */
+                !isPrintMode && (
+                    <div className="mx-2 flex flex-col items-center justify-center py-20 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50/20">
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-full shadow-sm mb-4">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-gray-900 dark:text-gray-100 font-semibold text-sm">Marksheet Viewer</h3>
+                        <p className="text-gray-400 text-xs mt-1 text-center max-w-[200px]">
+                            Please select course and student details to generate a grade sheet.
+                        </p>
+                    </div>
+                )
+            )}
         </div>
     );
 };
