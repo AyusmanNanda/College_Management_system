@@ -16,13 +16,5 @@ router.put("/password", authMiddleware, controller.updatePassword);
 
 router.put("/dob", authMiddleware, controller.updateDOB);
 
-/* ================= Attendance ================= */
-
-router.get("/attendance", authMiddleware, controller.getStudentAttendance);
-
-/* ================= Marksheet ================= */
-
-router.get("/marksheet", authMiddleware, controller.getStudentMarksheet);
-
 module.exports = router;
 

@@ -1,128 +1,103 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 
-const StudentDashboard = () => {
+function StatCard({ title, value }) {
+  return (
+    <div className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        {title}
+      </p>
+      <p className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+        {value}
+      </p>
+    </div>
+  );
+}
 
-    const token = localStorage.getItem("token");
+export default function StudentDashboard() {
 
-    const [student, setStudent] = useState({});
-    const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("token");
 
-    useEffect(() => {
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-        const fetchStudent = async () => {
+  useEffect(() => {
+    const fetchStudent = async () => {
+      try {
+        const res = await api.get("/api/student/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-            try {
+        setStudent(res.data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-                const res = await api.get(
-                    "/api/student/dashboard",
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
-                );
+    if (token) fetchStudent();
+  }, [token]);
 
-                setStudent(res.data);
+  return (
+    <div className="w-[94vw] sm:w-full min-h-[90vh] sm:min-h-[550px]
+      bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+      rounded-xl shadow-sm p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 mx-auto">
 
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
+      {/* Header */}
+      <div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
+          Student Dashboard
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Overview of your academic details.
+        </p>
+      </div>
 
-        };
+      {/* Cards (same as faculty style) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
 
-        if (token) fetchStudent();
+        <StatCard
+          title="Name"
+          value={
+            loading
+              ? "--"
+              : `${student?.firstname || ""} ${student?.lastname || ""}`
+          }
+        />
 
-    }, [token]);
+        <StatCard
+          title="Roll Number"
+          value={loading ? "--" : student?.rollnumber}
+        />
 
-    return (
+        <StatCard
+          title="Course"
+          value={loading ? "--" : student?.courcecode}
+        />
 
-        <div className="space-y-10">
+        <StatCard
+          title="Semester"
+          value={loading ? "--" : student?.semoryear || "N/A"}
+        />
 
-            {/* Page Title */}
+      </div>
 
-            <div>
-                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-                    Student Dashboard
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    View your profile, attendance, and marks.
-                </p>
-            </div>
+      {/* Info Section (same style as faculty) */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 shadow-sm col-span-full">
 
-            {/* Student Information Cards */}
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide mb-6">
+          Student Portal
+        </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                <DashboardCard
-                    title="Name"
-                    value={
-                        loading
-                            ? "--"
-                            : `${student.firstname || ""} ${student.lastname || ""}`
-                    }
-                />
-
-                <DashboardCard
-                    title="Roll Number"
-                    value={loading ? "--" : student.rollnumber}
-                />
-
-                <DashboardCard
-                    title="Course"
-                    value={loading ? "--" : student.Courcecode}
-                />
-
-                <DashboardCard
-                    title="Semester"
-                    value={loading ? "--" : student.semoryear}
-                />
-
-            </div>
-
-            {/* System Information */}
-
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
-
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide mb-6">
-                    Student Portal
-                </h3>
-
-                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-
-                    <p>
-                        Access your attendance reports and marksheets.
-                    </p>
-
-                    <p>
-                        Update your profile information anytime.
-                    </p>
-
-                </div>
-
-            </div>
-
+        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+          <p>View your attendance records.</p>
+          <p>Check your marks and performance.</p>
+          <p>Update your profile anytime.</p>
         </div>
 
-    );
-
-};
-
-const DashboardCard = ({ title, value }) => (
-
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
-
-        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            {title}
-        </p>
-
-        <p className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
-            {value}
-        </p>
+      </div>
 
     </div>
-
-);
-
-export default StudentDashboard;
-    
+  );
+}
