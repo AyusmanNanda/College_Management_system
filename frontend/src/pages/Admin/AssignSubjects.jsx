@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
+import Toast from "./Toast.jsx";
 
 const AssignSubjects = () => {
     const token = localStorage.getItem("token");
@@ -14,6 +15,8 @@ const AssignSubjects = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const [toast, setToast] = useState(null);
 
     /* ================= FETCH COURSES ================= */
 
@@ -83,6 +86,7 @@ const AssignSubjects = () => {
     const handleAssign = async (facultyId) => {
         if (!selectedCourse || !selectedSem || !selectedSubject) {
             setError("Select course, semester and subject first.");
+            setToast({ type: "error", message: "Select course, semester and subject first." });
             return;
         }
 
@@ -99,10 +103,13 @@ const AssignSubjects = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
+            setToast({ type: "success", message: "Subject assigned successfully!" });
             fetchFaculties();
             setError("");
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to assign subject.");
+            const errorMessage = err.response?.data?.message || "Failed to assign subject.";
+            setError(errorMessage);
+            setToast({ type: "error", message: errorMessage });
         } finally {
             setLoading(false);
         }
@@ -124,10 +131,12 @@ const AssignSubjects = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
+            setToast({ type: "success", message: "Subject unassigned successfully!" });
             fetchFaculties();
             setError("");
         } catch {
             setError("Failed to unassign subject.");
+            setToast({ type: "error", message: "Failed to unassign subject." });
         } finally {
             setLoading(false);
         }
@@ -268,11 +277,12 @@ const AssignSubjects = () => {
                                             )}
                                         </td>
 
+                                        {/* UPDATED: Buttons span full width on mobile */}
                                         <td className="px-3 py-2 sm:px-4 sm:py-4 flex flex-col sm:flex-row gap-2">
                                             <button
                                                 onClick={() => handleAssign(faculty.sr_no)}
                                                 disabled={loading}
-                                                className="px-3 py-1 bg-gray-900 text-white rounded text-sm hover:bg-black transition w-full sm:w-auto"
+                                                className="w-full sm:w-auto px-3 py-1 bg-gray-900 text-white rounded text-xs sm:text-sm hover:bg-black transition"
                                             >
                                                 Assign
                                             </button>
@@ -280,7 +290,7 @@ const AssignSubjects = () => {
                                             {faculty.subject !== "NOT ASSIGNED" && (
                                                 <button
                                                     onClick={() => handleUnassign(faculty.sr_no)}
-                                                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition w-full sm:w-auto"
+                                                    className="w-full sm:w-auto px-3 py-1 bg-red-600 text-white rounded text-xs sm:text-sm hover:bg-red-700 transition"
                                                 >
                                                     Unassign
                                                 </button>
@@ -293,6 +303,14 @@ const AssignSubjects = () => {
                         </table>
                     </div>
                 </div>
+            )}
+
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
             )}
         </div>
     );

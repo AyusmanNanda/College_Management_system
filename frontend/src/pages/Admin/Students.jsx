@@ -3,6 +3,7 @@ import api from "../../utils/api";
 import StudentProfile from "./StudentProfile";
 import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
 import ImportStudentModal from "./modals/ImportStudentModal.jsx";
+import Toast from "./Toast.jsx";
 
 const Students = () => {
     const BASE_URL = api.defaults.baseURL;
@@ -24,6 +25,8 @@ const Students = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const [toast, setToast] = useState(null);
 
     /* ================= FETCH STUDENTS ================= */
 
@@ -74,10 +77,12 @@ const Students = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            setToast({ type: "success", message: "Student deleted successfully." });
             fetchStudents();
         } catch (err) {
             console.error(err);
             setError("Failed to delete student.");
+            setToast({ type: "error", message: "Failed to delete student." });
         } finally {
             setShowDeleteModal(false);
             setStudentToDelete(null);
@@ -317,7 +322,10 @@ const Students = () => {
                 <ImportStudentModal
                     token={token}
                     onClose={() => setShowImportModal(false)}
-                    onImportSuccess={fetchStudents}
+                    onImportSuccess={() => {
+                        fetchStudents();
+                        setToast({ type: "success", message: "Students imported successfully!" });
+                    }}
                 />
             )}
 
@@ -326,7 +334,18 @@ const Students = () => {
                     student={selectedStudent}
                     isNew={isNew}
                     onClose={() => setSelectedStudent(null)}
-                    onUpdated={fetchStudents}
+                    onUpdated={() => {
+                        fetchStudents();
+                        setToast({ type: "success", message: "Student details saved successfully!" });
+                    }}
+                />
+            )}
+
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
                 />
             )}
         </div>
