@@ -23,14 +23,10 @@ const EnterMarks = () => {
 
     /* ================= UX HELPERS ================= */
 
-    // NEW: Blocks EVERYTHING except numbers (0-9) and control keys
     const preventSymbols = (e) => {
-        // Allow: Backspace, Tab, Enter, Escape, and Arrow keys
-        if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
-            (e.keyCode >= 35 && e.keyCode <= 39)) {
+        if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 || (e.keyCode >= 35 && e.keyCode <= 39)) {
             return;
         }
-        // Block if not a number (0-9)
         if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
             e.preventDefault();
         }
@@ -127,7 +123,6 @@ const EnterMarks = () => {
     };
 
     const handleMarkChange = (roll, field, value) => {
-        // Final safety sanitization for copy-paste
         const sanitizedValue = value === "" ? "" : Math.max(0, parseInt(value, 10));
         setMarks(prev => ({
             ...prev,
@@ -135,34 +130,54 @@ const EnterMarks = () => {
         }));
     };
 
-    /* ================= SAVE MARKS ================= */
+    /* ================= VALIDATION GATEKEEPER ================= */
 
-    const saveMarks = async () => {
-        if (!selectedSubject) return;
+    const handleOpenModal = () => {
+        if (!subjectDetails) return;
 
-        if (subjectDetails) {
-            const maxTheory = subjectDetails.theorymarks;
-            const maxPractical = subjectDetails.practicalmarks;
+        const maxTheory = subjectDetails.theorymarks;
+        const maxPractical = subjectDetails.practicalmarks;
 
-            for (const roll in marks) {
-                const theory = Number(marks[roll]?.theory || 0);
-                const practical = Number(marks[roll]?.practical || 0);
+        for (const student of students) {
+            const roll = student.rollnumber;
+            const theory = marks[roll]?.theory;
+            const practical = marks[roll]?.practical;
 
-                if (theory > maxTheory) {
-                    const msg = `Theory marks for ${roll} exceed maximum (${maxTheory})`;
-                    setError(msg);
-                    setToast({ type: "error", message: msg });
-                    return;
-                }
-                if (practical > maxPractical) {
-                    const msg = `Practical marks for ${roll} exceed maximum (${maxPractical})`;
-                    setError(msg);
-                    setToast({ type: "error", message: msg });
-                    return;
-                }
+            // 1. CHECK FOR EMPTY FIELDS
+            if (theory === "" || theory === undefined) {
+                const msg = `Theory marks missing for ${student.firstname}`;
+                setToast({ type: "error", message: msg });
+                return; // EXIT: Toast shows on clear screen, no modal opens
+            }
+
+            if (maxPractical > 0 && (practical === "" || practical === undefined)) {
+                const msg = `Practical marks missing for ${student.firstname}`;
+                setToast({ type: "error", message: msg });
+                return; // EXIT
+            }
+
+            // 2. CHECK FOR MAX MARKS
+            if (Number(theory) > maxTheory) {
+                const msg = `${student.firstname}'s Theory exceeds max (${maxTheory})`;
+                setToast({ type: "error", message: msg });
+                return; // EXIT
+            }
+
+            if (maxPractical > 0 && Number(practical) > maxPractical) {
+                const msg = `${student.firstname}'s Practical exceeds max (${maxPractical})`;
+                setToast({ type: "error", message: msg });
+                return; // EXIT
             }
         }
 
+        // All clear! Now we show the modal (and the blur)
+        setError("");
+        setShowSaveModal(true);
+    };
+
+    /* ================= FINAL SAVE ================= */
+
+    const saveMarks = async () => {
         try {
             const records = students.map(student => ({
                 rollnumber: student.rollnumber,
@@ -179,11 +194,9 @@ const EnterMarks = () => {
             }, { headers: { Authorization: `Bearer ${token}` } });
 
             setToast({ type: "success", message: "Marks saved successfully!" });
-            setError("");
             setShowSaveModal(false);
         } catch {
-            setError("Failed to save marks.");
-            setToast({ type: "error", message: "Failed to save marks." });
+            setToast({ type: "error", message: "Database error: Failed to save marks." });
         }
     };
 
@@ -204,20 +217,22 @@ const EnterMarks = () => {
 
             {/* FILTER CARD */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
-                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}
+                <select value={selectedCourse} onChange={(e) => { setSelectedCourse(e.target.value); setSelectedSem(""); }}
                         className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-1 focus:ring-gray-400 outline-none transition">
                     <option value="">Select Course</option>
                     {courses.map(course => <option key={course.id} value={course.course_code}>{course.course_name}</option>)}
                 </select>
 
-                <select value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-1 focus:ring-gray-400 outline-none transition">
+                <select value={selectedSem} onChange={(e) => { setSelectedSem(e.target.value); setSelectedSubject(""); }}
+                        disabled={!selectedCourse}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-1 focus:ring-gray-400 outline-none transition disabled:opacity-60">
                     <option value="">Select {semLabel}</option>
                     {semesterOptions.map(num => <option key={num} value={num}>{semLabel} {num}</option>)}
                 </select>
 
                 <select value={selectedSubject} onChange={(e) => handleSubjectChange(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-1 focus:ring-gray-400 outline-none transition">
+                        disabled={!selectedSem}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-1 focus:ring-gray-400 outline-none transition disabled:opacity-60">
                     <option value="">Select Subject</option>
                     {subjects.map(sub => <option key={sub.subjectcode} value={sub.subjectcode}>{sub.subjectname}</option>)}
                 </select>
@@ -226,60 +241,60 @@ const EnterMarks = () => {
             {selectedSubject && students.length > 0 && (
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors">
                     <div className="w-full overflow-x-auto">
-                        <table className="w-full text-xs sm:text-sm text-left">
-                            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
+                        <table className="w-full text-xs sm:text-sm text-left table-fixed md:table-auto">
+                            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-[10px] sm:text-xs tracking-wide">
                             <tr>
-                                <th className="px-4 py-3">Student</th>
-                                <th className="px-4 py-3 text-center">Theory (Max: {subjectDetails?.theorymarks})</th>
+                                <th className="w-1/3 px-2 sm:px-4 py-3">Student</th>
+                                <th className="px-2 sm:px-4 py-3 text-center">Theory</th>
                                 {subjectDetails?.practicalmarks > 0 && (
-                                    <th className="px-4 py-3 text-center">Practical (Max: {subjectDetails?.practicalmarks})</th>
+                                    <th className="px-2 sm:px-4 py-3 text-center">Pract.</th>
                                 )}
-                                <th className="px-4 py-3 text-center font-bold">Total</th>
+                                <th className="hidden md:table-cell px-4 py-3 text-center font-bold">Total</th>
                             </tr>
                             </thead>
                             <tbody>
                             {students.map(student => {
-                                const theoryVal = Number(marks[student.rollnumber]?.theory || 0);
-                                const practicalVal = Number(marks[student.rollnumber]?.practical || 0);
-                                const total = theoryVal + practicalVal;
+                                const theoryVal = marks[student.rollnumber]?.theory;
+                                const practicalVal = marks[student.rollnumber]?.practical;
+                                const total = (Number(theoryVal) || 0) + (Number(practicalVal) || 0);
 
                                 return (
                                     <tr key={student.rollnumber} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                                        <td className="px-4 py-3 dark:text-gray-200">
-                                            <div className="flex flex-col">
-                                                <span className="font-medium">{student.firstname} {student.lastname}</span>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">{student.rollnumber}</span>
+                                        <td className="px-2 sm:px-4 py-3 dark:text-gray-200">
+                                            <div className="flex flex-col leading-tight truncate">
+                                                <span className="font-medium truncate">{student.firstname} {student.lastname}</span>
+                                                <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{student.rollnumber}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-center">
+                                        <td className="px-1 sm:px-4 py-3 text-center">
                                             <input type="number"
-                                                   min="0"
-                                                   value={marks[student.rollnumber]?.theory || ""}
+                                                   placeholder="0"
+                                                   value={theoryVal ?? ""}
                                                    onChange={(e) => handleMarkChange(student.rollnumber, "theory", e.target.value)}
                                                    onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }}
                                                    onFocus={handleFocus}
-                                                   className={`w-24 px-2 py-1.5 border rounded-md text-sm text-center outline-none transition
-                                                        ${theoryVal > subjectDetails?.theorymarks
+                                                   className={`w-12 sm:w-20 px-1 py-1.5 border rounded-md text-xs sm:text-sm text-center outline-none transition
+                                                        ${(theoryVal === "" || Number(theoryVal) > subjectDetails?.theorymarks)
                                                        ? "border-red-500 bg-red-50 text-red-700"
                                                        : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-gray-400"}`}
                                             />
                                         </td>
                                         {subjectDetails?.practicalmarks > 0 && (
-                                            <td className="px-4 py-3 text-center">
+                                            <td className="px-1 sm:px-4 py-3 text-center">
                                                 <input type="number"
-                                                       min="0"
-                                                       value={marks[student.rollnumber]?.practical || ""}
+                                                       placeholder="0"
+                                                       value={practicalVal ?? ""}
                                                        onChange={(e) => handleMarkChange(student.rollnumber, "practical", e.target.value)}
                                                        onKeyDown={(e) => { preventSymbols(e); handleEnterMove(e); }}
                                                        onFocus={handleFocus}
-                                                       className={`w-24 px-2 py-1.5 border rounded-md text-sm text-center outline-none transition
-                                                            ${practicalVal > subjectDetails?.practicalmarks
+                                                       className={`w-12 sm:w-20 px-1 py-1.5 border rounded-md text-xs sm:text-sm text-center outline-none transition
+                                                            ${(practicalVal === "" || Number(practicalVal) > subjectDetails?.practicalmarks)
                                                            ? "border-red-500 bg-red-50 text-red-700"
                                                            : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-1 focus:ring-gray-400"}`}
                                                 />
                                             </td>
                                         )}
-                                        <td className="px-4 py-3 text-center font-bold dark:text-gray-200 text-base">{total}</td>
+                                        <td className="hidden md:table-cell px-4 py-3 text-center font-bold dark:text-gray-200 text-base">{total}</td>
                                     </tr>
                                 );
                             })}
@@ -288,7 +303,7 @@ const EnterMarks = () => {
                     </div>
 
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
-                        <button onClick={() => setShowSaveModal(true)} disabled={!isFormComplete}
+                        <button onClick={handleOpenModal} disabled={!isFormComplete}
                                 className={`w-full sm:w-auto px-6 py-2.5 text-sm rounded-md transition font-semibold
                                 ${isFormComplete ? "bg-gray-900 text-white hover:bg-black" : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-700"}
                             `}>
