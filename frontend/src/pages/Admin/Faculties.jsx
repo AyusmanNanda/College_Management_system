@@ -3,6 +3,7 @@ import api from "../../utils/api";
 import FacultyProfile from "./FacultyProfile";
 import ImportFacultyModal from "./modals/ImportFacultyModal.jsx";
 import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
+import Toast from "./Toast.jsx";
 
 const Faculties = () => {
     const BASE_URL = api.defaults.baseURL;
@@ -25,6 +26,8 @@ const Faculties = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const [toast, setToast] = useState(null);
 
     /* ================= FETCH FACULTIES ================= */
 
@@ -76,10 +79,12 @@ const Faculties = () => {
                 `/api/faculty/${facultyToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+            setToast({ type: "success", message: "Faculty deleted successfully." });
             fetchFaculties();
         } catch (err) {
             console.error(err);
             setError("Failed to delete faculty.");
+            setToast({ type: "error", message: "Failed to delete faculty." });
         } finally {
             setShowDeleteModal(false);
             setFacultyToDelete(null);
@@ -121,7 +126,7 @@ const Faculties = () => {
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button
                         onClick={() => setShowImportModal(true)}
-                        className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                        className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                     >
                         Import From File
                     </button>
@@ -131,7 +136,7 @@ const Faculties = () => {
                             setIsNew(true);
                             setSelectedFaculty({});
                         }}
-                        className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
+                        className="w-full sm:w-auto px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
                     >
                         Add Faculty
                     </button>
@@ -200,117 +205,54 @@ const Faculties = () => {
                         <tbody>
                         {loading ? (
                             <tr>
-                                <td
-                                    colSpan="9"
-                                    className="px-3 py-8 text-center text-gray-500 dark:text-gray-400"
-                                >
-                                    Loading...
-                                </td>
+                                <td colSpan="9" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">Loading...</td>
                             </tr>
                         ) : filteredFaculties.length === 0 ? (
                             <tr>
-                                <td
-                                    colSpan="9"
-                                    className="px-3 py-8 text-center text-gray-500 dark:text-gray-400"
-                                >
-                                    No faculties found.
-                                </td>
+                                <td colSpan="9" className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">No faculties found.</td>
                             </tr>
                         ) : (
                             filteredFaculties.map((faculty) => (
-                                <tr
-                                    key={faculty.sr_no}
-                                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
-                                >
-                                    {/* Profile */}
+                                <tr key={faculty.sr_no} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                                     <td className="px-3 py-2 sm:px-4 sm:py-4">
                                         <img
-                                            src={
-                                                faculty.profilepic
-                                                    ? `${BASE_URL}/uploads/faculties/${faculty.profilepic}`
-                                                    : `${BASE_URL}/uploads/faculties/default.png`
-                                            }
+                                            src={faculty.profilepic ? `${BASE_URL}/uploads/faculties/${faculty.profilepic}` : `${BASE_URL}/uploads/faculties/default.png`}
                                             alt="profile"
                                             className="h-9 w-9 rounded-full object-cover border dark:border-gray-600"
                                         />
                                     </td>
-
-                                    {/* Faculty Info */}
                                     <td className="px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        <div className="font-semibold">
-                                            {faculty.facultyname}
-                                        </div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {faculty.facultyid}
-                                        </div>
+                                        <div className="font-semibold">{faculty.facultyname}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{faculty.facultyid}</div>
                                     </td>
-
-                                    {/* Position */}
-                                    <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {faculty.position}
-                                    </td>
-
-                                    {/* Course */}
+                                    <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">{faculty.position}</td>
                                     <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        <div className="font-medium leading-tight">
-                                            {faculty.courcecode}
-                                        </div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                                            {faculty.course_name || ""}
-                                        </div>
+                                        <div className="font-medium leading-tight">{faculty.courcecode}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight">{faculty.course_name || ""}</div>
                                     </td>
-
-                                    {/* Semester */}
-                                    <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {faculty.semoryear || "-"}
-                                    </td>
-
-                                    {/* Subject */}
+                                    <td className="hidden md:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">{faculty.semoryear || "-"}</td>
                                     <td className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200 truncate">
-                                        <div className="font-medium">
-                                            {faculty.subject}
-                                        </div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {faculty.subject_name || ""}
-                                        </div>
+                                        <div className="font-medium">{faculty.subject}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{faculty.subject_name || ""}</div>
                                     </td>
-
-                                    {/* Experience */}
-                                    <td className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
-                                        {faculty.experience}
-                                    </td>
-
-                                    {/* Status */}
+                                    <td className="hidden lg:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">{faculty.experience}</td>
                                     <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4">
                                         {faculty.activestatus ? (
-                                            <span className="px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
-                                    Active
-                                </span>
+                                            <span className="px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">Active</span>
                                         ) : (
-                                            <span className="px-2.5 py-1 text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-full">
-                                    Inactive
-                                </span>
+                                            <span className="px-2.5 py-1 text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-full">Inactive</span>
                                         )}
                                     </td>
-
-                                    {/* Actions */}
                                     <td className="px-3 py-2 sm:px-4 sm:py-4">
                                         <div className="flex flex-col sm:flex-row gap-2 justify-center">
                                             <button
-                                                onClick={() => {
-                                                    setIsNew(false);
-                                                    setSelectedFaculty(faculty);
-                                                }}
+                                                onClick={() => { setIsNew(false); setSelectedFaculty(faculty); }}
                                                 className="w-full sm:w-auto px-3 py-1.5 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                                             >
                                                 Edit
                                             </button>
-
                                             <button
-                                                onClick={() => {
-                                                    setFacultyToDelete(faculty.sr_no);
-                                                    setShowDeleteModal(true);
-                                                }}
+                                                onClick={() => { setFacultyToDelete(faculty.sr_no); setShowDeleteModal(true); }}
                                                 className="w-full sm:w-auto px-3 py-1.5 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
                                             >
                                                 Delete
@@ -330,10 +272,7 @@ const Faculties = () => {
                 title="Confirm Deletion"
                 message="Are you sure you want to delete this faculty? This action cannot be undone."
                 loading={loading}
-                onCancel={() => {
-                    setShowDeleteModal(false);
-                    setFacultyToDelete(null);
-                }}
+                onCancel={() => { setShowDeleteModal(false); setFacultyToDelete(null); }}
                 onConfirm={handleDelete}
             />
 
@@ -342,7 +281,10 @@ const Faculties = () => {
                     faculty={selectedFaculty}
                     isNew={isNew}
                     onClose={() => setSelectedFaculty(null)}
-                    onUpdated={fetchFaculties}
+                    onUpdated={() => {
+                        fetchFaculties();
+                        setToast({ type: "success", message: "Faculty details saved successfully!" });
+                    }}
                 />
             )}
 
@@ -350,7 +292,18 @@ const Faculties = () => {
                 <ImportFacultyModal
                     token={token}
                     onClose={() => setShowImportModal(false)}
-                    onImportSuccess={fetchFaculties}
+                    onImportSuccess={() => {
+                        fetchFaculties();
+                        setToast({ type: "success", message: "Faculties imported successfully!" });
+                    }}
+                />
+            )}
+
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
                 />
             )}
         </div>
