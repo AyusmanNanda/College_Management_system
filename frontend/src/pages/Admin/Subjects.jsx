@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
+import Toast from "./Toast.jsx";
 
 const Subjects = () => {
     const token = localStorage.getItem("token");
@@ -15,6 +16,8 @@ const Subjects = () => {
     const [editingCode, setEditingCode] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [subjectToDelete, setSubjectToDelete] = useState(null);
+
+    const [toast, setToast] = useState(null);
 
     const [form, setForm] = useState({
         subjectcode: "",
@@ -108,6 +111,7 @@ const Subjects = () => {
                     },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
+                setToast({ type: "success", message: "Subject updated successfully!" });
             } else {
                 await api.post(
                     "/api/subjects",
@@ -118,13 +122,16 @@ const Subjects = () => {
                     },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
+                setToast({ type: "success", message: "Subject added successfully!" });
             }
 
             resetForm();
             fetchSubjects(selectedCourse, selectedSem);
 
         } catch (err) {
-            setError(err.response?.data?.message || "Operation failed.");
+            const errorMessage = err.response?.data?.message || "Operation failed.";
+            setError(errorMessage);
+            setToast({ type: "error", message: errorMessage });
         } finally {
             setLoading(false);
         }
@@ -151,9 +158,11 @@ const Subjects = () => {
                 `/api/subjects/${subjectToDelete}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+            setToast({ type: "success", message: "Subject deleted successfully." });
             fetchSubjects(selectedCourse, selectedSem);
         } catch {
             setError("Failed to delete subject.");
+            setToast({ type: "error", message: "Failed to delete subject." });
         } finally {
             setLoading(false);
             setShowDeleteModal(false);
@@ -277,23 +286,24 @@ const Subjects = () => {
                             className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                         />
 
-                        <div className="sm:col-span-2 md:col-span-5 flex gap-3">
-                            <button
-                                type="submit"
-                                className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                            >
-                                {editingCode ? "Update Subject" : "Add Subject"}
-                            </button>
-
+                        {/* UPDATED: Buttons now stack and span full width on mobile, right-aligned on desktop */}
+                        <div className="sm:col-span-2 md:col-span-5 flex flex-col sm:flex-row sm:justify-end gap-3 mt-2 w-full">
                             {editingCode && (
                                 <button
                                     type="button"
                                     onClick={resetForm}
-                                    className="px-5 py-2 bg-gray-200 dark:bg-gray-600 dark:text-white rounded-md"
+                                    className="w-full sm:w-auto px-3 py-1.5 sm:px-5 sm:py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-gray-800 text-xs sm:text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                                 >
                                     Cancel
                                 </button>
                             )}
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full sm:w-auto px-3 py-1.5 sm:px-5 sm:py-2 bg-gray-900 text-white text-xs sm:text-sm rounded-md hover:bg-black transition disabled:opacity-60"
+                            >
+                                {editingCode ? "Update Subject" : "Add Subject"}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -345,10 +355,11 @@ const Subjects = () => {
                                 </td>
 
                                 <td className="p-4 dark:text-gray-200">
+                                    {/* UPDATED: Table buttons span full width on mobile */}
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <button
                                             onClick={() => handleEdit(sub)}
-                                            className="px-3 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded"
+                                            className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                                         >
                                             Edit
                                         </button>
@@ -358,7 +369,7 @@ const Subjects = () => {
                                                 setSubjectToDelete(sub.subjectcode);
                                                 setShowDeleteModal(true);
                                             }}
-                                            className="px-3 py-1 bg-red-600 text-white rounded"
+                                            className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
                                         >
                                             Delete
                                         </button>
@@ -382,6 +393,14 @@ const Subjects = () => {
                 }}
                 onConfirm={handleDelete}
             />
+
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };
