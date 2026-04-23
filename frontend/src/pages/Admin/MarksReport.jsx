@@ -1,8 +1,18 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
+import {
+    BarChart3,
+    Filter,
+    RotateCcw,
+    Users,
+    Trophy,
+    Percent,
+    ArrowDownCircle,
+    AlertCircle,
+    ListChecks
+} from "lucide-react";
 
 const MarksReport = () => {
-
     const token = localStorage.getItem("token");
 
     const [courses, setCourses] = useState([]);
@@ -16,378 +26,209 @@ const MarksReport = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    /* ================= FETCH COURSES ================= */
+    const isSelectionComplete = selectedCourse && selectedSem && selectedSubject;
 
+    /* ================= ACTION: RESET ================= */
+    const handleReset = () => {
+        setSelectedCourse("");
+        setSelectedSem("");
+        setSelectedSubject("");
+        setReportData([]);
+        setError("");
+    };
+
+    /* ================= DATA ENGINE ================= */
     useEffect(() => {
-
         const fetchCourses = async () => {
-
             try {
-
-                const res = await api.get("/api/courses", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
+                const res = await api.get("/api/courses", { headers: { Authorization: `Bearer ${token}` } });
                 setCourses(res.data || []);
-
-            } catch {
-
-                setError("Failed to load courses.");
-
-            }
-
+            } catch { setError("Failed to load courses."); }
         };
-
         if (token) fetchCourses();
-
     }, [token]);
 
-    /* ================= DERIVED SEM OPTIONS ================= */
-
-    const selectedCourseObj = useMemo(() => {
-        return courses.find(c => c.course_code === selectedCourse);
-    }, [courses, selectedCourse]);
-
+    const selectedCourseObj = useMemo(() => courses.find(c => c.course_code === selectedCourse), [courses, selectedCourse]);
+    const semLabel = selectedCourseObj?.sem_or_year?.toLowerCase() === "year" ? "Year" : "Semester";
     const semesterOptions = useMemo(() => {
-
         if (!selectedCourseObj) return [];
-
-        return Array.from(
-            { length: Number(selectedCourseObj.total_semesters) },
-            (_, i) => i + 1
-        );
-
+        return Array.from({ length: Number(selectedCourseObj.total_semesters) }, (_, i) => i + 1);
     }, [selectedCourseObj]);
 
-    /* ================= FETCH SUBJECTS ================= */
-
     useEffect(() => {
-
-        if (!selectedCourse || !selectedSem) {
-            setSubjects([]);
-            return;
-        }
-
+        if (!selectedCourse || !selectedSem) { setSubjects([]); return; }
         const fetchSubjects = async () => {
-
             try {
-
-                const res = await api.get(
-                    `/api/marks/subjects?course=${selectedCourse}&sem=${selectedSem}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                );
-
+                const res = await api.get(`/api/marks/subjects?course=${selectedCourse}&sem=${selectedSem}`, { headers: { Authorization: `Bearer ${token}` } });
                 setSubjects(res.data || []);
-
-            } catch {
-
-                setError("Failed to load subjects.");
-
-            }
-
+            } catch { setError("Failed to load subjects."); }
         };
-
         fetchSubjects();
-
     }, [selectedCourse, selectedSem, token]);
 
-    /* ================= FETCH REPORT ================= */
-
     useEffect(() => {
-
-        if (!selectedSubject) {
-            setReportData([]);
-            return;
-        }
-
+        if (!isSelectionComplete) { setReportData([]); return; }
         const fetchReport = async () => {
-
             try {
-
                 setLoading(true);
-
-                const res = await api.get(
-                    `/api/marks/subject-report?course=${selectedCourse}&sem=${selectedSem}&subject=${selectedSubject}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                );
-
+                const res = await api.get(`/api/marks/subject-report?course=${selectedCourse}&sem=${selectedSem}&subject=${selectedSubject}`, { headers: { Authorization: `Bearer ${token}` } });
                 setReportData(res.data || []);
-
-            } catch {
-
-                setError("Failed to load report.");
-
-            } finally {
-
-                setLoading(false);
-
-            }
-
+                setError("");
+            } catch { setError("Failed to load report."); } finally { setLoading(false); }
         };
-
         fetchReport();
-
-    }, [selectedSubject, selectedCourse, selectedSem, token]);
-
-    /* ================= SUMMARY ================= */
+    }, [selectedSubject, selectedCourse, selectedSem, token, isSelectionComplete]);
 
     const summary = useMemo(() => {
-
         if (reportData.length === 0) return null;
-
         const totalStudents = reportData.length;
-
-        const avg =
-            reportData.reduce((acc, s) => acc + Number(s.total), 0) /
-            totalStudents;
-
+        const avg = reportData.reduce((acc, s) => acc + Number(s.total), 0) / totalStudents;
         const highest = Math.max(...reportData.map(s => Number(s.total)));
         const lowest = Math.min(...reportData.map(s => Number(s.total)));
-
-        return {
-            totalStudents,
-            average: avg.toFixed(2),
-            highest,
-            lowest
-        };
-
+        return { totalStudents, average: avg.toFixed(1), highest, lowest };
     }, [reportData]);
 
     return (
-        <div className="space-y-10">
+        <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
 
-            {/* HEADER */}
-
-            <div>
-                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-                    Marks Report
-                </h2>
-
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    Subject-wise marks analytics.
-                </p>
-            </div>
-
-            {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-md">
-                    {error}
-                </div>
-            )}
-
-            {/* FILTER CARD */}
-
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                <select
-                    value={selectedCourse}
-                    onChange={(e) => {
-                        setSelectedCourse(e.target.value);
-                        setSelectedSem("");
-                        setSelectedSubject("");
-                        setReportData([]);
-                    }}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-                >
-                    <option value="">Select Course</option>
-
-                    {courses.map(course => (
-                        <option key={course.id} value={course.course_code}>
-                            {course.course_name}
-                        </option>
-                    ))}
-                </select>
-
-                <select
-                    value={selectedSem}
-                    onChange={(e) => {
-                        setSelectedSem(e.target.value);
-                        setSelectedSubject("");
-                        setReportData([]);
-                    }}
-                    disabled={!selectedCourse}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-                >
-                    <option value="">Select Semester</option>
-
-                    {semesterOptions.map(sem => (
-                        <option key={sem} value={sem}>
-                            Semester {sem}
-                        </option>
-                    ))}
-                </select>
-
-                <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    disabled={!selectedSem}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
-                >
-                    <option value="">Select Subject</option>
-
-                    {subjects.map(sub => (
-                        <option key={sub.subjectcode} value={sub.subjectcode}>
-                            {sub.subjectname}
-                        </option>
-                    ))}
-                </select>
-
-            </div>
-
-            {/* SUMMARY */}
-
-            {summary && (
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-                    {[
-                        { label: "Students", value: summary.totalStudents },
-                        { label: "Average Marks", value: summary.average },
-                        { label: "Highest", value: summary.highest },
-                        { label: "Lowest", value: summary.lowest }
-                    ].map((item, index) => (
-
-                        <div
-                            key={index}
-                            className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm"
-                        >
-
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {item.label}
-                            </p>
-
-                            <p className="text-lg sm:text-xl font-semibold dark:text-gray-100">
-                                {item.value}
-                            </p>
-
+            {/* PLATFORM HEADER */}
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-md shadow-indigo-500/20">
+                            <BarChart3 className="w-5 h-5" />
                         </div>
-
-                    ))}
-
+                        <div>
+                            <h1 className="text-lg font-bold tracking-tight leading-tight">Marks Report</h1>
+                            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest hidden sm:block">Academic Analytics</p>
+                        </div>
+                    </div>
+                    <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
+                        <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Reset Matrix</span>
+                    </button>
                 </div>
+            </header>
 
-            )}
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-6 space-y-6">
 
-            {/* REPORT TABLE */}
+                {error && (
+                    <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-900/20 rounded-xl text-red-600 dark:text-red-400 text-sm font-semibold">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                        <p>{error}</p>
+                    </div>
+                )}
 
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-x-auto">
+                {/* FILTER CARD */}
+                <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-4 sm:p-6 transition-all">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Filter className="w-4 h-4 text-indigo-500" />
+                        <h2 className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">Report Selection</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <select value={selectedCourse} onChange={(e) => { setSelectedCourse(e.target.value); setSelectedSem(""); setSelectedSubject(""); }}
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer">
+                            <option value="">Select Course...</option>
+                            {courses.map(c => <option key={c.id} value={c.course_code}>{c.course_name}</option>)}
+                        </select>
+                        <select value={selectedSem} disabled={!selectedCourse} onChange={(e) => { setSelectedSem(e.target.value); setSelectedSubject(""); }}
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm disabled:opacity-40 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer">
+                            <option value="">Select {semLabel}...</option>
+                            {semesterOptions.map(num => <option key={num} value={num}>{semLabel} {num}</option>)}
+                        </select>
+                        <select value={selectedSubject} disabled={!selectedSem} onChange={(e) => setSelectedSubject(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm disabled:opacity-40 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer">
+                            <option value="">Select Subject...</option>
+                            {subjects.map(s => <option key={s.subjectcode} value={s.subjectcode}>{s.subjectname}</option>)}
+                        </select>
+                    </div>
+                </section>
 
-                <table className="w-full text-xs sm:text-sm text-left">
-
-                    <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
-
-                    <tr>
-
-                        <th className="px-2 sm:px-4 py-3 w-[35%]">
-                            Student
-                        </th>
-
-                        <th className="px-2 sm:px-4 py-3 text-center w-[16%]">
-                            Theory
-                            <br />
-                            <span className="text-[11px] normal-case text-gray-500">
-                                {reportData[0]?.theoryfull ?? "-"}
-                            </span>
-                        </th>
-
-                        <th className="px-2 sm:px-4 py-3 text-center w-[16%]">
-                            Practical
-                            <br />
-                            <span className="text-[11px] normal-case text-gray-500">
-                                {reportData[0]?.practicalfull ?? "-"}
-                            </span>
-                        </th>
-
-                        <th className="px-2 sm:px-4 py-3 text-center hidden sm:table-cell w-[16%]">
-                            Total
-                            <br />
-                            <span className="text-[11px] normal-case text-gray-500">
-                                {reportData[0]?.maxtotal ?? "-"}
-                            </span>
-                        </th>
-
-                        <th className="px-2 sm:px-4 py-3 text-center w-[17%]">
-                            Grade
-                        </th>
-
-                    </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                    {loading ? (
-
-                        <tr>
-                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                Loading...
-                            </td>
-                        </tr>
-
-                    ) : reportData.length === 0 ? (
-
-                        <tr>
-                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                No report data available.
-                            </td>
-                        </tr>
-
-                    ) : (
-
-                        reportData.map(student => (
-
-                            <tr
-                                key={student.rollnumber}
-                                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
-                            >
-
-                                <td className="px-2 sm:px-4 py-3">
-
-                                    <div className="font-medium text-sm dark:text-gray-200 leading-tight">
-                                        {student.rollnumber}
+                {/* CONTENT RENDERER */}
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                        <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Processing analytics...</p>
+                    </div>
+                ) : isSelectionComplete && reportData.length > 0 ? (
+                    <div className="space-y-6">
+                        {/* SUMMARY CARDS */}
+                        {summary && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                    { label: "Students", value: summary.totalStudents, icon: Users },
+                                    { label: "Class Avg", value: summary.average, icon: Percent },
+                                    { label: "Highest", value: summary.highest, icon: Trophy },
+                                    { label: "Lowest", value: summary.lowest, icon: ArrowDownCircle }
+                                ].map((item, idx) => (
+                                    <div key={idx} className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{item.label}</p>
+                                            <item.icon className="w-3.5 h-3.5 text-indigo-500" />
+                                        </div>
+                                        <p className="text-xl font-black text-slate-900 dark:text-slate-100">{item.value}</p>
                                     </div>
+                                ))}
+                            </div>
+                        )}
 
-                                    <div className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">
-                                        {student.name}
-                                    </div>
+                        {/* DATA TABLE - INSTANT RENDER */}
+                        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-all">
+                            <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                                <table className="w-full table-fixed">
+                                    <thead>
+                                    <tr>
+                                        <th className="w-[45%] sm:w-[40%] px-4 sm:px-6 py-4 text-left text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Student Profile</th>
+                                        <th className="w-[15%] px-2 sm:px-4 py-4 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Theory</th>
+                                        <th className="w-[15%] px-2 sm:px-4 py-4 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Pract.</th>
+                                        <th className="hidden sm:table-cell w-[15%] px-4 py-4 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Total</th>
+                                        <th className="w-[15%] px-4 py-4 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Grade</th>
+                                    </tr>
+                                    </thead>
+                                </table>
+                            </div>
 
-                                </td>
-
-                                <td className="px-2 sm:px-4 py-3 text-center dark:text-gray-200">
-                                    {student.theorymarks}
-                                </td>
-
-                                <td className="px-2 sm:px-4 py-3 text-center dark:text-gray-200">
-                                    {student.practicalmarks}
-                                </td>
-
-                                <td className="px-2 sm:px-4 py-3 text-center font-semibold dark:text-gray-100 hidden sm:table-cell">
-                                    {student.total}
-                                </td>
-
-                                <td className="px-2 sm:px-4 py-3 text-center font-semibold dark:text-gray-100">
-                                    {student.grade}
-                                </td>
-
-                            </tr>
-
-                        ))
-
-                    )}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
+                            <div className="w-full">
+                                <table className="w-full table-fixed">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                    {reportData.map((student, idx) => (
+                                        <tr key={student.rollnumber} className={`${idx % 2 === 0 ? 'bg-transparent' : 'bg-slate-50/50 dark:bg-slate-800/20'} hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-colors`}>
+                                            <td className="w-[45%] sm:w-[40%] px-4 sm:px-6 py-4">
+                                                <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{student.name}</div>
+                                                <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{student.rollnumber}</div>
+                                            </td>
+                                            <td className="w-[15%] px-2 sm:px-4 py-4 text-center">
+                                                <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{student.theorymarks}</div>
+                                            </td>
+                                            <td className="w-[15%] px-2 sm:px-4 py-4 text-center">
+                                                <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{student.practicalmarks}</div>
+                                            </td>
+                                            <td className="hidden sm:table-cell w-[15%] px-4 py-4 text-center">
+                                                <div className="text-xs font-bold text-slate-900 dark:text-slate-100">{student.total}</div>
+                                            </td>
+                                            <td className="w-[15%] px-4 py-4 text-center">
+                                                <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[10px] sm:text-xs font-black uppercase border border-slate-200 dark:border-slate-700">
+                                                    {student.grade}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                ) : (
+                    /* MODERN EMPTY STATE */
+                    <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center px-4 shadow-sm">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl mb-4 border border-slate-100 dark:border-slate-800">
+                            <ListChecks className="w-8 h-8 text-indigo-600" />
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Marks Distribution</h2>
+                        <p className="text-sm text-slate-500 mt-1 max-w-xs">Select course details above to view the comprehensive subject-wise performance report.</p>
+                    </div>
+                )}
+            </main>
         </div>
     );
 };
