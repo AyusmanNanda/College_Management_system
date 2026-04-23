@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
 import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
+import Toast from "./Toast.jsx";
 
 const EditAttendance = () => {
     const token = localStorage.getItem("token");
@@ -18,7 +19,7 @@ const EditAttendance = () => {
 
     const [checkedStudents, setCheckedStudents] = useState({});
     const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    const [toast, setToast] = useState(null);
 
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -82,8 +83,6 @@ const EditAttendance = () => {
                 setAttendanceDates([]);
                 setCheckedStudents({});
                 setError("");
-                setSuccess("");
-
             } catch {
                 setError("Failed to load subjects or students.");
             }
@@ -112,8 +111,6 @@ const EditAttendance = () => {
                 setSelectedDate("");
                 setCheckedStudents({});
                 setError("");
-                setSuccess("");
-
             } catch {
                 setAttendanceDates([]);
             }
@@ -136,7 +133,6 @@ const EditAttendance = () => {
                 );
 
                 const map = {};
-
                 students.forEach(student => {
                     map[Number(student.student_id)] = false;
                 });
@@ -149,14 +145,12 @@ const EditAttendance = () => {
 
                 setCheckedStudents(map);
                 setError("");
-
             } catch {
                 setError("Failed to load attendance.");
             }
         };
 
         loadAttendance();
-
     }, [selectedCourse, selectedSem, selectedSubject, selectedDate, students, token]);
 
     /* ================= TOGGLE ================= */
@@ -194,11 +188,12 @@ const EditAttendance = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setSuccess("Attendance updated successfully.");
+            setToast({ type: "success", message: "Attendance updated successfully!" });
             setError("");
-
-        } catch {
-            setError("Failed to update attendance.");
+        } catch (err) {
+            const apiError = err.response?.data?.message || "Failed to update attendance.";
+            setError(apiError);
+            setToast({ type: "error", message: apiError });
         }
     };
 
@@ -233,11 +228,12 @@ const EditAttendance = () => {
             setAttendanceDates(formattedDates);
             setSelectedDate("");
             setCheckedStudents({});
-            setSuccess("Attendance deleted successfully.");
+            setToast({ type: "success", message: "Attendance deleted successfully." });
             setError("");
-
         } catch {
-            setError("Failed to delete attendance.");
+            const delError = "Failed to delete attendance record.";
+            setError(delError);
+            setToast({ type: "error", message: delError });
         }
     };
 
@@ -260,16 +256,10 @@ const EditAttendance = () => {
                 </div>
             )}
 
-            {success && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm rounded-md">
-                    {success}
-                </div>
-            )}
-
             {/* FILTER CARD */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
-                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4 transition-colors">
+                <select value={selectedCourse} onChange={(e) => { setSelectedCourse(e.target.value); setSelectedSem(""); }}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition">
                     <option value="">Select Course</option>
                     {courses.map(course => (
                         <option key={course.id} value={course.course_code}>
@@ -278,9 +268,9 @@ const EditAttendance = () => {
                     ))}
                 </select>
 
-                <select value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}
+                <select value={selectedSem} onChange={(e) => { setSelectedSem(e.target.value); setSelectedSubject(""); }}
                         disabled={!selectedCourse}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition disabled:opacity-60">
                     <option value="">Select {semLabel}</option>
                     {semesterOptions.map(num => (
                         <option key={num} value={num}>
@@ -291,7 +281,7 @@ const EditAttendance = () => {
 
                 <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}
                         disabled={!selectedSem}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition disabled:opacity-60">
                     <option value="">Select Subject</option>
                     {subjects.map(sub => (
                         <option key={sub.subjectcode} value={sub.subjectcode}>
@@ -302,7 +292,7 @@ const EditAttendance = () => {
 
                 <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
                         disabled={!selectedSubject}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm">
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition disabled:opacity-60">
                     <option value="">Select Date</option>
                     {attendanceDates.map(d => (
                         <option key={d.date} value={d.date}>
@@ -314,7 +304,7 @@ const EditAttendance = () => {
 
             {/* TABLE CARD */}
             {selectedDate && (
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors">
                     <div className="w-full overflow-x-auto">
                         <table className="w-full text-xs sm:text-sm text-left">
                             <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wide">
@@ -339,7 +329,7 @@ const EditAttendance = () => {
                                             type="checkbox"
                                             checked={!!checkedStudents[student.student_id]}
                                             onChange={() => toggleStudent(student.student_id)}
-                                            className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500"
+                                            className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500 cursor-pointer"
                                         />
                                     </td>
                                 </tr>
@@ -350,15 +340,15 @@ const EditAttendance = () => {
 
                     <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex flex-col sm:flex-row gap-3 justify-end">
                         <button
-                            onClick={() => setShowSaveModal(true)}
-                            className="w-full sm:w-auto px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition">
-                            Update Attendance
+                            onClick={() => setShowDeleteModal(true)}
+                            className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition order-2 sm:order-1">
+                            Delete Attendance
                         </button>
 
                         <button
-                            onClick={() => setShowDeleteModal(true)}
-                            className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition">
-                            Delete Attendance
+                            onClick={() => setShowSaveModal(true)}
+                            className="w-full sm:w-auto px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition order-1 sm:order-2">
+                            Update Attendance
                         </button>
                     </div>
                 </div>
@@ -367,7 +357,7 @@ const EditAttendance = () => {
             <ConfirmSaveModal
                 show={showSaveModal}
                 title="Confirm Attendance Update"
-                message="Are you sure you want to update attendance for this date?"
+                message={`Are you sure you want to update attendance for ${selectedDate}?`}
                 onCancel={() => setShowSaveModal(false)}
                 onConfirm={() => {
                     setShowSaveModal(false);
@@ -378,13 +368,21 @@ const EditAttendance = () => {
             <ConfirmDeleteModal
                 show={showDeleteModal}
                 title="Confirm Attendance Deletion"
-                message="Are you sure you want to delete this attendance record? This action cannot be undone."
+                message={`Are you sure you want to delete the attendance record for ${selectedDate}? This action cannot be undone.`}
                 onCancel={() => setShowDeleteModal(false)}
                 onConfirm={() => {
                     setShowDeleteModal(false);
                     deleteAttendance();
                 }}
             />
+
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };
