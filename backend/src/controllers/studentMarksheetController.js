@@ -1,34 +1,62 @@
 const db = require("../config/db");
 
-// GET STUDENT MARKS
 exports.getStudentMarks = async (req, res) => {
 
-    try {
+  try {
 
-        const email = req.user.email;
+    const email = req.user.email;
 
-        const query = `
-            SELECT
-                subject,
-                internal_marks,
-                external_marks,
-                total_marks
-            FROM marks
-            WHERE student_email = ?
-        `;
+    // optional filters from frontend
+    const { sem, subject } = req.query;
 
-        const [rows] = await db.query(query, [email]);
+    const [student] = await db.query(
+      "SELECT rollnumber, Courcecode FROM students WHERE emailid = ?",
+      [email]
+    );
 
-        res.json(rows);
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-
+    if (!student.length) {
+      return res.status(404).json({ message: "Student not found" });
     }
+
+    const { rollnumber, Courcecode } = student[0];
+
+    // dynamic query
+    let query = `
+      SELECT
+        subjectname,
+        subjectcode,
+        semoryear,
+        theorymarks,
+        practicalmarks,
+        (theorymarks + practicalmarks) AS total_marks
+      FROM marks
+      WHERE rollnumber = ?
+      AND Courcecode = ?
+    `;
+
+    const params = [rollnumber, Courcecode];
+
+    if (sem) {
+      query += " AND semoryear = ?";
+      params.push(sem);
+    }
+
+    if (subject) {
+      query += " AND subjectcode = ?";
+      params.push(subject);
+    }
+
+    const [rows] = await db.query(query, params);
+
+    res.json({
+      marks: rows,
+      course: Courcecode,
+      roll: rollnumber
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
 
 };
