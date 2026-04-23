@@ -13,7 +13,6 @@ import {
     Eye,
     EyeOff,
     X,
-    Lock
 } from "lucide-react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
@@ -256,12 +255,10 @@ const EditDetailsModal = ({ faculty, token, onClose }) => {
             });
             if (profileFile) fd.append("profilepic", profileFile);
 
-            // 1. Update Profile
             await api.put("/api/faculty/profile", fd, { 
                 headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "multipart/form-data" } 
             });
 
-            // 2. Email Logic
             if (form.newEmail && form.newEmail !== faculty.emailid) {
                 const emailRes = await api.put("/api/faculty/change-email", 
                     { currentEmail: form.currentEmailForEmail, newEmail: form.newEmail },
@@ -271,7 +268,6 @@ const EditDetailsModal = ({ faculty, token, onClose }) => {
                 authToken = emailRes.data.token;
             }
 
-            // 3. Password Logic
             if (form.newPassword) {
                 await api.put("/api/faculty/change-password",
                     { currentPassword: form.currentPasswordForPassword, newPassword: form.newPassword },
@@ -293,7 +289,9 @@ const EditDetailsModal = ({ faculty, token, onClose }) => {
         <ModalWrapper onClose={onClose} title="Edit Faculty Profile">
             <div className="mb-6 flex flex-col items-center gap-3">
                 <img src={preview} alt="Preview" className="h-20 w-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm" />
-                <label className="cursor-pointer px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase rounded-md hover:bg-slate-200 transition-colors">
+                
+                {/* IMPROVED UPDATE PHOTO BUTTON */}
+                <label className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-200 active:opacity-80 whitespace-nowrap border border-transparent hover:border-slate-300 dark:hover:border-slate-600 shadow-sm">
                     Update Photo
                     <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </label>

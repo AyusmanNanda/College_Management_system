@@ -17,7 +17,6 @@ import {
 const FacultyDashboard = () => {
     const token = localStorage.getItem("token");
 
-    // KEPT: Your exact state structure and logic
     const [stats, setStats] = useState({
         totalStudents: 0,
         totalFaculty: 0,
@@ -26,15 +25,12 @@ const FacultyDashboard = () => {
 
     const [loading, setLoading] = useState(true);
 
-    /* ================= SYSTEM LOGIC (UNTOUCHED) ================= */
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 const res = await api.get("/api/faculty/dashboard", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-
-                // KEPT: Your exact data mapping and null checks
                 setStats({
                     totalStudents: res.data.total_students ?? 0,
                     totalFaculty: res.data.total_faculty ?? 0,
@@ -52,9 +48,9 @@ const FacultyDashboard = () => {
 
     return (
         <div className="pb-12 font-sans bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
-            
-            {/* LOCAL PAGE HEADER - GLASSMORPHISM */}
-            <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+
+            {/* HEADER — scrolls with page, no sticky */}
+            <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-md shadow-indigo-500/20">
@@ -86,7 +82,7 @@ const FacultyDashboard = () => {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
-                {/* METRICS GRID - MATCHES ADMIN STYLE */}
+                {/* METRICS GRID */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
                     <DashboardCard title="Total Students" value={stats.totalStudents} icon={Users} color="blue" loading={loading} />
                     <DashboardCard title="Total Faculty" value={stats.totalFaculty} icon={ShieldCheck} color="indigo" loading={loading} />
