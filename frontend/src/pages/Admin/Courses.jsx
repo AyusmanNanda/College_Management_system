@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
+import Toast from "./Toast.jsx";
 
 const Courses = () => {
     const token = localStorage.getItem("token");
@@ -19,6 +20,8 @@ const Courses = () => {
     const [editingId, setEditingId] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [courseToDelete, setCourseToDelete] = useState(null);
+
+    const [toast, setToast] = useState(null);
 
     const fetchCourses = async () => {
         if (!token) return;
@@ -66,12 +69,14 @@ const Courses = () => {
                     form,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
+                setToast({ type: "success", message: "Course updated successfully!" });
             } else {
                 await api.post(
                     "/api/courses",
                     form,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
+                setToast({ type: "success", message: "Course added successfully!" });
             }
 
             setForm({
@@ -86,7 +91,9 @@ const Courses = () => {
             fetchCourses();
         } catch (err) {
             console.error(err);
-            setError(err.response?.data?.message || "Something went wrong.");
+            const errorMessage = err.response?.data?.message || "Something went wrong.";
+            setError(errorMessage);
+            setToast({ type: "error", message: errorMessage });
         } finally {
             setLoading(false);
         }
@@ -115,11 +122,14 @@ const Courses = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
+            setToast({ type: "success", message: "Course deleted successfully." });
+
             fetchCourses();
             setError("");
         } catch (err) {
             console.error(err);
             setError("Failed to delete course.");
+            setToast({ type: "error", message: "Failed to delete course." });
         } finally {
             setLoading(false);
             setShowDeleteModal(false);
@@ -189,15 +199,8 @@ const Courses = () => {
                         min="1"
                     />
 
-                    <div className="md:col-span-4 flex flex-wrap gap-3 mt-2">
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="px-3 py-1.5 sm:px-5 sm:py-2 bg-gray-900 text-white dark:bg-gray-700 dark:hover:bg-gray-600 text-xs sm:text-sm rounded-md hover:bg-black transition disabled:opacity-60"
-                        >
-                            {editingId ? "Update Course" : "Add Course"}
-                        </button>
-
+                    {/* UPDATED: Buttons now stack and span full width on mobile */}
+                    <div className="md:col-span-4 flex flex-col sm:flex-row sm:justify-end gap-3 mt-2 w-full">
                         {editingId && (
                             <button
                                 type="button"
@@ -210,11 +213,18 @@ const Courses = () => {
                                         total_semesters: ""
                                     });
                                 }}
-                                className="px-3 py-1.5 sm:px-5 sm:py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-gray-800 text-xs sm:text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                                className="w-full sm:w-auto px-3 py-1.5 sm:px-5 sm:py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-gray-800 text-xs sm:text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                             >
                                 Cancel
                             </button>
                         )}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full sm:w-auto px-3 py-1.5 sm:px-5 sm:py-2 bg-gray-900 text-white text-xs sm:text-sm rounded-md hover:bg-black transition disabled:opacity-60"
+                        >
+                            {editingId ? "Update Course" : "Add Course"}
+                        </button>
                     </div>
                 </form>
             </div>
@@ -254,22 +264,25 @@ const Courses = () => {
                                 <td className="hidden sm:table-cell px-3 py-2 sm:px-4 sm:py-4 dark:text-gray-200">
                                     {course.total_semesters}
                                 </td>
-                                <td className="px-3 py-2 sm:px-4 sm:py-4 flex flex-col sm:flex-row gap-2">
-                                    <button
-                                        onClick={() => handleEdit(course)}
-                                        className="px-2 py-1 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setCourseToDelete(course.id);
-                                            setShowDeleteModal(true);
-                                        }}
-                                        className="px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
-                                    >
-                                        Delete
-                                    </button>
+                                <td className="px-3 py-2 sm:px-4 sm:py-4">
+                                    {/* UPDATED: Table buttons span full width on mobile */}
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <button
+                                            onClick={() => handleEdit(course)}
+                                            className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setCourseToDelete(course.id);
+                                                setShowDeleteModal(true);
+                                            }}
+                                            className="w-full sm:w-auto px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -289,6 +302,14 @@ const Courses = () => {
                 }}
                 onConfirm={handleDelete}
             />
+
+            {toast && (
+                <Toast
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };
