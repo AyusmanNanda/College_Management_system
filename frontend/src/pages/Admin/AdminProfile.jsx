@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import {
+    User,
+    Globe,
+    Share2,
+    Mail,
+    Phone,
+    MapPin,
+    Settings,
+    Camera,
+    ShieldCheck,
+    Eye,
+    EyeOff,
+    X
+} from "lucide-react";
 import api from "../../utils/api";
 import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
+import Toast from "./Toast.jsx";
 
 const AdminProfile = () => {
     const token = localStorage.getItem("token");
@@ -9,10 +23,11 @@ const AdminProfile = () => {
     const [admin, setAdmin] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showLinksModal, setShowLinksModal] = useState(false);
+    const [toast, setToast] = useState(null);
 
+    /* ================= DATA FETCHING ================= */
     useEffect(() => {
         if (!token) return;
-
         const fetchProfile = async () => {
             try {
                 const res = await api.get("/api/admin/profile", {
@@ -20,424 +35,237 @@ const AdminProfile = () => {
                 });
                 setAdmin(res.data);
             } catch (error) {
-                console.error(error);
+                setToast({ type: "error", message: "Failed to load profile data." });
             }
         };
-
         fetchProfile();
     }, [token]);
 
     const openLink = (url) => {
         if (!url) return;
-        window.open(url, "_blank", "noopener,noreferrer");
+        const processedUrl = url.startsWith('http') ? url : `https://${url}`;
+        window.open(processedUrl, "_blank", "noopener,noreferrer");
     };
 
     if (!admin) {
         return (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-                Loading profile...
-            </p>
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-600 rounded-full animate-spin"></div>
+            </div>
         );
     }
 
     return (
-        <div className="space-y-10">
+        <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
 
-            {/* HEADER */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 border-b pb-6 dark:border-gray-700">
-
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-
-                    <img
-                        src={
-                            admin?.logo
-                                ? `${api.defaults.baseURL}${admin.logo}`
-                                : `${api.defaults.baseURL}/uploads/admin/default.png`
-                        }
-                        onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = `${api.defaults.baseURL}/uploads/admin/default.png`;
-                        }}
-                        alt="Logo"
-                        className="h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
-                    />
-                    <div>
-                        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-                            {admin.collagename}
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            College Administration Profile
-                        </p>
+            {/* PLATFORM HEADER */}
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-md shadow-indigo-500/20">
+                            <ShieldCheck className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold tracking-tight leading-tight">Admin Profile</h1>
+                            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest hidden sm:block">Institution Management</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setShowDetailsModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 rounded-md transition-all active:scale-95">
+                            <Settings className="w-3.5 h-3.5" /> Edit Profile
+                        </button>
                     </div>
                 </div>
+            </header>
 
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <button
-                        onClick={() => setShowDetailsModal(true)}
-                        className="w-full sm:w-auto px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                    >
-                        Edit Details
-                    </button>
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-                    <button
-                        onClick={() => setShowLinksModal(true)}
-                        className="w-full sm:w-auto px-5 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-gray-800 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                    >
-                        Edit Links
-                    </button>
+                {/* HERO CARD */}
+                <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <div className="relative">
+                            <img src={admin?.logo ? `${api.defaults.baseURL}${admin.logo}` : `${api.defaults.baseURL}/uploads/admin/default.png`}
+                                 alt="Logo" className="h-24 w-24 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm" />
+                        </div>
+                        <div className="text-center sm:text-left">
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+                                {admin.collagename}
+                            </h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">College Administration Account</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* BASIC INFO */}
+                    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                            <User className="w-4 h-4 text-indigo-500" />
+                            <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider">Basic Information</h3>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            <InfoField label="Email Address" value={admin.emailid} icon={<Mail className="w-3.5 h-3.5" />} />
+                            <InfoField label="Contact Number" value={admin.contactnumber} icon={<Phone className="w-3.5 h-3.5" />} />
+                            <InfoField label="Official Website" value={admin.website} icon={<Globe className="w-3.5 h-3.5" />} isLink onClick={() => openLink(admin.website)} />
+                            <InfoField label="Address" value={admin.address} icon={<MapPin className="w-3.5 h-3.5" />} />
+                        </div>
+                    </section>
+
+                    {/* SOCIAL LINKS */}
+                    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Share2 className="w-4 h-4 text-indigo-500" />
+                                <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider">Social Media</h3>
+                            </div>
+                            <button onClick={() => setShowLinksModal(true)} className="text-[10px] font-bold text-indigo-600 uppercase hover:underline">Edit Links</button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            {["facebook", "instagram", "twitter", "linkedin"].map((key) => (
+                                <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[10px] font-bold uppercase text-slate-400 w-16">{key}</span>
+                                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate max-w-[150px] sm:max-w-xs">{admin[key] || "-"}</span>
+                                    </div>
+                                    {admin[key] && (
+                                        <button onClick={() => openLink(admin[key])} className="text-indigo-600 hover:text-indigo-700 transition-colors">
+                                            <Globe className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </section>
                 </div>
-            </div>
+            </main>
 
-            {/* BASIC INFO */}
-            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-6">
-                    Basic Information
-                </h3>
+            {/* MODALS */}
+            {showDetailsModal && <EditDetailsModal admin={admin} token={token} onClose={(upd) => { setShowDetailsModal(false); if(upd) { setAdmin(upd); setToast({type:"success", message:"Profile updated successfully."}); }}} />}
+            {showLinksModal && <EditLinksModal admin={admin} token={token} onClose={(upd) => { setShowLinksModal(false); if(upd) { setAdmin(upd); setToast({type:"success", message:"Links updated successfully."}); }}} />}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-                    <InfoField label="Email" value={admin.emailid} />
-                    <InfoField label="Contact Number" value={admin.contactnumber} />
-                    <InfoField
-                        label="Website"
-                        value={
-                            <span
-                                onClick={() => openLink(admin.website)}
-                                className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline break-words"
-                            >
-                                {admin.website}
-                            </span>
-                        }
-                    />
-                    <InfoField label="Address" value={admin.address} />
-                </div>
-            </div>
-
-            {/* SOCIAL */}
-            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm transition-colors">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-6">
-                    Social Media
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-                    {["facebook", "instagram", "twitter", "linkedin"].map((key) => (
-                        <InfoField
-                            key={key}
-                            label={key}
-                            value={
-                                admin[key] ? (
-                                    <span
-                                        onClick={() => openLink(admin[key])}
-                                        className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline break-words"
-                                    >
-                                        {admin[key]}
-                                    </span>
-                                ) : "-"
-                            }
-                        />
-                    ))}
-                </div>
-            </div>
-
-            {showDetailsModal && (
-                <EditDetailsModal
-                    admin={admin}
-                    token={token}
-                    onClose={(updatedAdmin) => {
-                        setShowDetailsModal(false);
-                        if (updatedAdmin) setAdmin(updatedAdmin);
-                    }}
-                />
-            )}
-
-            {showLinksModal && (
-                <EditLinksModal
-                    admin={admin}
-                    token={token}
-                    onClose={(updatedAdmin) => {
-                        setShowLinksModal(false);
-                        if (updatedAdmin) setAdmin(updatedAdmin);
-                    }}
-                />
-            )}
+            {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
         </div>
     );
 };
 
-/* ---------------- Info Field ---------------- */
+/* ---------------- Internal Components ---------------- */
 
-const InfoField = ({ label, value }) => (
-    <div>
-        <p className="text-gray-500 dark:text-gray-400 text-xs capitalize mb-1">
-            {label}
-        </p>
-        <p className="text-gray-800 dark:text-gray-100 break-words">
-            {value}
-        </p>
+const InfoField = ({ label, value, icon, isLink, onClick }) => (
+    <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5 text-slate-400">
+            {icon}
+            <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+        </div>
+        {isLink && value ? (
+            <button onClick={onClick} className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline text-left">{value}</button>
+        ) : (
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{value || "-"}</p>
+        )}
     </div>
 );
 
-/* ---------------- Modal Wrapper ---------------- */
-
-const ModalWrapper = ({ children, onClose }) => (
+const ModalWrapper = ({ children, onClose, title }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-
-        <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => onClose(null)}
-        />
-
-        <div className="relative bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl z-10 overflow-hidden p-6 transition-colors">
-            <button
-                onClick={() => onClose(null)}
-                className="absolute top-4 right-5 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white text-sm"
-            >
-                ✕
-            </button>
-
-            {children}
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => onClose(null)} />
+        <div className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-xl shadow-2xl z-10 flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                <h2 className="text-sm font-bold uppercase text-slate-800 dark:text-slate-200">{title}</h2>
+                <button onClick={() => onClose(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><X size={18} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto">{children}</div>
         </div>
     </div>
 );
 
-/* ---------------- Styled Input ---------------- */
-
 const StyledInput = ({ label, name, value, onChange, type = "text" }) => (
-    <div>
-        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-            {label}
-        </label>
+    <div className="space-y-1">
+        <label className="block text-[10px] font-bold uppercase text-slate-500">{label}</label>
         <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
+            type={type} name={name} value={value} onChange={onChange}
+            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm font-medium outline-none focus:ring-1 focus:ring-indigo-500"
         />
     </div>
 );
 
-/* ---------------- Edit Details Modal ---------------- */
+/* ---------------- Sub-Modals ---------------- */
 
 const EditDetailsModal = ({ admin, token, onClose }) => {
     const [form, setForm] = useState({ ...admin, password: "" });
     const [logoFile, setLogoFile] = useState(null);
-    const [preview, setPreview] = useState(
-        admin.logo ? `${api.defaults.baseURL}${admin.logo}` : null
-    );
+    const [preview, setPreview] = useState(admin.logo ? `${api.defaults.baseURL}${admin.logo}` : null);
     const [showPassword, setShowPassword] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.size > 1024 * 1024) {
-            alert("Image must be less than 1MB");
-            return;
-        }
-        setLogoFile(file);
-        setPreview(URL.createObjectURL(file));
-    };
-
     const handleSubmit = async () => {
+        const formData = new FormData();
+        Object.keys(form).forEach(key => { if (form[key] !== undefined && form[key] !== "") formData.append(key, form[key]); });
+        if (logoFile) formData.append("logo", logoFile);
         try {
-            const formData = new FormData();
-
-            Object.keys(form).forEach((key) => {
-                if (form[key] !== undefined && form[key] !== "") {
-                    formData.append(key, form[key]);
-                }
-            });
-
-            if (logoFile) {
-                formData.append("logo", logoFile);
-            }
-
-            await api.put("/api/admin/profile", formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "multipart/form-data"
-                }
-            });
-
-            const res = await api.get("/api/admin/profile", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
+            await api.put("/api/admin/profile", formData, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } });
+            const res = await api.get("/api/admin/profile", { headers: { Authorization: `Bearer ${token}` } });
             onClose(res.data);
-
-        } catch (error) {
-            console.error(error);
-        }
+        } catch (e) { console.error(e); }
     };
 
     return (
-        <ModalWrapper onClose={onClose}>
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
-                Edit Basic Details
-            </h2>
-
+        <ModalWrapper onClose={onClose} title="Edit Profile Details">
             <div className="mb-6 flex flex-col items-center gap-3">
-                {preview && (
-                    <img
-                        src={preview}
-                        alt="Preview"
-                        className="h-24 w-24 object-cover rounded-md border border-gray-200 dark:border-gray-600 shadow-sm"
-                    />
-                )}
-
-                <label className="cursor-pointer">
-                    <span className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition">
-                        Change Profile Picture
-                    </span>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                    />
+                <img src={preview} alt="Preview" className="h-20 w-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700" />
+                <label className="cursor-pointer px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase rounded-md hover:bg-slate-200 transition-colors">
+                    Change Logo
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files[0]; if(file){ setLogoFile(file); setPreview(URL.createObjectURL(file)); } }} />
                 </label>
             </div>
 
             <div className="space-y-4">
-                <StyledInput label="College Name" name="collagename" value={form.collagename} onChange={handleChange} />
-                <StyledInput label="Email" name="emailid" value={form.emailid} onChange={handleChange} />
-                <StyledInput label="Contact Number" name="contactnumber" value={form.contactnumber} onChange={handleChange} />
-                <StyledInput label="Website" name="website" value={form.website} onChange={handleChange} />
-
-                <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        Address
-                    </label>
-                    <textarea
-                        name="address"
-                        value={form.address || ""}
-                        onChange={handleChange}
-                        rows="3"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
-                    />
+                <StyledInput label="College Name" value={form.collagename} onChange={(e) => setForm({...form, collagename: e.target.value})} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <StyledInput label="Email Address" value={form.emailid} onChange={(e) => setForm({...form, emailid: e.target.value})} />
+                    <StyledInput label="Contact Number" value={form.contactnumber} onChange={(e) => setForm({...form, contactnumber: e.target.value})} />
                 </div>
-
-                <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        New Password
-                    </label>
-
+                <StyledInput label="Website" value={form.website} onChange={(e) => setForm({...form, website: e.target.value})} />
+                <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Address</label>
+                    <textarea rows="2" value={form.address || ""} onChange={(e) => setForm({...form, address: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
+                </div>
+                <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">New Password (Optional)</label>
                     <div className="relative">
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            name="password"
-                            value={form.password}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
-                        />
-
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowPassword(!showPassword);
-                            }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300 hover:text-gray-700"
-                        >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                        <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({...form, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 pr-10 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">{showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button>
                     </div>
                 </div>
             </div>
 
-            <div className="flex justify-end mt-6">
-                <button
-                    onClick={() => setShowSaveModal(true)}
-                    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                >
-                    Update Details
-                </button>
-            </div>
-            <ConfirmSaveModal
-                show={showSaveModal}
-                title="Confirm Profile Update"
-                message="Are you sure you want to update the admin profile?"
-                confirmText="Update"
-                onCancel={() => setShowSaveModal(false)}
-                onConfirm={async () => {
-                    await handleSubmit();
-                    setShowSaveModal(false);
-                }}
-            />
+            <button onClick={() => setShowSaveModal(true)} className="w-full mt-6 bg-indigo-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors uppercase tracking-wider">Update Details</button>
+            <ConfirmSaveModal show={showSaveModal} title="Confirm Update" message="Are you sure you want to update the admin profile?" confirmText="Confirm" onCancel={() => setShowSaveModal(false)} onConfirm={() => { handleSubmit(); setShowSaveModal(false); }} />
         </ModalWrapper>
     );
 };
 
-/* ---------------- Edit Links Modal ---------------- */
-
 const EditLinksModal = ({ admin, token, onClose }) => {
+    const [form, setForm] = useState({ facebook: admin.facebook || "", instagram: admin.instagram || "", twitter: admin.twitter || "", linkedin: admin.linkedin || "" });
     const [showSaveModal, setShowSaveModal] = useState(false);
-    const [form, setForm] = useState({
-        facebook: admin.facebook || "",
-        instagram: admin.instagram || "",
-        twitter: admin.twitter || "",
-        linkedin: admin.linkedin || ""
-    });
-
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
 
     const handleSubmit = async () => {
         try {
-            const updatedData = { ...admin, ...form };
-
-            await api.put("/api/admin/profile", updatedData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            const res = await api.get("/api/admin/profile", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
+            await api.put("/api/admin/profile", { ...admin, ...form }, { headers: { Authorization: `Bearer ${token}` } });
+            const res = await api.get("/api/admin/profile", { headers: { Authorization: `Bearer ${token}` } });
             onClose(res.data);
-
-        } catch (error) {
-            console.error(error);
-        }
+        } catch (e) { console.error(e); }
     };
 
     return (
-        <ModalWrapper onClose={onClose}>
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
-                Edit Social Links
-            </h2>
-
+        <ModalWrapper onClose={onClose} title="Edit Social Links">
             <div className="space-y-4">
-                <StyledInput label="Facebook" name="facebook" value={form.facebook} onChange={handleChange} />
-                <StyledInput label="Instagram" name="instagram" value={form.instagram} onChange={handleChange} />
-                <StyledInput label="Twitter" name="twitter" value={form.twitter} onChange={handleChange} />
-                <StyledInput label="LinkedIn" name="linkedin" value={form.linkedin} onChange={handleChange} />
+                <StyledInput label="Facebook" value={form.facebook} onChange={(e) => setForm({...form, facebook: e.target.value})} />
+                <StyledInput label="Instagram" value={form.instagram} onChange={(e) => setForm({...form, instagram: e.target.value})} />
+                <StyledInput label="Twitter" value={form.twitter} onChange={(e) => setForm({...form, twitter: e.target.value})} />
+                <StyledInput label="LinkedIn" value={form.linkedin} onChange={(e) => setForm({...form, linkedin: e.target.value})} />
             </div>
-
-            <div className="flex justify-end mt-6">
-                <button
-                    onClick={() => setShowSaveModal(true)}
-                    className="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-black transition"
-                >
-                    Update Links
-                </button>
-            </div>
-            <ConfirmSaveModal
-                show={showSaveModal}
-                title="Confirm Profile Update"
-                message="Are you sure you want to update the admin profile?"
-                confirmText="Update"
-                onCancel={() => setShowSaveModal(false)}
-                onConfirm={async () => {
-                    await handleSubmit();
-                    setShowSaveModal(false);
-                }}
-            />
+            <button onClick={() => setShowSaveModal(true)} className="w-full mt-6 bg-indigo-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors uppercase tracking-wider">Update Links</button>
+            <ConfirmSaveModal show={showSaveModal} title="Confirm Links" message="Update social media links?" confirmText="Confirm" onCancel={() => setShowSaveModal(false)} onConfirm={() => { handleSubmit(); setShowSaveModal(false); }} />
         </ModalWrapper>
     );
 };

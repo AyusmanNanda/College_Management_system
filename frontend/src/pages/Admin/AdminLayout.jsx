@@ -12,12 +12,14 @@ import {
     GraduationCap,
     BarChart3,
     User,
-    ChevronRight
+    ChevronRight,
+    Menu,
+    LogOut,
+    WifiOff
 } from "lucide-react";
 import useOfflineDetection from "./useOfflineDetection";
 
 const AdminLayout = () => {
-
     const BASE_URL = api.defaults.baseURL;
     const location = useLocation();
     const navigate = useNavigate();
@@ -36,10 +38,7 @@ const AdminLayout = () => {
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem("theme");
         if (savedTheme) return savedTheme;
-
-        return window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     });
 
     useEffect(() => {
@@ -48,12 +47,10 @@ const AdminLayout = () => {
         } else {
             document.documentElement.classList.remove("dark");
         }
-
         localStorage.setItem("theme", theme);
     }, [theme]);
 
-    /* ===================== Fetch Admin ===================== */
-
+    /* ===================== Layout Mechanics ===================== */
     useEffect(() => {
         if (window.innerWidth >= 1024) {
             localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -66,92 +63,53 @@ const AdminLayout = () => {
                 setIsSidebarOpen(false);
             } else {
                 const saved = localStorage.getItem("sidebarOpen");
-                if (saved !== null) {
-                    setIsSidebarOpen(JSON.parse(saved));
-                } else {
-                    setIsSidebarOpen(true); // default for desktop
-                }
+                setIsSidebarOpen(saved !== null ? JSON.parse(saved) : true);
             }
         };
-
         handleResize();
-
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
-    useEffect(() => {
 
+    /* ===================== Fetch Admin ===================== */
+    useEffect(() => {
         if (!token) {
             navigate("/", { replace: true });
             return;
         }
-
         const fetchAdmin = async () => {
-
             try {
-
-                const res = await api.get(
-                    "/api/admin/profile",
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
-                );
-
+                const res = await api.get("/api/admin/profile", { headers: { Authorization: `Bearer ${token}` } });
                 setAdmin(res.data);
-
             } catch (error) {
                 console.error(error);
             }
-
         };
-
         fetchAdmin();
-
     }, [token, navigate]);
 
     useEffect(() => {
-        if (isOffline) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "";
-        }
-
-        return () => {
-            document.body.style.overflow = "";
-        };
+        document.body.style.overflow = isOffline ? "hidden" : "";
+        return () => { document.body.style.overflow = ""; };
     }, [isOffline]);
 
-    /* ===================== Logout ===================== */
-
+    /* ===================== Actions ===================== */
     const handleLogout = () => {
-
         localStorage.clear();
         navigate("/", { replace: true });
-
     };
-
-    /* ===================== Theme ===================== */
 
     const toggleTheme = () => {
         setTheme((prev) => (prev === "dark" ? "light" : "dark"));
     };
 
-    /* ===================== Sidebar Section Toggle ===================== */
-
     const toggleSection = (section) => {
-        setOpenSections((prev) => ({
-            [section]: !prev[section]
-        }));
+        setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
     };
 
-    /* ===================== Menu ===================== */
-
+    /* ===================== Navigation Menu ===================== */
     const menuItems = [
-        {
-            name: "Dashboard",
-            icon: LayoutDashboard,
-            path: "/admin/dashboard"
-        },
+        { name: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
         {
             name: "Academic",
             icon: BookOpen,
@@ -209,278 +167,180 @@ const AdminLayout = () => {
 
     return (
         <>
-            {isOffline &&
-                createPortal(
-                    <div className="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm bg-black/30">
-                        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg text-center max-w-sm w-full">
-
-                            <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                                You're offline
-                            </p>
-
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                Please check your internet connection to continue.
-                            </p>
-
-                            {retryError && (
-                                <p className="text-xs text-red-500 mt-2">
-                                    {retryError}
-                                </p>
-                            )}
-
-                            <button
-                                onClick={async () => {
-                                    setChecking(true);
-                                    setRetryError("");
-
-                                    try {
-                                        await api.get("/api/admin/profile", {
-                                            headers: { Authorization: `Bearer ${token}` }
-                                        });
-
-                                        setIsOffline(false);
-                                        setChecking(false);
-                                        setRetryError("");
-                                    } catch (err) {
-                                        setChecking(false);
-                                        setRetryError("Still offline or server unreachable.");
-                                    }
-                                }}
-                                className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-md text-sm"
-                            >
-                                {checking ? "Checking..." : "Try Again"}
-                            </button>
-
+            {/* ENTERPRISE OFFLINE MODAL */}
+            {isOffline && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-md px-4 transition-all">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full animate-in zoom-in-95 duration-300">
+                        <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <WifiOff className="w-8 h-8" />
                         </div>
-                    </div>,
-                    document.body
-                )
-            }
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Connection Lost</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                            We cannot reach the academic server. Please verify your network connection to resume.
+                        </p>
+                        {retryError && <p className="text-xs font-semibold text-red-500 mt-3">{retryError}</p>}
+                        <button
+                            onClick={async () => {
+                                setChecking(true);
+                                setRetryError("");
+                                try {
+                                    await api.get("/api/admin/profile", { headers: { Authorization: `Bearer ${token}` } });
+                                    setIsOffline(false);
+                                    setChecking(false);
+                                    setRetryError("");
+                                } catch (err) {
+                                    setChecking(false);
+                                    setRetryError("Server is still unreachable.");
+                                }
+                            }}
+                            className="mt-8 w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-500/30 active:scale-95"
+                        >
+                            {checking ? "Verifying Connection..." : "Retry Connection"}
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
 
-            <div className="h-screen flex bg-gray-100 dark:bg-gray-950 overflow-hidden transition-colors">
+            {/* MAIN APPLICATION SHELL - Configured for 100dvh (Mobile Safey) */}
+            <div className="h-[100dvh] flex bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
 
+                {/* MOBILE SIDEBAR OVERLAY */}
                 {isSidebarOpen && (
-                    <div
-                        className="fixed inset-0 bg-black/30 z-30 lg:hidden"
-                        onClick={() => setIsSidebarOpen(false)}
-                    />
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+                         onClick={() => setIsSidebarOpen(false)} />
                 )}
 
-                <aside
-                    className={`fixed top-0 left-0 h-screen
-                    w-64
-                    bg-white dark:bg-gray-900
-                    border-r border-gray-200 dark:border-gray-700
-                    flex flex-col z-40
-                    transform transition-all duration-300
-                    ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-                >
+                {/* SLATE THEMED SIDEBAR */}
+                <aside className={`fixed top-0 left-0 h-[100dvh] w-[280px] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
-                    {/* Identity */}
-                    <div className="px-6 py-6 border-b border-gray-200 dark:border-gray-700">
-
-                        <div className="flex items-center gap-3">
-
-                            <div className="h-10 w-10 rounded-md bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                                <img
-                                    src={
-                                        admin?.logo
-                                            ? `${BASE_URL}${admin.logo}`
-                                            : `${BASE_URL}/uploads/admin/default.png`
-                                    }
-                                    onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = `${BASE_URL}/uploads/admin/default.png`;
-                                    }}
-                                    alt="College Logo"
-                                    className="h-full w-full object-cover"
-                                />
+                    {/* IDENTITY BLOCK - Includes Capacitor Safe-Area Top Padding */}
+                    <div className="pt-[env(safe-area-inset-top)] border-b border-slate-100 dark:border-slate-800/60">
+                        <div className="px-6 py-6">
+                            <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm flex-shrink-0">
+                                    <img
+                                        src={admin?.logo ? `${BASE_URL}${admin.logo}` : `${BASE_URL}/uploads/admin/default.png`}
+                                        onError={(e) => { e.target.onerror = null; e.target.src = `${BASE_URL}/uploads/admin/default.png`; }}
+                                        alt="Logo"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">Administrator</h2>
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold truncate">Academic Portal</p>
+                                </div>
                             </div>
 
-                            <div>
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                                    College Admin
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                    Management System
-                                </p>
-                            </div>
-
-                        </div>
-
-                        {admin && (
-                            <div className="mt-3 text-xs space-y-1 leading-relaxed">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-gray-400">Status:</span>
-                                    <span className="flex items-center gap-2">
-                                        <span
-                                            className={`h-2 w-2 rounded-full ${
-                                                admin.activestatus
-                                                    ? "bg-green-500"
-                                                    : "bg-red-500"
-                                            }`}
-                                        />
-                                        <span className="text-gray-600 dark:text-gray-300">
-                                            {admin.activestatus ? "Active" : "Inactive"}
+                            {admin && (
+                                <div className="mt-5 bg-slate-50 dark:bg-slate-950/50 rounded-lg p-3 text-[11px] font-medium border border-slate-100 dark:border-slate-800/60 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 dark:text-slate-400">System Node</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className={`h-1.5 w-1.5 rounded-full ${admin.activestatus ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-red-500"}`} />
+                                            <span className="text-slate-700 dark:text-slate-300 font-bold">{admin.activestatus ? "Online" : "Offline"}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 dark:text-slate-400">Last Auth</span>
+                                        <span className="text-slate-700 dark:text-slate-300 truncate pl-2 font-mono">
+                                            {admin.lastlogin ? new Date(admin.lastlogin).toLocaleDateString() : "N/A"}
                                         </span>
-                                    </span>
+                                    </div>
                                 </div>
-
-                                <div>
-                                    <span className="text-gray-400">Last login:</span>{" "}
-                                    <span className="text-gray-600 dark:text-gray-300 break-words">
-                                        {admin.lastlogin
-                                            ? new Date(admin.lastlogin).toLocaleString()
-                                            : "Not available"}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
-
+                            )}
+                        </div>
                     </div>
 
-                    {/* Navigation */}
-                    <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-
+                    {/* NAVIGATION MENU */}
+                    <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         {menuItems.map((item) => {
-
                             const Icon = item.icon;
-                            const isOpen =
-                                openSections[item.name] ||
-                                activeSection?.name === item.name;
+                            const isOpen = openSections[item.name] || activeSection?.name === item.name;
 
                             if (item.children) {
                                 return (
-                                    <div key={item.name}>
-                                        <button
-                                            onClick={() => toggleSection(item.name)}
-                                            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                        >
+                                    <div key={item.name} className="mb-1">
+                                        <button onClick={() => toggleSection(item.name)}
+                                                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-xl transition-all ${isOpen ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'}`}>
                                             <div className="flex items-center gap-3">
-                                                <Icon size={18} />
+                                                <Icon className={`w-5 h-5 ${isOpen ? 'text-blue-600 dark:text-blue-500' : ''}`} />
                                                 {item.name}
                                             </div>
-
-                                            <ChevronRight
-                                                size={16}
-                                                className={`transition-transform duration-200 text-gray-400 ${
-                                                    isOpen ? "rotate-90" : ""
-                                                }`}
-                                            />
+                                            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-90 text-slate-900 dark:text-white" : ""}`} />
                                         </button>
 
-                                        {isOpen && (
-                                            <div className="ml-8 mt-1 space-y-1">
+                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-48 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                                            <div className="ml-5 pl-3 border-l border-slate-200 dark:border-slate-800 space-y-1 py-1">
                                                 {item.children.map((sub) => {
                                                     const active = location.pathname.startsWith(sub.path);
-
                                                     return (
-                                                        <Link
-                                                            key={sub.path}
-                                                            to={sub.path}
-                                                            onClick={() => {
-                                                                setOpenSections({});
-                                                                if (window.innerWidth < 1024) {
-                                                                    setIsSidebarOpen(false);
-                                                                }
-                                                            }}
-                                                            className={`block px-3 py-1.5 rounded-md text-sm transition-colors ${
-                                                                active
-                                                                    ? "bg-gray-900 text-white dark:bg-gray-700"
-                                                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                            }`}
-                                                        >
+                                                        <Link key={sub.path} to={sub.path}
+                                                              onClick={() => { if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+                                                              className={`block px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${active ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
                                                             {sub.name}
                                                         </Link>
                                                     );
                                                 })}
                                             </div>
-                                        )}
-
+                                        </div>
                                     </div>
                                 );
                             }
 
                             const isActive = location.pathname === item.path;
-
                             return (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    onClick={() => {
-                                        setOpenSections({});
-                                        if (window.innerWidth < 1024) {
-                                            setIsSidebarOpen(false);
-                                        }
-                                    }}
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                        isActive
-                                            ? "bg-gray-900 text-white dark:bg-gray-700"
-                                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                    }`}
-                                >
-                                    <Icon size={18} />
+                                <Link key={item.path} to={item.path}
+                                      onClick={() => { setOpenSections({}); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+                                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${isActive ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200"}`}>
+                                    <Icon className="w-5 h-5" />
                                     {item.name}
                                 </Link>
                             );
                         })}
-
                     </nav>
-
                 </aside>
 
-                <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${isSidebarOpen ? "lg:ml-64" : "ml-0"}`}>
+                {/* THE "CANVAS" - Allows pages to stretch full-bleed */}
+                <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? "lg:ml-[280px]" : "ml-0"}`}>
 
-                    <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 lg:px-8">
+                    {/* GLASSMORPHISM HEADER - Includes Capacitor Safe-Area Top Padding */}
+                    <header className="pt-[env(safe-area-inset-top)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+                        <div className="flex items-center justify-between px-4 sm:px-8 h-16">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setIsSidebarOpen(prev => !prev)}
+                                        className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors focus:outline-none">
+                                    <Menu className="w-5 h-5" />
+                                </button>
+                                <h1 className="text-sm font-bold text-slate-800 dark:text-slate-200 hidden sm:block">
+                                    Academic Management ERP
+                                </h1>
+                            </div>
 
-                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 sm:gap-4">
+                                <button onClick={toggleTheme}
+                                        className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 rounded-lg transition-colors focus:outline-none"
+                                        title="Toggle Theme">
+                                    {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                                </button>
 
-                            <button
-                                onClick={() => setIsSidebarOpen(prev => !prev)}
-                                className="text-gray-700 dark:text-gray-300 text-xl"
-                            >
-                                ☰
-                            </button>
+                                <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
 
-                            <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                                Admin Panel
-                            </h1>
-
+                                <button onClick={handleLogout}
+                                        className="flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors focus:outline-none group">
+                                    <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                                    <span className="hidden sm:inline">Sign Out</span>
+                                </button>
+                            </div>
                         </div>
-
-                        <div className="flex items-center gap-6">
-
-                            <button
-                                onClick={toggleTheme}
-                                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-all duration-300 group"
-                                title="Toggle theme"
-                            >
-                                {theme === "dark" ? (
-                                    <Sun size={20} className="text-gray-300 group-hover:rotate-12" />
-                                ) : (
-                                    <Moon size={20} className="text-gray-700 group-hover:-rotate-12" />
-                                )}
-                            </button>
-
-                            <button
-                                onClick={handleLogout}
-                                className="text-sm font-medium text-red-600 hover:text-red-700"
-                            >
-                                Logout
-                            </button>
-
-                        </div>
-
                     </header>
 
-                    <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 lg:p-8 min-h-[80vh]">
-                            <Outlet />
-                        </div>
+                    {/* UNBOXED RENDER AREA - No forced padding or white boxes here! */}
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-950 relative scroll-smooth">
+                        <Outlet />
                     </main>
 
                 </div>
-
             </div>
         </>
     );
