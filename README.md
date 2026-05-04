@@ -16,6 +16,7 @@
 **[🔗 Live Demo](https://college-management-system-gules-three.vercel.app/)** · [📋 Features](#-features) · [🏗️ Architecture](#️-architecture) · [🚀 Setup](#-setup-guide) · [👥 Team](#-team)
 
 ---
+![Login Light](./screenshots/login-light.png)
 
 ## 📌 Overview
 
@@ -389,8 +390,35 @@ npm run electron
 <details>
 <summary>Click to expand</summary>
 
-### Login Page
-![Login](./screenshots/LoginPage.png)
+### 🔐 Login Page
+| Light | Dark |
+|---|---|
+| ![Login Light](./screenshots/login-light.png) | ![Login Dark](./screenshots/login-dark.png) |
+| ![Login Phone Light](./screenshots/login-phone-light.png) | ![Login Phone Dark](./screenshots/login-phone-dark.png) |
+
+---
+
+### 🛡️ Admin Portal
+| Light | Dark |
+|---|---|
+| ![Admin Light](./screenshots/admin-light.png) | ![Admin Dark](./screenshots/admin-dark.png) |
+| ![Admin Phone Light](./screenshots/admin-phone-light.png) | ![Admin Phone Dark](./screenshots/admin-phone-dark.png) |
+
+---
+
+### 👨‍🏫 Faculty Portal
+| Light | Dark |
+|---|---|
+| ![Faculty Light](./screenshots/faculty-light.png) | ![Faculty Dark](./screenshots/faculty-dark.png) |
+| ![Faculty Phone Light](./screenshots/faculty-phone-light.png) | ![Faculty Phone Dark](./screenshots/facutly-phone-dark.png) |
+
+---
+
+### 👨‍🎓 Student Portal
+| Light | Dark |
+|---|---|
+| ![Student Light](./screenshots/student-light.png) | ![Student Dark](./screenshots/student-dark.png) |
+| ![Student Phone Light](./screenshots/student-phone-light.png) | ![Student Phone Dark](./screenshots/student-phone-dark.png) |
 
 </details>
 
