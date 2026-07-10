@@ -52,7 +52,7 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.2.0",
-    "vite": "^7.3.2",
+    "vite": "^7.3.6",
     "wait-on": "^9.0.4"
   },
   "build": {
