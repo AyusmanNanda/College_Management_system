@@ -25,17 +25,23 @@ exports.verifyMarksheet = async (req, res) => {
         const rollNumber = parts[3];
 
         // 2. Get College Info
-        const [adminRows] = await db.query(`SELECT collagename FROM admin LIMIT 1`);
+        const adminResult = await db.query(
+            `SELECT collagename FROM admin LIMIT 1`
+        );
+
+        const adminRows = adminResult.rows;
         const collegeName = adminRows.length ? adminRows[0].collagename : "College";
 
         // 3. Fetch Student Data
         // Using your exact column names: Courcecode, semoryear
-        const [studentRows] = await db.query(
+        const studentResult = await db.query(
             `SELECT firstname, lastname, rollnumber, profilepic 
              FROM students 
-             WHERE rollnumber = ? AND Courcecode = ? AND semoryear = ?`,
+             WHERE rollnumber = $1 AND Courcecode = $2 AND semoryear = $3`,
             [rollNumber, courseCode, sem]
         );
+
+        const studentRows = studentResult.rows;
 
         if (!studentRows.length) {
             return res.status(404).json({
@@ -43,11 +49,12 @@ exports.verifyMarksheet = async (req, res) => {
                 message: "No student found matching this verification ID."
             });
         }
+
         const student = studentRows[0];
 
         // 4. Fetch Student Marks
         // Joining 'marks' and 'subject' tables exactly as your schema dictates
-        const [marksRows] = await db.query(
+        const marksResult = await db.query(
             `SELECT 
                  m.subjectcode, 
                  m.subjectname, 
@@ -58,10 +65,12 @@ exports.verifyMarksheet = async (req, res) => {
                  sub.subjecttype
              FROM marks m
              JOIN subject sub ON sub.subjectcode = m.subjectcode
-             WHERE m.courcecode = ? AND m.semoryear = ? AND m.rollnumber = ?
+             WHERE m.courcecode = $1 AND m.semoryear = $2 AND m.rollnumber = $3
              ORDER BY m.subjectcode`,
             [courseCode, sem, rollNumber]
         );
+
+        const marksRows = marksResult.rows;
 
         if (!marksRows.length) {
             return res.status(404).json({
@@ -89,24 +98,40 @@ exports.verifyMarksheet = async (req, res) => {
 
             // Passing criteria: >= 40% in the subject
             const subjectPercentage = subjectMax ? (subjectTotal / subjectMax) * 100 : 0;
-            if (subjectPercentage < 40) subjectFailed = true;
+
+            if (subjectPercentage < 40) {
+                subjectFailed = true;
+            }
 
             return {
                 subjectcode: r.subjectcode,
                 subjectname: r.subjectname,
                 type: r.subjecttype,
-                theory: { obtained: theory, max: theoryFull },
-                practical: { obtained: practical, max: practicalFull },
-                total: { obtained: subjectTotal, max: subjectMax },
+                theory: {
+                    obtained: theory,
+                    max: theoryFull
+                },
+                practical: {
+                    obtained: practical,
+                    max: practicalFull
+                },
+                total: {
+                    obtained: subjectTotal,
+                    max: subjectMax
+                },
                 status: (subjectPercentage >= 40) ? "PASS" : "FAIL"
             };
         });
 
         // 6. Overall Percentage & Grade Logic
-        let percentage = totalMaximum ? (totalObtained / totalMaximum) * 100 : 0;
+        let percentage = totalMaximum
+            ? (totalObtained / totalMaximum) * 100
+            : 0;
+
         percentage = Number(percentage.toFixed(2));
 
         let finalGrade = "F";
+
         if (percentage >= 90) finalGrade = "O";
         else if (percentage >= 80) finalGrade = "A+";
         else if (percentage >= 70) finalGrade = "A";
@@ -120,13 +145,20 @@ exports.verifyMarksheet = async (req, res) => {
 
         if (!subjectFailed) {
             result = "PASS";
+
             if (percentage >= 75) {
                 result = "PASS WITH DISTINCTION";
                 division = "FIRST CLASS WITH DISTINCTION";
             }
-            else if (percentage >= 60) { division = "FIRST CLASS"; }
-            else if (percentage >= 50) { division = "SECOND CLASS"; }
-            else if (percentage >= 40) { division = "PASS"; }
+            else if (percentage >= 60) {
+                division = "FIRST CLASS";
+            }
+            else if (percentage >= 50) {
+                division = "SECOND CLASS";
+            }
+            else if (percentage >= 40) {
+                division = "PASS";
+            }
         }
 
         // 8. Send Verification Payload
@@ -158,6 +190,7 @@ exports.verifyMarksheet = async (req, res) => {
 
     } catch (error) {
         console.error("Marksheet Verification Error:", error);
+
         res.status(500).json({
             isValid: false,
             message: "Internal server error during verification."
