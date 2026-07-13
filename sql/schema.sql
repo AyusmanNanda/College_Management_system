@@ -213,7 +213,11 @@ CREATE TABLE faculties (
                            contactnumber VARCHAR(20) DEFAULT NULL,
                            qualification VARCHAR(30) DEFAULT NULL,
                            experience VARCHAR(30) DEFAULT NULL,
-                           birthdate VARCHAR(30) DEFAULT NULL,
+
+    -- Changed from VARCHAR because PostgreSQL TO_CHAR()
+    -- in facultyController.js expects a date value.
+                           birthdate DATE DEFAULT NULL,
+
                            gender VARCHAR(10) DEFAULT NULL,
                            profilepic VARCHAR(255) DEFAULT NULL,
                            courcecode VARCHAR(20) DEFAULT 'NOT ASSIGNED',
@@ -224,7 +228,7 @@ CREATE TABLE faculties (
                            lastlogin VARCHAR(100) DEFAULT NULL,
                            password VARCHAR(255) DEFAULT NULL,
                            activestatus SMALLINT DEFAULT 0,
-                           joineddate VARCHAR(50) DEFAULT NULL,
+                           joineddate DATE DEFAULT NULL,
 
                            PRIMARY KEY (sr_no),
 
