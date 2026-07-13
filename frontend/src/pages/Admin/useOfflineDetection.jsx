@@ -10,7 +10,7 @@ const useOfflineDetection = () => {
         const checkConnectivity = async (retries = 3, delay = 1000) => {
             for (let i = 0; i < retries; i++) {
                 try {
-                    await fetch(`${api.defaults.baseURL}/health`, {
+                    await fetch(`${api.defaults.baseURL}/status`, {
                         method: "GET",
                         cache: "no-store",
                     });
