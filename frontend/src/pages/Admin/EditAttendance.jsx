@@ -262,7 +262,7 @@ const EditAttendance = () => {
         <div className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
 
             {/* PLATFORM HEADER - GLASSMORPHISM */}
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+            <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-600 text-white rounded-lg shadow-md shadow-blue-500/20">
@@ -390,7 +390,7 @@ const EditAttendance = () => {
 
             {/* STICKY BOTTOM ACTION BAR */}
             {selectedDate && students.length > 0 && (
-                <div className="sticky bottom-0 mt-auto w-full z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+                <div className="sticky bottom-0 mt-auto w-full z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
                     <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
                         <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-500">
                             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
