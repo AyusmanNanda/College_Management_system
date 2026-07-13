@@ -39,9 +39,9 @@ exports.createSubject = async (req, res) => {
 
     try {
         await db.query(
-            `INSERT INTO subject 
-            (subjectcode, subjectname, courcecode, semoryear, subjecttype, theorymarks, practicalmarks)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO subject
+             (subjectcode, subjectname, courcecode, semoryear, subjecttype, theorymarks, practicalmarks)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [
                 subjectcode.trim().toUpperCase(),
                 subjectname.trim(),
@@ -57,7 +57,7 @@ exports.createSubject = async (req, res) => {
 
     } catch (error) {
 
-        if (error.code === "ER_DUP_ENTRY") {
+        if (error.code === "23505") {
             return res.status(400).json({
                 message: "Subject code already exists"
             });
@@ -82,7 +82,7 @@ exports.getSubjects = async (req, res) => {
     }
 
     try {
-        const [subjects] = await db.query(
+        const result = await db.query(
             `SELECT 
                 subjectcode,
                 subjectname,
@@ -91,10 +91,12 @@ exports.getSubjects = async (req, res) => {
                 theorymarks,
                 practicalmarks
              FROM subject
-             WHERE courcecode = ? AND semoryear = ?
+             WHERE courcecode = $1 AND semoryear = $2
              ORDER BY subjectcode ASC`,
             [course_code, sem]
         );
+
+        const subjects = result.rows;
 
         res.json(subjects);
 
@@ -128,10 +130,10 @@ exports.updateSubject = async (req, res) => {
     }
 
     try {
-        const [result] = await db.query(
+        const result = await db.query(
             `UPDATE subject 
-             SET subjectname = ?, subjecttype = ?, theorymarks = ?, practicalmarks = ?
-             WHERE subjectcode = ?`,
+             SET subjectname = $1, subjecttype = $2, theorymarks = $3, practicalmarks = $4
+             WHERE subjectcode = $5`,
             [
                 subjectname.trim(),
                 subjecttype,
@@ -141,7 +143,7 @@ exports.updateSubject = async (req, res) => {
             ]
         );
 
-        if (result.affectedRows === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Subject not found" });
         }
 
@@ -161,12 +163,12 @@ exports.deleteSubject = async (req, res) => {
     const { subjectcode } = req.params;
 
     try {
-        const [result] = await db.query(
-            "DELETE FROM subject WHERE subjectcode = ?",
+        const result = await db.query(
+            "DELETE FROM subject WHERE subjectcode = $1",
             [subjectcode]
         );
 
-        if (result.affectedRows === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Subject not found" });
         }
 

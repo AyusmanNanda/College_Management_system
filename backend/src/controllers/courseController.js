@@ -23,7 +23,7 @@ exports.createCourse = async (req, res) => {
 
     try {
         await db.query(
-            "INSERT INTO courses (course_code, course_name, sem_or_year, total_semesters) VALUES (?, ?, ?, ?)",
+            "INSERT INTO courses (course_code, course_name, sem_or_year, total_semesters) VALUES ($1, $2, $3, $4)",
             [
                 course_code.trim().toUpperCase(),
                 course_name.trim(),
@@ -36,7 +36,7 @@ exports.createCourse = async (req, res) => {
 
     } catch (error) {
 
-        if (error.code === "ER_DUP_ENTRY") {
+        if (error.code === "23505") {
             return res.status(400).json({
                 message: "Course code or course name already exists"
             });
@@ -53,7 +53,7 @@ exports.createCourse = async (req, res) => {
 // ============================
 exports.getCourses = async (req, res) => {
     try {
-        const [courses] = await db.query(`
+        const result = await db.query(`
             SELECT 
                 c.*,
                 (SELECT COUNT(*) FROM subject s WHERE s.courcecode = c.course_code) AS subject_count,
@@ -62,7 +62,7 @@ exports.getCourses = async (req, res) => {
             ORDER BY c.id DESC
         `);
 
-        res.json(courses);
+        res.json(result.rows);
 
     } catch (error) {
         console.error(error);
@@ -83,8 +83,8 @@ exports.updateCourse = async (req, res) => {
     }
 
     try {
-        const [result] = await db.query(
-            "UPDATE courses SET course_code = ?, course_name = ?, sem_or_year = ?, total_semesters = ? WHERE id = ?",
+        const result = await db.query(
+            "UPDATE courses SET course_code = $1, course_name = $2, sem_or_year = $3, total_semesters = $4 WHERE id = $5",
             [
                 course_code.trim().toUpperCase(),
                 course_name.trim(),
@@ -94,7 +94,7 @@ exports.updateCourse = async (req, res) => {
             ]
         );
 
-        if (result.affectedRows === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Course not found" });
         }
 
@@ -102,7 +102,7 @@ exports.updateCourse = async (req, res) => {
 
     } catch (error) {
 
-        if (error.code === "ER_DUP_ENTRY") {
+        if (error.code === "23505") {
             return res.status(400).json({
                 message: "Course code or course name already exists"
             });
@@ -121,12 +121,12 @@ exports.deleteCourse = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [result] = await db.query(
-            "DELETE FROM courses WHERE id = ?",
+        const result = await db.query(
+            "DELETE FROM courses WHERE id = $1",
             [id]
         );
 
-        if (result.affectedRows === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ message: "Course not found" });
         }
 

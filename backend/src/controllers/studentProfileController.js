@@ -10,8 +10,8 @@ exports.updateStudentProfile = async (req, res) => {
 
         const query = `
             UPDATE students
-            SET password = ?, dob = ?
-            WHERE email = ?
+            SET password = $1, dob = $2
+            WHERE email = $3
         `;
 
         await db.query(query, [password, dob, email]);

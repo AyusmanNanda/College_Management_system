@@ -23,7 +23,7 @@ const getAdminLogo = () => {
 
 exports.getAdminProfile = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM admin LIMIT 1");
+        const { rows } = await db.query("SELECT * FROM admin LIMIT 1");
 
         if (rows.length === 0) {
             return res.status(404).json({ message: "Admin not found" });
@@ -98,18 +98,18 @@ exports.updateAdminProfile = async (req, res) => {
 
         await db.query(
             `
-                UPDATE admin
-                SET collagename = ?,
-                    address = ?,
-                    emailid = ?,
-                    contactnumber = ?,
-                    website = ?,
-                    facebook = ?,
-                    instagram = ?,
-                    twitter = ?,
-                    linkedin = ?,
-                    password = COALESCE(?, password)
-            `,
+UPDATE admin
+SET collagename = $1,
+    address = $2,
+    emailid = $3,
+    contactnumber = $4,
+    website = $5,
+    facebook = $6,
+    instagram = $7,
+    twitter = $8,
+    linkedin = $9,
+    password = COALESCE($10, password)
+        `,
             [
                 collagename,
                 address,
