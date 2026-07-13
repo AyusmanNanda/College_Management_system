@@ -52,15 +52,15 @@ exports.getStudents = async (req, res) => {
     }
 
     try {
-        const [rows] = await db.query(
+        const result = await db.query(
             `SELECT sr_no, rollnumber, firstname, lastname
              FROM students
-             WHERE Courcecode = ? AND semoryear = ?
+             WHERE Courcecode = $1 AND semoryear = $2
              ORDER BY rollnumber`,
             [course, sem]
         );
 
-        const formatted = rows.map(student => ({
+        const formatted = result.rows.map(student => ({
             student_id: student.sr_no,
             rollnumber: student.rollnumber,
             firstname: student.firstname,
@@ -90,26 +90,26 @@ exports.getAttendanceByDate = async (req, res) => {
     date = String(date).slice(0, 10);   // FIXED
 
     try {
-        const [rows] = await db.query(
+        const result = await db.query(
             `
                 SELECT
                     s.sr_no AS student_id,
-                    IFNULL(a.present, 0) AS present
+                    COALESCE(a.present, 0) AS present
                 FROM students s
                          LEFT JOIN attendance a
                                    ON s.sr_no = a.student_id
-                                       AND a.subjectcode = ?
-                                       AND a.attendance_date = ?
-                                       AND a.courcecode = ?
-                                       AND a.semoryear = ?
-                WHERE s.Courcecode = ?
-                  AND s.semoryear = ?
+                                       AND a.subjectcode = $1
+                                       AND a.attendance_date = $2
+                                       AND a.courcecode = $3
+                                       AND a.semoryear = $4
+                WHERE s.Courcecode = $5
+                  AND s.semoryear = $6
                 ORDER BY s.rollnumber
             `,
             [subjectcode, date, courcecode, semoryear, courcecode, semoryear]
         );
 
-        res.json(rows);
+        res.json(result.rows);
 
     } catch (err) {
         console.error(err);
@@ -135,10 +135,10 @@ exports.saveAttendance = async (req, res) => {
     const userRole = getUserRole(req);
 
     if (userRole === "faculty" && date !== todayDate) {
-    return res.status(403).json({
-        message: "Faculty can edit attendance only for today's date"
-    });
-   }
+        return res.status(403).json({
+            message: "Faculty can edit attendance only for today's date"
+        });
+    }
 
     try {
         const values = records.map(r => [
@@ -150,15 +150,34 @@ exports.saveAttendance = async (req, res) => {
             Number(semoryear)
         ]);
 
-        await db.query(
-            `
-                INSERT INTO attendance
-                (student_id, subjectcode, attendance_date, present, courcecode, semoryear)
-                VALUES ?
-                    ON DUPLICATE KEY UPDATE present = VALUES(present)
-            `,
-            [values]
-        );
+        if (values.length > 0) {
+            const placeholders = values.map((_, index) => {
+                const offset = index * 6;
+
+                return `(
+                    $${offset + 1},
+                    $${offset + 2},
+                    $${offset + 3},
+                    $${offset + 4},
+                    $${offset + 5},
+                    $${offset + 6}
+                )`;
+            }).join(", ");
+
+            const flattenedValues = values.flat();
+
+            await db.query(
+                `
+                    INSERT INTO attendance
+                    (student_id, subjectcode, attendance_date, present, courcecode, semoryear)
+                    VALUES ${placeholders}
+                    ON CONFLICT
+                    (student_id, subjectcode, attendance_date, courcecode, semoryear)
+                    DO UPDATE SET present = EXCLUDED.present
+                `,
+                flattenedValues
+            );
+        }
 
         res.json({ message: "Attendance saved successfully" });
 
@@ -180,7 +199,7 @@ exports.getReport = async (req, res) => {
     }
 
     try {
-        const [rows] = await db.query(
+        const result = await db.query(
             `
                 SELECT
                     s.rollnumber,
@@ -188,22 +207,26 @@ exports.getReport = async (req, res) => {
                     COUNT(a.attendance_date) AS total_classes,
                     SUM(a.present) AS present_count,
                     ROUND(
-                            IFNULL((SUM(a.present) / NULLIF(COUNT(a.attendance_date), 0)) * 100, 0),
+                            COALESCE(
+                                    (SUM(a.present)::numeric /
+                                     NULLIF(COUNT(a.attendance_date), 0)) * 100,
+                                    0
+                            ),
                             2
                     ) AS percentage
                 FROM students s
                          LEFT JOIN attendance a
                                    ON s.sr_no = a.student_id
-                                       AND a.subjectcode = ?
-                WHERE s.Courcecode = ?
-                  AND s.semoryear = ?
+                                       AND a.subjectcode = $1
+                WHERE s.Courcecode = $2
+                  AND s.semoryear = $3
                 GROUP BY s.sr_no
                 ORDER BY s.rollnumber
             `,
             [subject, course, sem]
         );
 
-        res.json(rows);
+        res.json(result.rows);
 
     } catch (err) {
         console.error(err);
@@ -223,19 +246,19 @@ exports.getAttendanceDates = async (req, res) => {
     }
 
     try {
-        const [rows] = await db.query(
+        const result = await db.query(
             `
-                SELECT DISTINCT DATE_FORMAT(attendance_date, '%Y-%m-%d') AS date
+                SELECT DISTINCT TO_CHAR(attendance_date, 'YYYY-MM-DD') AS date
                 FROM attendance
-                WHERE subjectcode = ?
-                  AND courcecode = ?
-                  AND semoryear = ?
+                WHERE subjectcode = $1
+                  AND courcecode = $2
+                  AND semoryear = $3
                 ORDER BY date DESC
             `,
             [subjectcode, courcecode, semoryear]
         );
 
-        res.json(rows);
+        res.json(result.rows);
 
     } catch (err) {
         console.error(err);
@@ -260,10 +283,10 @@ exports.deleteAttendance = async (req, res) => {
         await db.query(
             `
                 DELETE FROM attendance
-                WHERE subjectcode = ?
-                  AND attendance_date = ?
-                  AND courcecode = ?
-                  AND semoryear = ?
+                WHERE subjectcode = $1
+                  AND attendance_date = $2
+                  AND courcecode = $3
+                  AND semoryear = $4
             `,
             [subjectcode, date, courcecode, semoryear]
         );
@@ -313,6 +336,7 @@ exports.downloadAttendanceTemplate = async (req, res) => {
 
         await workbook.xlsx.write(res);
         res.end();
+
     } catch (err) {
         console.error("Download attendance template error:", err);
         res.status(500).json({ message: "Failed to download template" });
@@ -333,24 +357,27 @@ exports.importAttendance = async (req, res) => {
     if (!subjectcode || !date || !courcecode || !semoryear) {
         return res.status(400).json({ message: "Missing required fields" });
     }
-    const [existingAttendance] = await db.query(
-    `
-        SELECT 1
-        FROM attendance
-        WHERE subjectcode = ?
-          AND attendance_date = ?
-          AND courcecode = ?
-          AND semoryear = ?
-        LIMIT 1
-    `,
-    [subjectcode, date, courcecode, Number(semoryear)]
-);
 
-if (existingAttendance.length > 0) {
-    return res.status(400).json({
-        message: "Attendance is already taken for this date, so import is not allowed."
-    });
-}
+    const existingAttendanceResult = await db.query(
+        `
+            SELECT 1
+            FROM attendance
+            WHERE subjectcode = $1
+              AND attendance_date = $2
+              AND courcecode = $3
+              AND semoryear = $4
+            LIMIT 1
+        `,
+        [subjectcode, date, courcecode, Number(semoryear)]
+    );
+
+    const existingAttendance = existingAttendanceResult.rows;
+
+    if (existingAttendance.length > 0) {
+        return res.status(400).json({
+            message: "Attendance is already taken for this date, so import is not allowed."
+        });
+    }
 
     date = String(date).slice(0, 10);
 
@@ -374,17 +401,22 @@ if (existingAttendance.length > 0) {
             return res.status(400).json({ message: "Excel file is empty" });
         }
 
-        const [students] = await db.query(
+        const studentsResult = await db.query(
             `
                 SELECT sr_no, rollnumber
                 FROM students
-                WHERE Courcecode = ? AND semoryear = ?
+                WHERE Courcecode = $1 AND semoryear = $2
             `,
             [courcecode, semoryear]
         );
 
+        const students = studentsResult.rows;
+
         const rollMap = new Map(
-            students.map((student) => [String(student.rollnumber).trim(), student.sr_no])
+            students.map((student) => [
+                String(student.rollnumber).trim(),
+                student.sr_no
+            ])
         );
 
         const values = [];
@@ -417,97 +449,114 @@ if (existingAttendance.length > 0) {
             }
 
             const hasPresent = presentValue !== "";
-const hasAbsent = absentValue !== "";
+            const hasAbsent = absentValue !== "";
 
-// both filled -> invalid
-if (hasPresent && hasAbsent) {
-    invalidRows++;
-    errors.push({
-        row: excelRowNumber,
-        reason: "Both present and absent are filled"
-    });
-    return;
-}
+            // both filled -> invalid
+            if (hasPresent && hasAbsent) {
+                invalidRows++;
+                errors.push({
+                    row: excelRowNumber,
+                    reason: "Both present and absent are filled"
+                });
+                return;
+            }
 
-// both empty -> invalid
-if (!hasPresent && !hasAbsent) {
-    invalidRows++;
-    errors.push({
-        row: excelRowNumber,
-        reason: "Either present or absent must be filled"
-    });
-    return;
-}
+            // both empty -> invalid
+            if (!hasPresent && !hasAbsent) {
+                invalidRows++;
+                errors.push({
+                    row: excelRowNumber,
+                    reason: "Either present or absent must be filled"
+                });
+                return;
+            }
 
-// validate the filled field only
-if (hasPresent && !["1", "0"].includes(presentValue)) {
-    invalidRows++;
-    errors.push({
-        row: excelRowNumber,
-        reason: "Present must be 0 or 1"
-    });
-    return;
-}
+            // validate the filled field only
+            if (hasPresent && !["1", "0"].includes(presentValue)) {
+                invalidRows++;
+                errors.push({
+                    row: excelRowNumber,
+                    reason: "Present must be 0 or 1"
+                });
+                return;
+            }
 
-if (hasAbsent && !["1", "0"].includes(absentValue)) {
-    invalidRows++;
-    errors.push({
-        row: excelRowNumber,
-        reason: "Absent must be 0 or 1"
-    });
-    return;
-}
+            if (hasAbsent && !["1", "0"].includes(absentValue)) {
+                invalidRows++;
+                errors.push({
+                    row: excelRowNumber,
+                    reason: "Absent must be 0 or 1"
+                });
+                return;
+            }
 
-// only one field is filled -> accept row
-let normalizedPresent;
+            // only one field is filled -> accept row
+            let normalizedPresent;
 
-if (hasPresent) {
-    normalizedPresent = 1;
-} else if (hasAbsent) {
-    normalizedPresent = 0;
-}
+            if (hasPresent) {
+                normalizedPresent = 1;
+            } else if (hasAbsent) {
+                normalizedPresent = 0;
+            }
 
-const student_id = rollMap.get(rollnumber);
+            const student_id = rollMap.get(rollnumber);
 
-values.push([
-    student_id,
-    subjectcode,
-    date,
-    normalizedPresent,
-    courcecode,
-    Number(semoryear)
-]);
+            values.push([
+                student_id,
+                subjectcode,
+                date,
+                normalizedPresent,
+                courcecode,
+                Number(semoryear)
+            ]);
         });
 
         if (!values.length) {
-    return res.status(400).json({
-        message: "No valid rows found in file",
-        totalRows: rows.length,
-        inserted: 0,
-        invalidRows,
-        errors
-    });
-}
+            return res.status(400).json({
+                message: "No valid rows found in file",
+                totalRows: rows.length,
+                inserted: 0,
+                invalidRows,
+                errors
+            });
+        }
 
 
-if (invalidRows > 0) {
-    return res.status(400).json({
-        message: "Some rows are invalid. Please fix them and import again.",
-        totalRows: rows.length,
-        inserted: 0,
-        invalidRows,
-        errors
-    });
-}
+        if (invalidRows > 0) {
+            return res.status(400).json({
+                message: "Some rows are invalid. Please fix them and import again.",
+                totalRows: rows.length,
+                inserted: 0,
+                invalidRows,
+                errors
+            });
+        }
+
+        const placeholders = values.map((_, index) => {
+            const offset = index * 6;
+
+            return `(
+                $${offset + 1},
+                $${offset + 2},
+                $${offset + 3},
+                $${offset + 4},
+                $${offset + 5},
+                $${offset + 6}
+            )`;
+        }).join(", ");
+
+        const flattenedValues = values.flat();
 
         await db.query(
             `
                 INSERT INTO attendance
                 (student_id, subjectcode, attendance_date, present, courcecode, semoryear)
-                VALUES ?
-                ON DUPLICATE KEY UPDATE present = VALUES(present)
+                VALUES ${placeholders}
+                    ON CONFLICT
+                (student_id, subjectcode, attendance_date, courcecode, semoryear)
+                DO UPDATE SET present = EXCLUDED.present
             `,
-            [values]
+            flattenedValues
         );
 
         return res.json({
@@ -517,6 +566,7 @@ if (invalidRows > 0) {
             invalidRows,
             errors
         });
+
     } catch (err) {
         console.error("Import attendance error:", err);
         res.status(500).json({ message: "Failed to import attendance" });
