@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "college-management-system",
   "private": true,
   "version": "2.1.0-alpha",
   "description": "A cross-platform college management system for managing courses, students, faculty, attendance, marks, and academic records.",
@@ -11,6 +11,9 @@
   },
   "bugs": {
     "url": "https://github.com/AyusmanNanda/College_Management_system/issues"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   },
   "main": "electron/main.js",
   "type": "module",
