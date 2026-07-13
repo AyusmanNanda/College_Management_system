@@ -2,17 +2,21 @@ const db = require("../config/db");
 
 exports.getDashboardStats = async (req, res) => {
     try {
-        const [[courseCount]] = await db.query(
+        const courseResult = await db.query(
             "SELECT COUNT(*) AS total_courses FROM courses"
         );
 
-        const [[facultyCount]] = await db.query(
+        const facultyResult = await db.query(
             "SELECT COUNT(*) AS total_faculty FROM faculties"
         );
 
-        const [[studentCount]] = await db.query(
+        const studentResult = await db.query(
             "SELECT COUNT(*) AS total_students FROM students"
         );
+
+        const courseCount = courseResult.rows[0];
+        const facultyCount = facultyResult.rows[0];
+        const studentCount = studentResult.rows[0];
 
         res.json({
             total_courses: courseCount.total_courses,

@@ -28,15 +28,15 @@ exports.getStudentsForMarks = async (req, res) => {
 
         const { course, sem } = req.query;
 
-        const [rows] = await db.query(
+        const result = await db.query(
             `SELECT rollnumber, firstname, lastname
              FROM students
-             WHERE Courcecode = ? AND semoryear = ?
+             WHERE Courcecode = $1 AND semoryear = $2
              ORDER BY rollnumber`,
             [course, sem]
         );
 
-        res.json(rows);
+        res.json(result.rows);
 
     } catch (error) {
         console.error(error);
@@ -62,10 +62,11 @@ exports.saveMarks = async (req, res) => {
             await db.query(
                 `INSERT INTO marks
                  (courcecode, semoryear, subjectcode, subjectname, rollnumber, theorymarks, practicalmarks)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE
-                 theorymarks = VALUES(theorymarks),
-                 practicalmarks = VALUES(practicalmarks)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                     ON CONFLICT (courcecode, semoryear, subjectcode, rollnumber)
+                 DO UPDATE SET
+                    theorymarks = EXCLUDED.theorymarks,
+                                             practicalmarks = EXCLUDED.practicalmarks`,
                 [
                     course,
                     sem,
@@ -92,6 +93,7 @@ exports.saveMarks = async (req, res) => {
 
 
 // ===== TEMPLATE DOWNLOAD =====
+
 exports.downloadMarksTemplate = async (req, res) => {
     try {
         const { course, sem, subject } = req.query;
@@ -100,12 +102,14 @@ exports.downloadMarksTemplate = async (req, res) => {
             return res.status(400).json({ message: "course, sem and subject are required" });
         }
 
-        const [subjectRows] = await db.query(
+        const subjectResult = await db.query(
             `SELECT subjectname, theorymarks, practicalmarks
              FROM subject
-             WHERE subjectcode = ? AND courcecode = ? AND semoryear = ?`,
+             WHERE subjectcode = $1 AND courcecode = $2 AND semoryear = $3`,
             [subject, course, sem]
         );
+
+        const subjectRows = subjectResult.rows;
 
         if (!subjectRows.length) {
             return res.status(404).json({ message: "Subject not found" });
@@ -113,13 +117,15 @@ exports.downloadMarksTemplate = async (req, res) => {
 
         const subjectInfo = subjectRows[0];
 
-        const [studentRows] = await db.query(
+        const studentResult = await db.query(
             `SELECT rollnumber
              FROM students
-             WHERE Courcecode = ? AND semoryear = ?
+             WHERE Courcecode = $1 AND semoryear = $2
              LIMIT 1`,
             [course, sem]
         );
+
+        const studentRows = studentResult.rows;
 
         const demoRoll = studentRows.length ? String(studentRows[0].rollnumber) : "";
 
@@ -143,8 +149,12 @@ exports.downloadMarksTemplate = async (req, res) => {
             subjectcode: subject,
             subjectname: subjectInfo.subjectname || "",
             rollnumber: demoRoll,
-            theorymarks: Number(subjectInfo.theorymarks || 0) > 0 ? Math.min(Number(subjectInfo.theorymarks), 50) : 0,
-            practicalmarks: Number(subjectInfo.practicalmarks || 0) > 0 ? Math.min(Number(subjectInfo.practicalmarks), 20) : 0
+            theorymarks: Number(subjectInfo.theorymarks || 0) > 0
+                ? Math.min(Number(subjectInfo.theorymarks), 50)
+                : 0,
+            practicalmarks: Number(subjectInfo.practicalmarks || 0) > 0
+                ? Math.min(Number(subjectInfo.practicalmarks), 20)
+                : 0
         });
 
         worksheet.getRow(1).font = { bold: true };
@@ -153,6 +163,7 @@ exports.downloadMarksTemplate = async (req, res) => {
             "Content-Type",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         );
+
         res.setHeader(
             "Content-Disposition",
             'attachment; filename="Marks_Template.xlsx"'
@@ -160,13 +171,16 @@ exports.downloadMarksTemplate = async (req, res) => {
 
         await workbook.xlsx.write(res);
         res.end();
+
     } catch (err) {
         console.error("Download marks template error:", err);
         res.status(500).json({ message: "Failed to download template" });
     }
 };
 
+
 // ===== IMPORT MARKS =====
+
 exports.importMarks = async (req, res) => {
     try {
         const { course, sem, subject } = req.body;
@@ -179,12 +193,14 @@ exports.importMarks = async (req, res) => {
             return res.status(400).json({ message: "course, sem and subject are required" });
         }
 
-        const [subjectRows] = await db.query(
+        const subjectResult = await db.query(
             `SELECT subjectname, theorymarks, practicalmarks
              FROM subject
-             WHERE subjectcode = ? AND courcecode = ? AND semoryear = ?`,
+             WHERE subjectcode = $1 AND courcecode = $2 AND semoryear = $3`,
             [subject, course, sem]
         );
+
+        const subjectRows = subjectResult.rows;
 
         if (!subjectRows.length) {
             return res.status(404).json({ message: "Subject not found" });
@@ -194,12 +210,14 @@ exports.importMarks = async (req, res) => {
         const maxTheory = Number(subjectInfo.theorymarks || 0);
         const maxPractical = Number(subjectInfo.practicalmarks || 0);
 
-        const [studentRows] = await db.query(
+        const studentResult = await db.query(
             `SELECT rollnumber
              FROM students
-             WHERE Courcecode = ? AND semoryear = ?`,
+             WHERE Courcecode = $1 AND semoryear = $2`,
             [course, sem]
         );
+
+        const studentRows = studentResult.rows;
 
         const validRolls = new Set(
             studentRows.map((s) => String(s.rollnumber).trim())
@@ -224,7 +242,10 @@ exports.importMarks = async (req, res) => {
             const courcecode = String(row.courcecode || course).trim();
             const semoryear = String(row.semoryear || sem).trim();
             const subjectcode = String(row.subjectcode || subject).trim();
-            const subjectname = String(row.subjectname || subjectInfo.subjectname || "").trim();
+            const subjectname = String(
+                row.subjectname || subjectInfo.subjectname || ""
+            ).trim();
+
             const rollnumber = String(row.rollnumber || "").trim();
 
             const theoryRaw = row.theorymarks;
@@ -232,74 +253,96 @@ exports.importMarks = async (req, res) => {
 
             if (!rollnumber) {
                 invalidRows++;
+
                 errors.push({
                     row: excelRow,
                     reason: "rollnumber is required"
                 });
+
                 return;
             }
 
             if (!validRolls.has(rollnumber)) {
                 invalidRows++;
+
                 errors.push({
                     row: excelRow,
                     reason: `Student not found for rollnumber ${rollnumber}`
                 });
+
                 return;
             }
 
-            if (courcecode !== String(course) || semoryear !== String(sem) || subjectcode !== String(subject)) {
+            if (
+                courcecode !== String(course) ||
+                semoryear !== String(sem) ||
+                subjectcode !== String(subject)
+            ) {
                 invalidRows++;
+
                 errors.push({
                     row: excelRow,
                     reason: "courcecode, semoryear or subjectcode does not match selected subject"
                 });
+
                 return;
             }
 
             const theorymarks =
-                theoryRaw === "" || theoryRaw === null || theoryRaw === undefined
+                theoryRaw === "" ||
+                theoryRaw === null ||
+                theoryRaw === undefined
                     ? 0
                     : Number(theoryRaw);
 
             const practicalmarks =
-                practicalRaw === "" || practicalRaw === null || practicalRaw === undefined
+                practicalRaw === "" ||
+                practicalRaw === null ||
+                practicalRaw === undefined
                     ? 0
                     : Number(practicalRaw);
 
             if (Number.isNaN(theorymarks) || theorymarks < 0) {
                 invalidRows++;
+
                 errors.push({
                     row: excelRow,
                     reason: "theorymarks must be a valid number"
                 });
+
                 return;
             }
 
             if (Number.isNaN(practicalmarks) || practicalmarks < 0) {
                 invalidRows++;
+
                 errors.push({
                     row: excelRow,
                     reason: "practicalmarks must be a valid number"
                 });
+
                 return;
             }
 
             if (theorymarks > maxTheory) {
                 invalidRows++;
+
                 errors.push({
                     row: excelRow,
                     reason: `theorymarks cannot exceed ${maxTheory}`
                 });
+
                 return;
             }
 
             if (practicalmarks > maxPractical) {
                 invalidRows++;
+
                 errors.push({
                     row: excelRow,
                     reason: `practicalmarks cannot exceed ${maxPractical}`
                 });
+
                 return;
             }
 
@@ -324,15 +367,32 @@ exports.importMarks = async (req, res) => {
             });
         }
 
+        const placeholders = values.map((_, index) => {
+            const offset = index * 7;
+
+            return `(
+                $${offset + 1},
+                $${offset + 2},
+                $${offset + 3},
+                $${offset + 4},
+                $${offset + 5},
+                $${offset + 6},
+                $${offset + 7}
+            )`;
+        }).join(", ");
+
+        const flattenedValues = values.flat();
+
         await db.query(
             `INSERT INTO marks
              (courcecode, semoryear, subjectcode, subjectname, rollnumber, theorymarks, practicalmarks)
-             VALUES ?
-             ON DUPLICATE KEY UPDATE
-             theorymarks = VALUES(theorymarks),
-             practicalmarks = VALUES(practicalmarks),
-             subjectname = VALUES(subjectname)`,
-            [values]
+             VALUES ${placeholders}
+                 ON CONFLICT (courcecode, semoryear, subjectcode, rollnumber)
+             DO UPDATE SET
+                theorymarks = EXCLUDED.theorymarks,
+                                     practicalmarks = EXCLUDED.practicalmarks,
+                                     subjectname = EXCLUDED.subjectname`,
+            flattenedValues
         );
 
         res.json({
@@ -349,6 +409,7 @@ exports.importMarks = async (req, res) => {
     }
 };
 
+
 // ============================
 // Get Marks For Editing
 // ============================
@@ -359,7 +420,7 @@ exports.getMarksForEdit = async (req, res) => {
 
         const { course, sem, subject } = req.query;
 
-        const [rows] = await db.query(
+        const result = await db.query(
             `SELECT
                  s.rollnumber,
                  s.firstname,
@@ -369,16 +430,16 @@ exports.getMarksForEdit = async (req, res) => {
              FROM students s
              LEFT JOIN marks m
                ON s.rollnumber = m.rollnumber
-               AND m.subjectcode = ?
-               AND m.courcecode = ?
-               AND m.semoryear = ?
-             WHERE s.Courcecode = ?
-             AND s.semoryear = ?
+               AND m.subjectcode = $1
+               AND m.courcecode = $2
+               AND m.semoryear = $3
+             WHERE s.Courcecode = $4
+             AND s.semoryear = $5
              ORDER BY s.rollnumber`,
             [subject, course, sem, course, sem]
         );
 
-        res.json(rows);
+        res.json(result.rows);
 
     } catch (error) {
 
@@ -406,11 +467,11 @@ exports.updateMarks = async (req, res) => {
 
             await db.query(
                 `UPDATE marks
-                 SET theorymarks = ?, practicalmarks = ?
-                 WHERE rollnumber = ?
-                 AND subjectcode = ?
-                 AND courcecode = ?
-                 AND semoryear = ?`,
+                 SET theorymarks = $1, practicalmarks = $2
+                 WHERE rollnumber = $3
+                   AND subjectcode = $4
+                   AND courcecode = $5
+                   AND semoryear = $6`,
                 [
                     theorymarks,
                     practicalmarks,
@@ -445,7 +506,7 @@ exports.getMarksReport = async (req, res) => {
 
         const { course, sem } = req.query;
 
-        const [rows] = await db.query(
+        const result = await db.query(
             `SELECT
                  m.rollnumber,
                  CONCAT(s.firstname, ' ', s.lastname) AS name,
@@ -455,13 +516,13 @@ exports.getMarksReport = async (req, res) => {
              FROM marks m
              JOIN students s
              ON m.rollnumber = s.rollnumber
-             WHERE m.courcecode = ?
-             AND m.semoryear = ?
+             WHERE m.courcecode = $1
+             AND m.semoryear = $2
              ORDER BY m.rollnumber`,
             [course, sem]
         );
 
-        res.json(rows);
+        res.json(result.rows);
 
     } catch (error) {
 
@@ -485,10 +546,10 @@ exports.deleteMarks = async (req, res) => {
 
         await db.query(
             `DELETE FROM marks
-             WHERE courcecode = ?
-             AND semoryear = ?
-             AND subjectcode = ?
-             AND rollnumber = ?`,
+             WHERE courcecode = $1
+               AND semoryear = $2
+               AND subjectcode = $3
+               AND rollnumber = $4`,
             [course, sem, subject, rollnumber]
         );
 
@@ -516,9 +577,9 @@ exports.deleteSubjectMarks = async (req, res) => {
 
         await db.query(
             `DELETE FROM marks
-             WHERE courcecode = ?
-             AND semoryear = ?
-             AND subjectcode = ?`,
+             WHERE courcecode = $1
+               AND semoryear = $2
+               AND subjectcode = $3`,
             [course, sem, subject]
         );
 
@@ -544,7 +605,7 @@ exports.getSubjectReport = async (req, res) => {
 
         const { course, sem, subject } = req.query;
 
-        const [rows] = await db.query(
+        const result = await db.query(
             `SELECT
                  s.rollnumber,
                  s.firstname,
@@ -556,16 +617,18 @@ exports.getSubjectReport = async (req, res) => {
              FROM students s
              LEFT JOIN marks m
                ON m.rollnumber = s.rollnumber
-               AND m.subjectcode = ?
-               AND m.courcecode = ?
-               AND m.semoryear = ?
+               AND m.subjectcode = $1
+               AND m.courcecode = $2
+               AND m.semoryear = $3
              JOIN subject sub
-               ON sub.subjectcode = ?
-             WHERE s.Courcecode = ?
-             AND s.semoryear = ?
+               ON sub.subjectcode = $4
+             WHERE s.Courcecode = $5
+             AND s.semoryear = $6
              ORDER BY s.rollnumber`,
             [subject, course, sem, subject, course, sem]
         );
+
+        const rows = result.rows;
 
         const data = rows.map(r => {
 
@@ -618,16 +681,16 @@ exports.getSubjects = async (req, res) => {
 
         const { course, sem } = req.query;
 
-        const [rows] = await db.query(
+        const result = await db.query(
             `SELECT subjectcode, subjectname
              FROM subject
-             WHERE courcecode = ?
-             AND semoryear = ?
+             WHERE courcecode = $1
+             AND semoryear = $2
              ORDER BY subjectcode`,
             [course, sem]
         );
 
-        res.json(rows);
+        res.json(result.rows);
 
     } catch (error) {
 
@@ -637,6 +700,7 @@ exports.getSubjects = async (req, res) => {
     }
 
 };
+
 
 // ============================
 // Get Student Marksheet
@@ -656,9 +720,11 @@ exports.getStudentMarksheet = async (req, res) => {
         // Get College Info
         // ============================
 
-        const [adminRows] = await db.query(
+        const adminResult = await db.query(
             `SELECT collagename, logo FROM admin LIMIT 1`
         );
+
+        const adminRows = adminResult.rows;
 
         const collegeName = adminRows.length
             ? adminRows[0].collagename
@@ -671,7 +737,7 @@ exports.getStudentMarksheet = async (req, res) => {
         // Fetch Student Marks
         // ============================
 
-        const [rows] = await db.query(
+        const marksResult = await db.query(
             `SELECT
                  s.firstname,
                  s.lastname,
@@ -689,12 +755,14 @@ exports.getStudentMarksheet = async (req, res) => {
                            ON m.rollnumber = s.rollnumber
                       JOIN subject sub
                            ON sub.subjectcode = m.subjectcode
-             WHERE m.courcecode = ?
-               AND m.semoryear = ?
-               AND m.rollnumber = ?
+             WHERE m.courcecode = $1
+               AND m.semoryear = $2
+               AND m.rollnumber = $3
              ORDER BY m.subjectcode`,
             [course, sem, roll]
         );
+
+        const rows = marksResult.rows;
 
         if (!rows.length) {
 

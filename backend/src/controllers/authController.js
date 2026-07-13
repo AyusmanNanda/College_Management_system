@@ -2,11 +2,13 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
+
 const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     `${process.env.BASE_URL}/api/auth/google-callback`
 );
+
 /*
   Role-Based Login
   Supports bcrypt OR plain text passwords
@@ -21,8 +23,8 @@ exports.login = async (req, res) => {
         let table = null;
 
         // Check admin
-        const [adminRows] = await db.query(
-            "SELECT * FROM admin WHERE emailid = ?",
+        const { rows: adminRows } = await db.query(
+            "SELECT * FROM admin WHERE emailid = $1",
             [email]
         );
 
@@ -34,8 +36,8 @@ exports.login = async (req, res) => {
 
         // Check faculties
         if (!user) {
-            const [facultyRows] = await db.query(
-                "SELECT * FROM faculties WHERE emailid = ?",
+            const { rows: facultyRows } = await db.query(
+                "SELECT * FROM faculties WHERE emailid = $1",
                 [email]
             );
 
@@ -48,8 +50,8 @@ exports.login = async (req, res) => {
 
         // Check students
         if (!user) {
-            const [studentRows] = await db.query(
-                "SELECT * FROM students WHERE emailid = ?",
+            const { rows: studentRows } = await db.query(
+                "SELECT * FROM students WHERE emailid = $1",
                 [email]
             );
 
@@ -88,11 +90,11 @@ exports.login = async (req, res) => {
 
         await db.query(
             `
-                UPDATE ${table}
-                SET activestatus = 1,
-                    lastlogin = ?
-                WHERE emailid = ?
-            `,
+UPDATE ${table}
+SET activestatus = 1,
+    lastlogin = $1
+WHERE emailid = $2
+    `,
             [new Date().toISOString(), email]
         );
 
@@ -138,10 +140,10 @@ exports.logout = async (req, res) => {
 
         await db.query(
             `
-                UPDATE ${table}
-                SET activestatus = 0
-                WHERE emailid = ?
-            `,
+UPDATE ${table}
+SET activestatus = 0
+WHERE emailid = $1
+    `,
             [email]
         );
 
@@ -170,8 +172,8 @@ exports.googleLogin = async (req, res) => {
         let table = null;
 
         // Check admin
-        const [adminRows] = await db.query(
-            "SELECT * FROM admin WHERE emailid = ?",
+        const { rows: adminRows } = await db.query(
+            "SELECT * FROM admin WHERE emailid = $1",
             [email]
         );
 
@@ -183,8 +185,8 @@ exports.googleLogin = async (req, res) => {
 
         // Check faculty
         if (!user) {
-            const [facultyRows] = await db.query(
-                "SELECT * FROM faculties WHERE emailid = ?",
+            const { rows: facultyRows } = await db.query(
+                "SELECT * FROM faculties WHERE emailid = $1",
                 [email]
             );
 
@@ -197,8 +199,8 @@ exports.googleLogin = async (req, res) => {
 
         // Check students
         if (!user) {
-            const [studentRows] = await db.query(
-                "SELECT * FROM students WHERE emailid = ?",
+            const { rows: studentRows } = await db.query(
+                "SELECT * FROM students WHERE emailid = $1",
                 [email]
             );
 
@@ -223,11 +225,11 @@ exports.googleLogin = async (req, res) => {
 
         await db.query(
             `
-            UPDATE ${table}
-            SET activestatus = 1,
-                lastlogin = ?
-            WHERE emailid = ?
-            `,
+UPDATE ${table}
+SET activestatus = 1,
+    lastlogin = $1
+WHERE emailid = $2
+    `,
             [new Date().toISOString(), email]
         );
 
@@ -300,8 +302,8 @@ exports.googleCallback = async (req, res) => {
 
         /* ===== Check Admin ===== */
 
-        const [adminRows] = await db.query(
-            "SELECT * FROM admin WHERE emailid = ?",
+        const { rows: adminRows } = await db.query(
+            "SELECT * FROM admin WHERE emailid = $1",
             [email]
         );
 
@@ -315,8 +317,8 @@ exports.googleCallback = async (req, res) => {
 
         if (!user) {
 
-            const [facultyRows] = await db.query(
-                "SELECT * FROM faculties WHERE emailid = ?",
+            const { rows: facultyRows } = await db.query(
+                "SELECT * FROM faculties WHERE emailid = $1",
                 [email]
             );
 
@@ -332,8 +334,8 @@ exports.googleCallback = async (req, res) => {
 
         if (!user) {
 
-            const [studentRows] = await db.query(
-                "SELECT * FROM students WHERE emailid = ?",
+            const { rows: studentRows } = await db.query(
+                "SELECT * FROM students WHERE emailid = $1",
                 [email]
             );
 
@@ -363,11 +365,11 @@ exports.googleCallback = async (req, res) => {
 
         await db.query(
             `
-                UPDATE ${table}
-                SET activestatus = 1,
-                    lastlogin = ?
-                WHERE emailid = ?
-            `,
+UPDATE ${table}
+SET activestatus = 1,
+    lastlogin = $1
+WHERE emailid = $2
+    `,
             [new Date().toISOString(), email]
         );
 
@@ -384,18 +386,19 @@ exports.googleCallback = async (req, res) => {
 
             return res.redirect(`cms://oauth-success/?token=${token}&role=${role}`);
 
-        }
-        if (platform === "electron") {
-            return res.redirect(`${process.env.FRONTEND_URL}/oauth-success?token=${token}&role=${role}`);
-        }
-
-        return res.redirect(`${process.env.FRONTEND_URL}/oauth-success?token=${token}&role=${role}`);
-
-    } catch (error) {
-
-        console.error("Google OAuth Error:", error);
-        res.status(500).send("Google login failed");
-
     }
+
+if (platform === "electron") {
+    return res.redirect(`${process.env.FRONTEND_URL}/oauth-success?token=${token}&role=${role}`);
+}
+
+return res.redirect(`${process.env.FRONTEND_URL}/oauth-success?token=${token}&role=${role}`);
+
+} catch (error) {
+
+    console.error("Google OAuth Error:", error);
+    res.status(500).send("Google login failed");
+
+}
 
 };

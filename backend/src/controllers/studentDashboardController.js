@@ -7,10 +7,12 @@ exports.getDashboard = async (req, res) => {
 
     const email = req.user.email;
 
-    const [rows] = await db.query(
-      "SELECT firstname, lastname, rollnumber, Courcecode, semoryear, profilePic FROM students WHERE emailid=?",
-      [email]
+    const result = await db.query(
+        "SELECT firstname, lastname, rollnumber, Courcecode, semoryear, profilePic FROM students WHERE emailid = $1",
+        [email]
     );
+
+    const rows = result.rows;
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -31,17 +33,16 @@ exports.updatePassword = async (req, res) => {
     const email = req.user.email;
     const { password } = req.body;
 
-    // ✅ check password exists
     if (!password) {
       return res.status(400).json({ message: "Password is required" });
     }
 
-    // ✅ hash password
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await db.query(
-      "UPDATE students SET password=? WHERE emailid=?",
-      [hashedPassword, email]
+        "UPDATE students SET password = $1 WHERE emailid = $2",
+        [hashedPassword, email]
     );
 
     res.json({ message: "Password updated successfully" });
@@ -58,14 +59,13 @@ exports.updateDOB = async (req, res) => {
     const email = req.user.email;
     const { dateofbirth } = req.body;
 
-    // ✅ check DOB exists
     if (!dateofbirth) {
       return res.status(400).json({ message: "Date of birth is required" });
     }
 
     await db.query(
-      "UPDATE students SET dateofbirth=? WHERE emailid=?",
-      [dateofbirth, email]
+        "UPDATE students SET dateofbirth = $1 WHERE emailid = $2",
+        [dateofbirth, email]
     );
 
     res.json({ message: "DOB updated successfully" });

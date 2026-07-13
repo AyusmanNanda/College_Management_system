@@ -9,10 +9,12 @@ exports.getStudentMarks = async (req, res) => {
     // optional filters from frontend
     const { sem, subject } = req.query;
 
-    const [student] = await db.query(
-      "SELECT rollnumber, Courcecode FROM students WHERE emailid = ?",
-      [email]
+    const studentResult = await db.query(
+        "SELECT rollnumber, Courcecode FROM students WHERE emailid = $1",
+        [email]
     );
+
+    const student = studentResult.rows;
 
     if (!student.length) {
       return res.status(404).json({ message: "Student not found" });
@@ -30,23 +32,25 @@ exports.getStudentMarks = async (req, res) => {
         practicalmarks,
         (theorymarks + practicalmarks) AS total_marks
       FROM marks
-      WHERE rollnumber = ?
-      AND Courcecode = ?
+      WHERE rollnumber = $1
+        AND Courcecode = $2
     `;
 
     const params = [rollnumber, Courcecode];
 
     if (sem) {
-      query += " AND semoryear = ?";
       params.push(sem);
+      query += ` AND semoryear = $${params.length}`;
     }
 
     if (subject) {
-      query += " AND subjectcode = ?";
       params.push(subject);
+      query += ` AND subjectcode = $${params.length}`;
     }
 
-    const [rows] = await db.query(query, params);
+    const result = await db.query(query, params);
+
+    const rows = result.rows;
 
     res.json({
       marks: rows,

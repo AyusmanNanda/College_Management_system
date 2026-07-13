@@ -1,4 +1,4 @@
-# ⚡ Axiom — College Management System
+# ⚡ Axiom - College Management System
 
 ![Build](https://github.com/AyusmanNanda/College_Management_system/actions/workflows/build.yml/badge.svg)
 
