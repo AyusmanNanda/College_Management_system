@@ -13,7 +13,7 @@
 
 **Axiom** is a full-stack, multi-platform college management system built for **Government College of Engineering, Keonjhar**. It runs as a web app, Android app, desktop (Electron) app, and installable PWA — all from a single codebase.
 
-**[🔗 Live Demo](https://college-management-system-gules-three.vercel.app/)** · [📋 Features](#-features) · [🏗️ Architecture](#️-architecture) · [🚀 Setup](#-setup-guide) · [👥 Team](#-team)
+**[🔗 Live Demo](https://cmsnet.vercel.app/)** · [📋 Features](#-features) · [🏗️ Architecture](#️-architecture) · [🚀 Setup](#-setup-guide) · [👥 Team](#-team)
 
 ---
 ![Login Light](./screenshots/login-light.png)
