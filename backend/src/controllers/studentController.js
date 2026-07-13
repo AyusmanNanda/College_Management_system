@@ -13,10 +13,12 @@ exports.getStudentProfile = async (req, res) => {
   try {
     const email = req.user.email;
 
-    const [rows] = await db.query(
-        "SELECT * FROM students WHERE emailid = ?",
+    const result = await db.query(
+        "SELECT * FROM students WHERE emailid = $1",
         [email]
     );
+
+    const rows = result.rows;
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -37,10 +39,12 @@ exports.getStudentSubjects = async (req, res) => {
   try {
     const email = req.user.email;
 
-    const [student] = await db.query(
-        "SELECT Courcecode, semoryear FROM students WHERE emailid = ?",
+    const studentResult = await db.query(
+        "SELECT Courcecode, semoryear FROM students WHERE emailid = $1",
         [email]
     );
+
+    const student = studentResult.rows;
 
     if (student.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -48,10 +52,12 @@ exports.getStudentSubjects = async (req, res) => {
 
     const { Courcecode, semoryear } = student[0];
 
-    const [subjects] = await db.query(
-        "SELECT * FROM subject WHERE courcecode = ? AND semoryear = ?",
+    const subjectsResult = await db.query(
+        "SELECT * FROM subject WHERE courcecode = $1 AND semoryear = $2",
         [Courcecode, semoryear]
     );
+
+    const subjects = subjectsResult.rows;
 
     res.json(subjects);
   } catch (error) {
@@ -71,8 +77,8 @@ exports.updateStudentProfile = async (req, res) => {
 
     await db.query(
         `UPDATE students
-       SET emailid = ?, contactnumber = ?, state = ?, city = ?
-       WHERE emailid = ?`,
+         SET emailid = $1, contactnumber = $2, state = $3, city = $4
+         WHERE emailid = $5`,
         [emailid, contactnumber, state, city, email]
     );
 
@@ -104,9 +110,11 @@ const getStudentImage = (rollnumber) => {
 
 exports.getAllStudents = async (req, res) => {
   try {
-    const [rows] = await db.query(
+    const result = await db.query(
         `SELECT * FROM students ORDER BY sr_no DESC`
     );
+
+    const rows = result.rows;
 
     const updatedStudents = rows.map((student) => ({
       ...student,
@@ -164,10 +172,12 @@ exports.createStudent = async (req, res) => {
     const lastname = nameParts.slice(1).join(" ") || "";
 
     // Check duplicate email
-    const [existing] = await db.query(
-        `SELECT * FROM students WHERE emailid = ?`,
+    const existingResult = await db.query(
+        `SELECT * FROM students WHERE emailid = $1`,
         [emailid]
     );
+
+    const existing = existingResult.rows;
 
     if (existing.length > 0) {
       return res.status(400).json({ message: "Email already exists" });
@@ -179,12 +189,13 @@ exports.createStudent = async (req, res) => {
     const profilepic = req.file ? req.file.filename : null;
 
     await db.query(
-        `INSERT INTO students 
-      (Courcecode, semoryear, rollnumber, optionalsubject, firstname, lastname, emailid,
-       contactnumber, dateofbirth, gender, state, city,
-       fathername, fatheroccupation, mothername, motheroccupation,
-       profilepic, password, activestatus, admissiondate)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO students
+         (Courcecode, semoryear, rollnumber, optionalsubject, firstname, lastname, emailid,
+          contactnumber, dateofbirth, gender, state, city,
+          fathername, fatheroccupation, mothername, motheroccupation,
+          profilepic, password, activestatus, admissiondate)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                 $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
         [
           Courcecode,
           semoryear,
@@ -252,24 +263,24 @@ exports.updateStudent = async (req, res) => {
 
     let updateQuery = `
       UPDATE students SET
-      Courcecode = ?,
-      semoryear = ?,
-      rollnumber = ?,
-      optionalsubject = ?,
-      firstname = ?,
-      lastname = ?,
-      emailid = ?,
-      contactnumber = ?,
-      dateofbirth = ?,
-      gender = ?,
-      state = ?,
-      city = ?,
-      fathername = ?,
-      fatheroccupation = ?,
-      mothername = ?,
-      motheroccupation = ?,
-      admissiondate = ?,
-      activestatus = ?
+                        Courcecode = $1,
+                        semoryear = $2,
+                        rollnumber = $3,
+                        optionalsubject = $4,
+                        firstname = $5,
+                        lastname = $6,
+                        emailid = $7,
+                        contactnumber = $8,
+                        dateofbirth = $9,
+                        gender = $10,
+                        state = $11,
+                        city = $12,
+                        fathername = $13,
+                        fatheroccupation = $14,
+                        mothername = $15,
+                        motheroccupation = $16,
+                        admissiondate = $17,
+                        activestatus = $18
     `;
 
     const values = [
@@ -295,17 +306,17 @@ exports.updateStudent = async (req, res) => {
 
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
-      updateQuery += `, password = ?`;
       values.push(hashedPassword);
+      updateQuery += `, password = $${values.length}`;
     }
 
     if (req.file) {
-      updateQuery += `, profilepic = ?`;
       values.push(req.file.filename);
+      updateQuery += `, profilepic = $${values.length}`;
     }
 
-    updateQuery += ` WHERE sr_no = ?`;
     values.push(id);
+    updateQuery += ` WHERE sr_no = $${values.length}`;
 
     await db.query(updateQuery, values);
 
@@ -325,10 +336,12 @@ exports.deleteStudent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [rows] = await db.query(
-        "SELECT rollnumber FROM students WHERE sr_no = ?",
+    const result = await db.query(
+        "SELECT rollnumber FROM students WHERE sr_no = $1",
         [id]
     );
+
+    const rows = result.rows;
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -336,12 +349,16 @@ exports.deleteStudent = async (req, res) => {
 
     const rollnumber = rows[0].rollnumber;
 
-    await db.query("DELETE FROM students WHERE sr_no = ?", [id]);
+    await db.query(
+        "DELETE FROM students WHERE sr_no = $1",
+        [id]
+    );
 
     const dynamicImage = getStudentImage(rollnumber);
 
     if (dynamicImage !== "default.png") {
       const filePath = path.join(studentUploadDir, dynamicImage);
+
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -488,12 +505,13 @@ exports.importStudentsFromExcel = async (req, res) => {
         const hashedPassword = await bcrypt.hash(dateofbirth, 10);
 
         await db.query(
-            `INSERT INTO students 
-          (Courcecode, semoryear, rollnumber, optionalsubject, firstname, lastname, emailid,
-           contactnumber, dateofbirth, gender, state, city,
-           fathername, fatheroccupation, mothername, motheroccupation,
-           password, activestatus, admissiondate)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO students
+             (Courcecode, semoryear, rollnumber, optionalsubject, firstname, lastname, emailid,
+              contactnumber, dateofbirth, gender, state, city,
+              fathername, fatheroccupation, mothername, motheroccupation,
+              password, activestatus, admissiondate)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                     $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
             [
               Courcecode,
               semoryear,
@@ -520,7 +538,7 @@ exports.importStudentsFromExcel = async (req, res) => {
         inserted++;
 
       } catch (error) {
-        if (error.code === "ER_DUP_ENTRY") {
+        if (error.code === "23505") {
           duplicates++;
         } else {
           invalidRows++;
