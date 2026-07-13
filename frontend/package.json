@@ -2,6 +2,16 @@
   "name": "frontend",
   "private": true,
   "version": "2.1.0-alpha",
+  "description": "A cross-platform college management system for managing courses, students, faculty, attendance, marks, and academic records.",
+  "author": "Ayusman Avisek Nanda",
+  "homepage": "https://github.com/AyusmanNanda/College_Management_system",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AyusmanNanda/College_Management_system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AyusmanNanda/College_Management_system/issues"
+  },
   "main": "electron/main.js",
   "type": "module",
   "scripts": {
