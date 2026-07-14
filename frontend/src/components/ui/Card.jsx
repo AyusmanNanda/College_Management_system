@@ -1,12 +1,17 @@
-/*
-  Card Component
-  --------------
-  Reusable content block
-*/
-
-const Card = ({ children }) => {
+const Card = ({
+                  children,
+                  className = "",
+              }) => {
     return (
-        <div className="bg-gray-50 rounded-md border border-gray-200 p-6">
+        <div
+            className={`
+                bg-white dark:bg-slate-900
+                border border-slate-200 dark:border-slate-800
+                rounded-xl
+                shadow-sm
+                ${className}
+            `}
+        >
             {children}
         </div>
     );

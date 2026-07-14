@@ -1,9 +1,18 @@
 import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
-import { FileSpreadsheet, Download, Upload, X, AlertCircle, CheckCircle2 } from "lucide-react";
-import api from "../../../utils/api.js";
+import {
+    FileSpreadsheet,
+    Download,
+    Upload,
+    X,
+    CheckCircle2,
+} from "lucide-react";
+import api from "../../utils/api.js";
 import ConfirmSaveModal from "./ConfirmSaveModal.jsx";
+import Button from "../ui/Button";
+import Spinner from "../ui/Spinner";
+import Alert from "../ui/Alert";
 
 const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
     const [file, setFile] = useState(null);
@@ -16,6 +25,7 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
     const handleDownloadTemplate = async () => {
         try {
             setError("");
+
             const url = `${api.defaults.baseURL}/api/faculty/template`;
 
             if (Capacitor.isNativePlatform()) {
@@ -23,18 +33,17 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
 
                 const response = await fetch(url, {
                     headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                        Authorization: `Bearer ${token}`,
+                    },
                 });
 
                 if (!response.ok) {
-                    setLoading(false);
                     throw new Error("Download failed");
                 }
 
                 const blob = await response.blob();
-
                 const reader = new FileReader();
+
                 reader.onload = async () => {
                     const filePath = "Faculty_Import_Template.xlsx";
                     const fileData = reader.result;
@@ -47,14 +56,14 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                                 path: filePath,
                                 directory: Directory.Documents,
                             });
+
                             fileExists = true;
-                        } catch (_) {
+                        } catch {
                             fileExists = false;
                         }
 
                         if (fileExists) {
                             setLoading(false);
-                            setShowConfirm(true);
 
                             setConfirmAction(() => async () => {
                                 try {
@@ -62,8 +71,11 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                                         path: filePath,
                                         directory: Directory.Documents,
                                     });
-                                } catch (err) {
-                                    console.warn("Delete failed, falling back to overwrite");
+                                } catch (error) {
+                                    console.warn(
+                                        "Delete failed, falling back to overwrite",
+                                        error
+                                    );
                                 }
 
                                 try {
@@ -76,15 +88,15 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
 
                                     setError("");
                                     alert("Download complete");
-
-                                } catch (err) {
-                                    console.error(err);
+                                } catch (error) {
+                                    console.error(error);
                                     setError("Failed to save file");
                                 } finally {
                                     setLoading(false);
                                 }
                             });
 
+                            setShowConfirm(true);
                             return;
                         }
 
@@ -97,9 +109,8 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
 
                         setError("");
                         alert("Download complete");
-
-                    } catch (err) {
-                        console.error(err);
+                    } catch (error) {
+                        console.error(error);
                         setError("Failed to save file");
                     } finally {
                         setLoading(false);
@@ -115,24 +126,39 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                 return;
             }
 
+            setLoading(true);
+
             const response = await api.get("/api/faculty/template", {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: "blob"
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                responseType: "blob",
             });
 
-            const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+            const blobUrl = window.URL.createObjectURL(
+                new Blob([response.data])
+            );
+
             const link = document.createElement("a");
+
             link.href = blobUrl;
-            link.setAttribute("download", "Faculty_Import_Template.xlsx");
+            link.setAttribute(
+                "download",
+                "Faculty_Import_Template.xlsx"
+            );
+
             document.body.appendChild(link);
             link.click();
             link.remove();
-            window.URL.revokeObjectURL(blobUrl);
 
-        } catch (err) {
-            console.error(err);
-            setLoading(false);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error(error);
             setError("Failed to download template.");
+        } finally {
+            if (!showConfirm) {
+                setLoading(false);
+            }
         }
     };
 
@@ -152,161 +178,239 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                 formData,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
             );
 
             setResult(response.data);
             setFile(null);
-            onImportSuccess();
-        } catch (err) {
-            setError(err.response?.data?.message || "Import failed.");
+            onImportSuccess?.();
+        } catch (error) {
+            setError(
+                error.response?.data?.message || "Import failed."
+            );
         } finally {
             setLoading(false);
         }
     };
 
+    const handleClose = () => {
+        if (!loading) {
+            onClose?.();
+        }
+    };
+
+    const handleFileChange = (event) => {
+        const selectedFile = event.target.files?.[0];
+
+        if (!selectedFile) return;
+
+        setFile(selectedFile);
+        setError("");
+        setResult(null);
+
+        event.target.value = "";
+    };
+
+    const handleConfirmOverwrite = async () => {
+        if (!confirmAction) return;
+
+        setLoading(true);
+
+        try {
+            await confirmAction();
+        } finally {
+            setConfirmAction(null);
+            setShowConfirm(false);
+        }
+    };
+
+    const handleCancelOverwrite = () => {
+        setShowConfirm(false);
+        setConfirmAction(null);
+        setLoading(false);
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-
             <div
                 className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
-                onClick={onClose}
+                onClick={handleClose}
             />
 
-            <div
-                className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2rem] shadow-2xl z-10 overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-300">
-
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 right-6 p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
+            <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-300 dark:border-slate-800 dark:bg-slate-900">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClose}
+                    disabled={loading}
+                    aria-label="Close import modal"
+                    className="absolute right-6 top-6 p-2 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
                 >
                     <X size={20} />
-                </button>
+                </Button>
 
                 <div className="p-8 sm:p-10">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
+                    <div className="mb-8 flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm dark:bg-blue-500/10">
                             <FileSpreadsheet size={24} />
                         </div>
+
                         <div>
                             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800 dark:text-slate-100">
                                 Faculty Data Import
                             </h2>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+
+                            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                                 Bulk Upload Utility
                             </p>
                         </div>
                     </div>
 
                     <div className="space-y-8">
-
-                        {/* Step 1: Download */}
-                        <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/60">
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px]">1</span>
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 dark:border-slate-800/60 dark:bg-slate-950/50">
+                            <p className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] dark:bg-slate-800">
+                                    1
+                                </span>
                                 Download Structure
                             </p>
 
-                            <button
+                            <Button
+                                variant="secondary"
+                                size="lg"
                                 onClick={handleDownloadTemplate}
-                                className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 text-indigo-600 border border-indigo-100 dark:border-indigo-900/50 text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-indigo-500/10 transition-all active:scale-95"
+                                disabled={loading}
+                                className="w-full text-[10px] uppercase tracking-widest sm:w-auto"
                             >
-                                <Download size={16} />
-                                {loading ? "Preparing..." : "Download Template"}
-                            </button>
+                                {loading ? (
+                                    <>
+                                        <Spinner size="sm" />
+                                        Preparing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download size={16} />
+                                        Download Template
+                                    </>
+                                )}
+                            </Button>
                         </div>
 
-                        {/* Step 2: Upload */}
-                        <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/60">
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px]">2</span>
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 dark:border-slate-800/60 dark:bg-slate-950/50">
+                            <p className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] dark:bg-slate-800">
+                                    2
+                                </span>
                                 Upload Data
                             </p>
 
                             <label className="block">
-                                <span
-                                    className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest rounded-xl hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 transition-all cursor-pointer dark:text-slate-300">
+                                <span className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-white px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500">
                                     <Upload size={18} />
-                                    {file ? "Change Excel File" : "Select Completed File"}
+
+                                    {file
+                                        ? "Change Excel File"
+                                        : "Select Completed File"}
                                 </span>
 
                                 <input
                                     type="file"
                                     accept=".xlsx,.xls"
-                                    onChange={(e) => {
-                                        const selectedFile = e.target.files?.[0];
-                                        if (!selectedFile) return;
-                                        setFile(selectedFile);
-                                        setError("");
-                                        setResult(null);
-                                        e.target.value = null;
-                                    }}
+                                    onChange={handleFileChange}
+                                    disabled={loading}
                                     className="hidden"
                                 />
                             </label>
 
                             {file && (
-                                <div
-                                    className="mt-4 flex items-center gap-3 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 rounded-xl px-4 py-3 animate-in slide-in-from-left-2">
-                                    <CheckCircle2 size={14} />
-                                    <span className="truncate">File Ready: {file.name}</span>
+                                <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-[11px] font-bold text-blue-600 animate-in slide-in-from-left-2 dark:border-blue-500/20 dark:bg-blue-500/5 dark:text-blue-400">
+                                    <CheckCircle2
+                                        size={14}
+                                        className="shrink-0"
+                                    />
+
+                                    <span className="truncate">
+                                        File Ready: {file.name}
+                                    </span>
                                 </div>
                             )}
                         </div>
 
-                        {/* Final Actions */}
-                        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-                            <button
+                        <div className="flex flex-col justify-end gap-3 pt-4 sm:flex-row">
+                            <Button
+                                variant="primary"
+                                size="lg"
                                 onClick={handleImport}
                                 disabled={!file || loading}
-                                className={`w-full sm:w-auto px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 ${
-                                    !file || loading
-                                        ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                                        : "bg-indigo-600 text-white shadow-indigo-500/20 hover:bg-indigo-700"
-                                }`}
+                                className="w-full text-[10px] uppercase tracking-[0.2em] sm:w-auto"
                             >
                                 {loading ? (
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : <Upload size={16} />}
-                                {loading ? "Processing..." : "Execute Import"}
-                            </button>
+                                    <>
+                                        <Spinner size="sm" />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={16} />
+                                        Execute Import
+                                    </>
+                                )}
+                            </Button>
                         </div>
 
-                        {/* Status Messaging */}
                         <div className="space-y-4">
                             {error && (
-                                <div className="w-full flex items-start gap-3 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 rounded-xl px-4 py-3 animate-in slide-in-from-top-2">
-                                    <AlertCircle size={16} className="shrink-0" />
-                                    <p>{error}</p>
-                                </div>
+                                <Alert variant="error">
+                                    {error}
+                                </Alert>
                             )}
 
                             {result && (
-                                <div
-                                    className="w-full bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-6 text-[11px] font-bold text-slate-700 dark:text-slate-300 grid grid-cols-2 gap-4 animate-in zoom-in-95">
+                                <div className="grid w-full grid-cols-2 gap-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-[11px] font-bold text-slate-700 animate-in zoom-in-95 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-slate-300">
                                     <div className="space-y-1">
-                                        <p className="text-slate-400 uppercase text-[9px] tracking-widest">Total Rows</p>
-                                        <p className="text-lg text-slate-900 dark:text-white">{result.totalRows}</p>
+                                        <p className="text-[9px] uppercase tracking-widest text-slate-400">
+                                            Total Rows
+                                        </p>
+
+                                        <p className="text-lg text-slate-900 dark:text-white">
+                                            {result.totalRows}
+                                        </p>
                                     </div>
+
                                     <div className="space-y-1">
-                                        <p className="text-emerald-500 uppercase text-[9px] tracking-widest">Inserted</p>
-                                        <p className="text-lg text-emerald-600">{result.inserted}</p>
+                                        <p className="text-[9px] uppercase tracking-widest text-emerald-500">
+                                            Inserted
+                                        </p>
+
+                                        <p className="text-lg text-emerald-600">
+                                            {result.inserted}
+                                        </p>
                                     </div>
+
                                     <div className="space-y-1">
-                                        <p className="text-amber-500 uppercase text-[9px] tracking-widest">Duplicates</p>
-                                        <p className="text-lg text-amber-600">{result.duplicates}</p>
+                                        <p className="text-[9px] uppercase tracking-widest text-amber-500">
+                                            Duplicates
+                                        </p>
+
+                                        <p className="text-lg text-amber-600">
+                                            {result.duplicates}
+                                        </p>
                                     </div>
+
                                     <div className="space-y-1">
-                                        <p className="text-rose-500 uppercase text-[9px] tracking-widest">Invalid</p>
-                                        <p className="text-lg text-rose-600">{result.invalidRows}</p>
+                                        <p className="text-[9px] uppercase tracking-widest text-red-500">
+                                            Invalid
+                                        </p>
+
+                                        <p className="text-lg text-red-600">
+                                            {result.invalidRows}
+                                        </p>
                                     </div>
                                 </div>
                             )}
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -316,16 +420,8 @@ const ImportFacultyModal = ({ token, onClose, onImportSuccess }) => {
                 title="Conflict Detected"
                 message="An existing template was found in your storage. Would you like to overwrite it with a fresh copy?"
                 confirmText="Overwrite File"
-                onCancel={() => {
-                    setShowConfirm(false);
-                    setLoading(false);
-                }}
-                onConfirm={async () => {
-                    setLoading(true);
-                    if (confirmAction) await confirmAction();
-                    setConfirmAction(null);
-                    setShowConfirm(false);
-                }}
+                onCancel={handleCancelOverwrite}
+                onConfirm={handleConfirmOverwrite}
                 loading={loading}
             />
         </div>
