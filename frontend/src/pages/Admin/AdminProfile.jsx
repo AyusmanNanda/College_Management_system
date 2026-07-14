@@ -14,7 +14,7 @@ import {
     X
 } from "lucide-react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
+import ConfirmSaveModal from "../../components/modals/ConfirmSaveModal.jsx";
 import Toast from "./Toast.jsx";
 
 const AdminProfile = () => {

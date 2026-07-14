@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import FacultyProfile from "./FacultyProfile";
-import ImportFacultyModal from "./modals/ImportFacultyModal.jsx";
-import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
+import ImportFacultyModal from "../../components/modals/ImportFacultyModal.jsx";
+import ConfirmDeleteModal from "../../components/modals/ConfirmDeleteModal.jsx";
 import Toast from "./Toast.jsx";
 import {
     Users,

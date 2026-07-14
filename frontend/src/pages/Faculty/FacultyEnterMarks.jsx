@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
+import ConfirmSaveModal from "../../components/modals/ConfirmSaveModal";
 import ImportMarksModal from "./ImportMarksModal";
 import { 
   ListChecks, 

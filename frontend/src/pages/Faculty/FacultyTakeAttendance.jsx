@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
 import ImportAttendanceModal from "./ImportAttendanceModal";
-import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
+import ConfirmSaveModal from "../../components/modals/ConfirmSaveModal";
 import {
     CheckSquare,
     Filter,

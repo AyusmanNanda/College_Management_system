@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import ConfirmDeleteModal from "./modals/ConfirmDeleteModal.jsx";
+import ConfirmDeleteModal from "../../components/modals/ConfirmDeleteModal.jsx";
 import Toast from "./Toast.jsx";
 import {
     Library,

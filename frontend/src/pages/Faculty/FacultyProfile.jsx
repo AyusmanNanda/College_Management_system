@@ -15,7 +15,7 @@ import {
     X,
 } from "lucide-react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "../Admin/modals/ConfirmSaveModal";
+import ConfirmSaveModal from "../../components/modals/ConfirmSaveModal";
 
 const FacultyProfile = () => {
     const token = localStorage.getItem("token");

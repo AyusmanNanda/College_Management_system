@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, UserCircle, Camera, X } from "lucide-react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
+import ConfirmSaveModal from "../../components/modals/ConfirmSaveModal.jsx";
 
 const StudentProfile = ({ student, isNew, onClose, onUpdated }) => {
     const BASE_URL = api.defaults.baseURL;

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
-import ConfirmSaveModal from "./modals/ConfirmSaveModal.jsx";
+import ConfirmSaveModal from "../../components/modals/ConfirmSaveModal.jsx";
 import Toast from "./Toast.jsx";
 import { GraduationCap, Filter, ListChecks, Save, RotateCcw, CheckCircle2, AlertCircle } from "lucide-react";
 
