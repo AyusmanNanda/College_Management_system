@@ -94,9 +94,23 @@ const AdminLayout = () => {
     }, [isOffline]);
 
     /* ===================== Actions ===================== */
-    const handleLogout = () => {
-        localStorage.clear();
-        navigate("/", { replace: true });
+    const handleLogout = async () => {
+        try {
+            await api.post(
+                "/api/auth/logout",
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+        } catch (error) {
+            console.error("Logout failed:", error);
+        } finally {
+            localStorage.clear();
+            navigate("/", { replace: true });
+        }
     };
 
     const toggleTheme = () => {
