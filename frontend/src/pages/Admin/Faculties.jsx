@@ -3,7 +3,7 @@ import api from "../../utils/api";
 import FacultyProfile from "./FacultyProfile";
 import ImportFacultyModal from "../../components/modals/ImportFacultyModal.jsx";
 import ConfirmDeleteModal from "../../components/modals/ConfirmDeleteModal.jsx";
-import Toast from "./Toast.jsx";
+import Toast from "../../components/ui/Toast.jsx";
 import {
     Users,
     Search,

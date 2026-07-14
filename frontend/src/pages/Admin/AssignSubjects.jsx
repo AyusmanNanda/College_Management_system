@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
-import Toast from "./Toast.jsx";
+import Toast from "../../components/ui/Toast.jsx";
 import {
     UserCheck,
     Filter,

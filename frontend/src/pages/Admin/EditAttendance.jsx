@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import ConfirmDeleteModal from "../../components/modals/ConfirmDeleteModal.jsx";
 import ConfirmSaveModal from "../../components/modals/ConfirmSaveModal.jsx";
-import Toast from "./Toast.jsx";
+import Toast from "../../components/ui/Toast.jsx";
 import {
     ClipboardEdit,
     Filter,
