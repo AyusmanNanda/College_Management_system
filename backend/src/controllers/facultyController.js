@@ -900,9 +900,9 @@ exports.getFacultySelfProfile = async (req, res) => {
                 activestatus,
                 lastlogin
              FROM faculties
-             WHERE emailid = $1 OR facultyid = $2
+             WHERE emailid = $1
              LIMIT 1`,
-            [email, email]
+            [email]
         );
 
         const rows = result.rows;
@@ -948,9 +948,9 @@ exports.getFacultyDashboardStats = async (req, res) => {
         const facultyResult = await db.query(
             `SELECT facultyid
              FROM faculties
-             WHERE emailid = $1 OR facultyid = $2
+             WHERE emailid = $1
              LIMIT 1`,
-            [email, email]
+            [email]
         );
 
         const rows = facultyResult.rows;
@@ -1014,9 +1014,9 @@ exports.updateFacultyProfile = async (req, res) => {
         const facultyResult = await db.query(
             `SELECT sr_no, facultyid
              FROM faculties
-             WHERE emailid = $1 OR facultyid = $2
+             WHERE emailid = $1
              LIMIT 1`,
-            [email, email]
+            [email]
         );
 
         const rows = facultyResult.rows;
@@ -1167,9 +1167,9 @@ exports.changeFacultyPassword = async (req, res) => {
         const result = await db.query(
             `SELECT sr_no, password
              FROM faculties
-             WHERE emailid = $1 OR facultyid = $2
+             WHERE emailid = $1
              LIMIT 1`,
-            [email, email]
+            [email]
         );
 
         const rows = result.rows;
@@ -1253,9 +1253,9 @@ exports.changeFacultyEmail = async (req, res) => {
         const facultyResult = await db.query(
             `SELECT sr_no
              FROM faculties
-             WHERE emailid = $1 OR facultyid = $2
+             WHERE emailid = $1
              LIMIT 1`,
-            [tokenEmail, tokenEmail]
+            [tokenEmail]
         );
 
         const rows = facultyResult.rows;
@@ -1400,12 +1400,12 @@ exports.getAssignedSubjects = async (req, res) => {
              FROM faculties f
              LEFT JOIN subject s
                ON f.subject = s.subjectcode
-             WHERE (f.emailid = $1 OR f.facultyid = $2)
+             WHERE (f.emailid = $1)
                AND f.subject IS NOT NULL
                AND f.subject <> ''
                AND f.subject <> 'NOT ASSIGNED'
              LIMIT 1`,
-            [email, email]
+            [email]
         );
 
         const rows = result.rows;
