@@ -36,7 +36,7 @@
     "@capacitor/network": "^8.0.1",
     "@capacitor/status-bar": "^8.0.1",
     "@react-oauth/google": "^0.13.4",
-    "axios": "^1.16.0",
+    "axios": "^1.18.1",
     "dotenv": "^17.3.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
